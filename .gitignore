@@ -25,3 +25,8 @@ proguard/
 
 # Log Files
 *.log
+
+software/.build
+software/.build.app
+
+

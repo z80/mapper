@@ -257,7 +257,13 @@ bool QrExtractor::extract( const cv::Mat & img )
         cv::imshow( "QrExtractor::filtered", pd->blurredSaved );
     }
 
-    return (markers.size() > 2);
+    bool found = (markers.size() > 2);
+    return found;
+}
+
+void QrExtractor::setDebug( bool en )
+{
+    pd->debug = en;
 }
 
 const std::vector<cv::Point> & QrExtractor::points() const

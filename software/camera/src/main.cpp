@@ -27,7 +27,7 @@ public:
         matcher(_matcher)
     {}
 
-    void setFirstFrame(const Mat frame, vector<Point2f> bb, string title, Stats& stats);
+    void setFirstFrame(const Mat frame, Stats& stats);
     Mat process(const Mat frame, Stats& stats);
     Ptr<Feature2D> getDetector() {
         return detector;
@@ -40,14 +40,14 @@ protected:
     vector<Point2f> object_bb;
 };
 
-void Tracker::setFirstFrame(const Mat frame, vector<Point2f> bb, string title, Stats& stats)
+void Tracker::setFirstFrame(const Mat frame, Stats& stats)
 {
     first_frame = frame.clone();
     detector->detectAndCompute(first_frame, noArray(), first_kp, first_desc);
     stats.keypoints = (int)first_kp.size();
-    drawBoundingBox(first_frame, bb);
-    putText(first_frame, title, Point(0, 60), FONT_HERSHEY_PLAIN, 5, Scalar::all(0), 4);
-    object_bb = bb;
+    //drawBoundingBox(first_frame, bb);
+    //putText(first_frame, title, Point(0, 60), FONT_HERSHEY_PLAIN, 5, Scalar::all(0), 4);
+    //object_bb = bb;
 }
 
 Mat Tracker::process(const Mat frame, Stats& stats)
@@ -172,8 +172,11 @@ int main()
     Mode mode = LOOK_FOR_QR;
     qrFound = false;
 
+    qr.setDebug( false );
+
     Stats stats;
     Ptr<ORB> orb_detector = ORB::create();
+    stats.keypoints = 100;
     orb_detector->setMaxFeatures(stats.keypoints);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
     Tracker tracker( orb_detector, matcher );
@@ -188,10 +191,10 @@ int main()
             if(image.empty())
                 break;
             Mat undistorted = image.clone();
+            Mat processed = image.clone();
             undistort( image, undistorted, cameraMatrix, distCoeffs );
             //drawText(image);
-            imshow( "Original", image );
-            imshow( "Undistorted", undistorted );
+            //imshow( "Original", image );
 
             orb_detector->detect( undistorted, kpts1 );
             orb_detector->compute( undistorted, kpts1, desc1 );
@@ -199,13 +202,18 @@ int main()
             switch ( mode )
             {
             case LOOK_FOR_QR:
-            case TRACK_POINTS:
                 qrFound = qr.extract( undistorted );
                 if ( qrFound )
                     qrPts2d = qr.points();
-                drawText( image, qrFound ? "no QR A" : "A Detected!" );
+                drawText( undistorted, qrFound ? "QR Detected!" : "no QR" );
+                break;
+            case TRACK_POINTS:
+                processed = tracker.process( undistorted, stats );
+                imshow( "Processed", processed );
                 break;
             };
+
+            imshow( "Undistorted", undistorted );
 
             ostringstream os;
             os << "mode = ";
@@ -220,7 +228,6 @@ int main()
             Mat imgWithFeatures = undistorted.clone();
             drawFeatures( imgWithFeatures, kpts1 );
             imshow( "Features", imgWithFeatures );
-            //latch->compute( undistorted, kpts1, desc1 );
 
             int key = waitKey( 10 );
             if( key == 'q' )
@@ -242,11 +249,19 @@ int main()
                     bool res = solveCamPos();
                     if ( res )
                     {
-                        mode = TRACK_POINTS;
                         if ( mode == LOOK_FOR_QR )
-                            tracker.setFirstFrame( undistorted, kpts1, "aaa", stats );
+                        {
+                            tracker.setFirstFrame( undistorted, stats );
+                            // Save camera position and orientation.
+                            // And also save all descriptor's 2D points.
+                        }
                         else
-                            tracker.process( undistorted, stats );
+                        {
+                            // Use second camera position.
+                            // Here triangulate all key points.
+                            // If successfull - change mode
+                            mode = TRACK_POINTS;
+                        }
                     }
                 }
             }

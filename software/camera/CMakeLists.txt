@@ -18,8 +18,10 @@ message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 # Add OpenCV headers location to your include paths
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+file( GLOB src "./src/*.cpp" )
+
 # Declare the executable target built from your sources
-add_executable( camera src/main.cpp)
+add_executable( camera src )
 
 # Link your application with OpenCV libraries
 target_link_libraries( camera ${OpenCV_LIBS})

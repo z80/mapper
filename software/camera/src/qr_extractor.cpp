@@ -14,8 +14,8 @@ public:
     int smoothSz;
     int tresholdWndSz;
 
-    vector<vector<Point>> contours;
-    vector<Vec4i>         hierarchy;
+    vector< vector<Point> > contours;
+    vector<Vec4i>           hierarchy;
 
     vector<Point>         markers;
 

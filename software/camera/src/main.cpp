@@ -9,6 +9,8 @@
 #include "stats.h"
 #include "utils.h"
 
+#include "cam_locator.h"
+
 using namespace cv;
 using namespace std;
 
@@ -143,6 +145,10 @@ enum Mode { LOOK_FOR_QR, TRACK_POINTS, PREDICT };
 
 int main()
 {
+    CamLocator locator( 5, 7, 0.02 );
+
+
+
     qrPts3d.resize( 3 );
     qrPts3d[0] = Point3d( 0.0, 0.0, 0.0 );
     qrPts3d[1] = Point3d( 1.0, 0.0, 0.0 );
@@ -199,12 +205,15 @@ int main()
             orb_detector->detect( undistorted, kpts1 );
             orb_detector->compute( undistorted, kpts1, desc1 );
 
+
+            cv::Mat vRot, vTrans;
             switch ( mode )
             {
             case LOOK_FOR_QR:
-                qrFound = qr.extract( undistorted );
-                if ( qrFound )
-                    qrPts2d = qr.points();
+                locator.findChessboard( undistorted, vRot, vTrans );
+                //qrFound = qr.extract( undistorted );
+                //if ( qrFound )
+                //    qrPts2d = qr.points();
                 drawText( undistorted, qrFound ? "QR Detected!" : "no QR" );
                 break;
             case TRACK_POINTS:

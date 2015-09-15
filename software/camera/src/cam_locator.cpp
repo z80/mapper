@@ -36,8 +36,9 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
     cv::cvtColor( mat, pd->gray, CV_BGR2GRAY );
     cv::Size sz = cv::Size( pd->cols, pd->rows );
 
+    cv::imshow( "Grey", pd->gray );
 
-    std::vector<cv::Point2f> corners; //this will be filled by the detected corners
+
     bool patternfound = cv::findChessboardCorners(  pd->gray, sz, pd->corners,
                                                     cv::CALIB_CB_ADAPTIVE_THRESH + 
                                                     cv::CALIB_CB_NORMALIZE_IMAGE + 
@@ -45,7 +46,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
 
     if ( patternfound )
     {
-        cv::cornerSubPix( pd->gray, corners, cv::Size(11, 11), cv::Size(-1, -1),
+        cv::cornerSubPix( pd->gray, pd->corners, cv::Size(11, 11), cv::Size(-1, -1),
                       cv::TermCriteria( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1 ) );
 
         // locate camera;
@@ -56,9 +57,11 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
         bool useExtrinsicGuess = true;
 
         // Pose estimation
+        bool correspondence = true;
+        /*
         bool correspondence = cv::solvePnP( qrPts3d, qrPts2d, cameraMatrix, distCoeffs,
                                             rvec, tvec,
-                                            useExtrinsicGuess, CV_ITERATIVE );
+                                            useExtrinsicGuess, CV_ITERATIVE );*/
 
         if ( pd->debug )
         {
@@ -73,8 +76,8 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
         if ( !correspondence )
             return false;
         // Transforms Rotation Vector to Matrix
-        vRot  = rVec;
-        vTran = tvec;
+        vRot   = rvec;
+        vTrans = tvec;
 
         return true;
     }

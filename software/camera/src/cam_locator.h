@@ -13,6 +13,7 @@ class CamLocator
 public:
     CamLocator( int rows = 5, int cols = 7, double step = 0.05 );
     ~CamLocator();
+    void setCamera( const cv::Mat & cameraMatrix, const cv::Mat & distCoefs );
     bool findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & vTrans );
 private:
     class PD;

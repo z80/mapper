@@ -172,6 +172,8 @@ int main()
     fs[ "camera_matrix" ] >> cameraMatrix;
     fs[ "distortion_coefficients" ] >> distCoeffs;
     fs.release();
+
+    locator.setCamera( cameraMatrix, distCoeffs );
     
     vector<KeyPoint> kpts1, kpts2;
     Mat desc1, desc2;

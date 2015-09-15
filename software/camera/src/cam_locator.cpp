@@ -34,11 +34,11 @@ CamLocator::CamLocator( int rows, int cols, double step )
     int index = 0;
     for ( int iy=0; iy<rows; iy++ )
     {
-        double y = static_cast<double>(cols-1-iy) * step;
+        double y = static_cast<double>(rows-1-iy) * step;
         for ( int ix=0; ix<cols; ix++ )
         {
             double x = static_cast<double>(ix) * step;
-            cv::Point3d pt( x, y, 0.0 ); 
+            cv::Point3f pt( x, y, 0.0 );
             pd->corners3d[ index++ ] = pt;
         }
     }
@@ -85,14 +85,28 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
         // locate camera;
         cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);
         cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64FC1);
-        tvec.at<double>( 2, 0 ) = 10.0;
+        tvec.at<double>( 2, 0 ) = 1.0;
 
-        const bool useExtrinsicGuess = true;
+        const bool useExtrinsicGuess = false;
 
         // Pose estimation
         bool correspondence;
         try {
-            correspondence = cv::solvePnP( pd->corners3d, pd->corners2d, pd->cameraMatrix, pd->distCoeffs,
+            correspondence = true;
+            correspondence = CV_IS_MAT_HDR( &pd->corners3d );
+            correspondence = CV_IS_MAT_HDR( &pd->corners2d );
+            correspondence = CV_IS_MAT_HDR( &pd->cameraMatrix );
+            correspondence = CV_IS_MAT_HDR( &pd->distCoeffs );
+            correspondence = CV_IS_MAT( &pd->corners3d );
+            correspondence = CV_IS_MAT( &pd->corners2d );
+            correspondence = CV_IS_MAT( &pd->cameraMatrix );
+            correspondence = CV_IS_MAT( &pd->distCoeffs );
+            /*
+            correspondence = cv::solvePnP( cv::Mat(pd->corners3d), cv::Mat(pd->corners2d), pd->cameraMatrix, pd->distCoeffs,
+                                            rvec, tvec,
+                                            useExtrinsicGuess, CV_ITERATIVE );
+            */
+            correspondence = cv::solvePnPRansac( cv::Mat(pd->corners3d), cv::Mat(pd->corners2d), pd->cameraMatrix, pd->distCoeffs,
                                             rvec, tvec,
                                             useExtrinsicGuess, CV_ITERATIVE );
         }
@@ -108,7 +122,18 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
             {
                 cv::Mat preview = mat;
                 try {
-                    cv::drawChessboardCorners( preview, sz, cv::Mat(pd->corners2d), patternfound );
+                    int sz = 9;
+                    //cv::drawChessboardCorners( preview, sz, cv::Mat(pd->corners2d), patternfound );
+                    cv::Point2f pt = pd->corners2d[0];
+                    cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
+                    cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
+                    pt = pd->corners2d[pd->corners2d.size() - pd->cols ];
+                    cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
+                    cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
+                    pt = pd->corners2d[pd->corners2d.size() - 1 ];
+                    cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
+                    cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
+
                 }
                 catch ( cv::Exception & e )
                 {

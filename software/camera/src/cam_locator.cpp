@@ -56,7 +56,7 @@ void CamLocator::setCamera( const cv::Mat & cameraMatrix, const cv::Mat & distCo
     pd->distCoeffs   = distCoefs;
 }
 
-bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & vTrans )
+bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
 {
 
     cv::cvtColor( mat, pd->gray, CV_BGR2GRAY );
@@ -92,15 +92,6 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
         // Pose estimation
         bool correspondence;
         try {
-            correspondence = true;
-            correspondence = CV_IS_MAT_HDR( &pd->corners3d );
-            correspondence = CV_IS_MAT_HDR( &pd->corners2d );
-            correspondence = CV_IS_MAT_HDR( &pd->cameraMatrix );
-            correspondence = CV_IS_MAT_HDR( &pd->distCoeffs );
-            correspondence = CV_IS_MAT( &pd->corners3d );
-            correspondence = CV_IS_MAT( &pd->corners2d );
-            correspondence = CV_IS_MAT( &pd->cameraMatrix );
-            correspondence = CV_IS_MAT( &pd->distCoeffs );
             /*
             correspondence = cv::solvePnP( cv::Mat(pd->corners3d), cv::Mat(pd->corners2d), pd->cameraMatrix, pd->distCoeffs,
                                             rvec, tvec,
@@ -115,6 +106,25 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
             correspondence = false;
             std::cout << e.what() << std::endl;
         }
+
+
+        if ( !correspondence )
+            return false;
+        // Transforms Rotation Vector to Matrix
+
+        cv::Mat rot;
+        cv::Rodrigues( rvec, rot );
+        cv::Mat objToCam = cv::Mat::zeros( 4, 4, CV_64FC1);
+        for ( int iy=0; iy<3; iy++ )
+        {
+            for ( int ix=0; ix<3; ix++ )
+            {
+                objToCam.at<double>( iy, ix ) = rot.at<double>( iy, ix );
+            }
+            objToCam.at<double>( iy, 3 ) = tvec.at<double>( iy, 0 );
+        }
+        objToCam.at<double>( 3, 3 ) = 1.0;
+        camToWorld4x4 = objToCam.inv();
 
         if ( pd->debug )
         {
@@ -144,17 +154,11 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & 
             }
             if ( correspondence )
             {
-                std::cout << "x: " << tvec.at<double>( 0, 0 ) << " ";
-                std::cout << "y: " << tvec.at<double>( 1, 0 ) << " ";
-                std::cout << "z: " << tvec.at<double>( 2, 0 ) << std::endl;
+                std::cout << "x: " << camToWorld4x4.at<double>( 0, 3 ) << " ";
+                std::cout << "y: " << camToWorld4x4.at<double>( 1, 3 ) << " ";
+                std::cout << "z: " << camToWorld4x4.at<double>( 2, 3 ) << std::endl;
             }
         }
-
-        if ( !correspondence )
-            return false;
-        // Transforms Rotation Vector to Matrix
-        vRot   = rvec;
-        vTrans = tvec;
 
         return true;
     }

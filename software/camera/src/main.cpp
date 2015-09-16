@@ -208,11 +208,11 @@ int main()
             orb_detector->compute( undistorted, kpts1, desc1 );
 
 
-            cv::Mat vRot, vTrans;
+            cv::Mat camToWorld;
             switch ( mode )
             {
             case LOOK_FOR_QR:
-                locator.findChessboard( undistorted, vRot, vTrans );
+                locator.findChessboard( undistorted, camToWorld );
                 //qrFound = qr.extract( undistorted );
                 //if ( qrFound )
                 //    qrPts2d = qr.points();

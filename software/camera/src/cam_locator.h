@@ -14,7 +14,7 @@ public:
     CamLocator( int rows = 5, int cols = 7, double step = 0.05 );
     ~CamLocator();
     void setCamera( const cv::Mat & cameraMatrix, const cv::Mat & distCoefs );
-    bool findChessboard( const cv::Mat & mat, cv::Mat & vRot, cv::Mat & vTrans );
+    bool findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 );
 private:
     class PD;
     PD * pd;

@@ -7,14 +7,46 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/features2d.hpp"
 
-#include <queue>
+#include <list>
+#include <vector>
+
+class PointDesc
+{
+public:
+    cv::Point2d screenPos;
+    cv::Mat     camMatrix;
+
+    PointDesc()
+    {
+    }
+
+    PointDesc( const PointDesc & inst )
+    {
+        *this = inst;
+    }
+
+    ~PointDesc()
+    {
+    }
+
+    const PointDesc & operator=( const PointDesc & inst )
+    {
+        if ( this != &inst )
+        {
+            screenPos = inst.screenPos;
+            camMatrix = inst.camMatrix;
+        }
+        return *this;
+    }
+
+};
 
 class FeatureDesc
 {
 public:
     FeatureDesc();
     ~FeatureDesc();
-    FeatureDesc( const & FeatureDesc & inst );
+    FeatureDesc( const FeatureDesc & inst );
     const FeatureDesc & operator=( const FeatureDesc & inst );
 
 public:
@@ -22,43 +54,12 @@ public:
     cv::Mat feature;
 
     // Feature history and position.
-    std::queue<cv::Point2d> screenPos;
+    std::list<PointDesc> screenPos;
 
     bool triangulated;
     cv::Point3d worldPos;
 };
 
-FeatureDesc::FeatureDesc()
-{
-    triangulated = false;
-}
-
-FeatureDesc::~FeatureDesc()
-{
-
-}
-
-FeatureDesc::FeatureDesc( const & FeatureDesc & inst )
-{
-    *this = inst;
-}
-
-const FeatureDesc & FeatureDesc::operator=( const FeatureDesc & inst )
-{
-    if ( this != &inst )
-    {
-        screenPos.clear();
-        for( std::queue<cv::Point2d>::const_iterator i=inst.screenPos.begin();
-             i!=inst.screenPos.end(); i++ )
-        {
-            screenPos.push_back( *i );
-        }
-        triangulated = inst.triangulated;
-        if ( triangulated )
-            worldPos = inst.worldPos;
-    }
-    return *this;
-}
 
 
 class FeatureLocator

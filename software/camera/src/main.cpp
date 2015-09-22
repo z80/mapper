@@ -10,6 +10,7 @@
 #include "utils.h"
 
 #include "cam_locator.h"
+#include "feature_locator.h"
 
 using namespace cv;
 using namespace std;

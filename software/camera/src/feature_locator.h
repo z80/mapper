@@ -69,6 +69,16 @@ public:
     ~FeatureLocator();
 
     bool processFrame( const cv::Mat & img, const cv::Mat & camToWorld );
+
+
+private:
+    cv::Ptr<cv::Feature2D>         detector;
+    cv::Ptr<cv::DescriptorMatcher> matcher;
+
+    cv::Mat                   descs;
+    std::vector<cv::KeyPoint> keypoints;
+
+
 };
 
 

@@ -52,7 +52,12 @@ const FeatureDesc & FeatureDesc::operator=( const FeatureDesc & inst )
 
 FeatureLocator::FeatureLocator()
 {
+    cv::Ptr<cv::ORB> orb = cv::ORB::create();
+    orb->setMaxFeatures( stats.keypoints );
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
 
+    this->detector = orb;
+    this->matcher  = matcher;
 }
 
 FeatureLocator::~FeatureLocator()

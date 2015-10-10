@@ -72,6 +72,10 @@ public:
 
 
 private:
+    void rescaleImage();
+    void blurImage();
+    void subtractBackgroung();
+
     cv::Ptr<cv::Feature2D>         detector;
     cv::Ptr<cv::DescriptorMatcher> matcher;
 

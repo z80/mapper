@@ -176,20 +176,7 @@ int main()
 
     locator.setCamera( cameraMatrix, distCoeffs );
     
-    vector<KeyPoint> kpts1, kpts2;
-    Mat desc1, desc2;
-    Mode mode = LOOK_FOR_QR;
-    qrFound = false;
-
-    qr.setDebug( false );
-
-    Stats stats;
-    Ptr<ORB> orb_detector = ORB::create();
-    stats.keypoints = 100;
-    orb_detector->setMaxFeatures(stats.keypoints);
-    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
-    Tracker tracker( orb_detector, matcher );
-
+    FeatureLocator locator;
 
     if(capture.isOpened())
     {
@@ -200,88 +187,18 @@ int main()
             if(image.empty())
                 break;
             Mat undistorted = image.clone();
-            Mat processed = image.clone();
             undistort( image, undistorted, cameraMatrix, distCoeffs );
-            //drawText(image);
-            //imshow( "Original", image );
-
-            orb_detector->detect( undistorted, kpts1 );
-            orb_detector->compute( undistorted, kpts1, desc1 );
-
-
-            cv::Mat camToWorld;
-            switch ( mode )
-            {
-            case LOOK_FOR_QR:
-                locator.findChessboard( undistorted, camToWorld );
-                //qrFound = qr.extract( undistorted );
-                //if ( qrFound )
-                //    qrPts2d = qr.points();
-                drawText( undistorted, qrFound ? "QR Detected!" : "no QR" );
-                break;
-            case TRACK_POINTS:
-                processed = tracker.process( undistorted, stats );
-                imshow( "Processed", processed );
-                break;
-            };
-
-            imshow( "Undistorted", undistorted );
-
-            ostringstream os;
-            os << "mode = ";
-            if ( mode == LOOK_FOR_QR )
-                os << "LOOK_FOR_QR";
-            else if ( mode == TRACK_POINTS )
-                os << "TRACK_POINTS";
-            else if ( mode == PREDICT )
-                os << "PREDICT";
-            drawText( image, os.str(), 1 );
-
-            Mat imgWithFeatures = undistorted.clone();
-            drawFeatures( imgWithFeatures, kpts1 );
-            imshow( "Features", imgWithFeatures );
 
             int key = waitKey( 10 );
             if( key == 'q' )
                 break;
-            else if (key == 's' )
-            {
-                static int ind = 0;
-                // Make screenshot.
-                ostringstream os;
-                os << "image" << ind++ << ".jpg";
-                imwrite( os.str(), image );
-            }
-            else if ( key == 'l' )
-            {
-                if ( ( mode == LOOK_FOR_QR ) || ( mode == TRACK_POINTS ) )
-                {
 
-                    // If qr is found compute camera position.
-                    bool res = solveCamPos();
-                    if ( res )
-                    {
-                        if ( mode == LOOK_FOR_QR )
-                        {
-                            tracker.setFirstFrame( undistorted, stats );
-                            // Save camera position and orientation.
-                            // And also save all descriptor's 2D points.
-                        }
-                        else
-                        {
-                            // Use second camera position.
-                            // Here triangulate all key points.
-                            // If successfull - change mode
-                            mode = TRACK_POINTS;
-                        }
-                    }
-                }
-            }
-            else if ( key == 'p' )
-            {
-                // If both QRs are found start predicting.
+            cv::Mat camToWorld4x4;
+            bool res = locator.findChessboard( undistorted, camToWorld4x4 );
+            if !res
+                continue;
 
-            }
+            locator.processFrame( undistorted, camToWorld4x4 );
         }
     }
     return 0;

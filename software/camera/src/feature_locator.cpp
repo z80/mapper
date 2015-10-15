@@ -81,6 +81,14 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
     blurImage( scaled, blurred );
     subtractBackgroung( blurred, subtracted );
 
+    // Debugging.
+    cv:Mat imgWithFeatures = img.clone();
+    drawFeatures( imgWithFeatures );
+    imshow( "Features", imgWithFeatures );
+    imshow( "Subtracted", subtracted );
+    // End of debugging.
+
+
     return false;
 }
 
@@ -118,39 +126,59 @@ int FeatureLocator::match( const cv::Mat & img, const cv::Mat & camToWorld )
     detector->compute( img, keypoints, descs );
 
     // Copy obtained features.
-    FeatureDesc desc;
-    desc.screenPos.resize( keypoints.size() );
-    desc.feature    = descs;
-    desc.camToWorld = camToWorld;
-    unsigned i = 0;
-    for( std::vector<cv::KeyPoint>::const_iterator it=keypoints.begin(); it!=keypoints.end(); it++ )
-    {
-        cv::KeyPoint kp = *it;
-        desc.screenPos[ i ] = kp.pt;
-        i++;
-    }
+    //FeatureDesc desc;
+    //desc.screenPos.resize( keypoints.size() );
+    //desc.feature    = descs;
+    //desc.camToWorld = camToWorld;
+    //unsigned i = 0;
+    //for( std::vector<cv::KeyPoint>::const_iterator it=keypoints.begin(); it!=keypoints.end(); it++ )
+    //{
+    //    cv::KeyPoint kp = *it;
+    //    desc.screenPos[ i ] = kp.pt;
+    //    i++;
+    //}
 
+    FeatureDesc desc;
+    desc.camToWorld = camToWorld;
     // If there are previous frames analyzed.
     if ( frames.size() < 1 )
-        return 0;
-
-    FeatureDesc & prevDesc = frames[ frames.size() - 1 ];
-
-
-    //std::vector< cv::KeyPoint > matched1, matched2;
-    int matched = 0;
-    matcher->knnMatch( prevDesc.feature, desc.feature, matches, 2 );
-    for( unsigned int i=0; i<matches.size(); i++ )
     {
-        if ( matches[i][0].distance < nn_match_ratio * matches[i][1].distance )
+        // Add all points to the list of potential points.
+        desc.screenPos.resize( keypoints.size() );
+        unsigned i = 0;
+        for( std::vector<cv::KeyPoint>::const_iterator it=keypoints.begin(); it!=keypoints.end(); it++ )
         {
-            //matched1.push_back( first_kp[matches[i][0].queryIdx] );
-            //matched2.push_back(       kp[matches[i][0].trainIdx] );
-            desc.screenPos[i].matchedIndex = matches[i][0].trainIdx;
-            matched += 1;
+            cv::KeyPoint kp = *it;
+            PointDesc pd;
+            pd.screenPos = kp.pt;
+            pd.selfIndex = i;
+            desc.screenPos[ i ] = pd;
+            i++;
         }
+        frames.push_back( desc );
+        return 0;
     }
-    return matched;
+    else
+    {
+        // Perform match in the case of existing previous frames.
+        int matched = 0;
+        matcher->knnMatch( descsPrev, descs, matches, 2 );
+        for( unsigned int i=0; i<matches.size(); i++ )
+        {
+            if ( matches[i][0].distance < nn_match_ratio * matches[i][1].distance )
+            {
+                // Add point to the list.
+                PointDesc pd;
+                pd.matchedIndex = matches[i][0].trainIdx;
+                pd.selfIndex    = matches[i][1].queryIdx;
+                pd.screenPos = keypoints[i].pt;
+                desc.screenPos.push_back( pd );
+                matched += 1;
+            }
+        }
+        return matched;
+    }
+    descsPrev = descs.clone();
 }
 
 bool FeatureLocator::triangulatePoints()
@@ -164,6 +192,19 @@ bool FeatureLocator::calcCameraPosition()
 {
     
     return true;
+}
+
+void FeatureLocator::drawFeatures( cv::Mat & img )
+{
+    const int sz = 9;
+    for ( std::vector<cv::KeyPoint>::const_iterator i=keypoints.begin(); i!=keypoints.end(); i++ )
+    {
+        cv::KeyPoint pt = *i;
+        pt.pt.x = img.size().width / imageSz.width;
+        pt.pt.y = img.size().height / imageSz.height;
+        line( img, cv::Point( pt.pt.x-sz, pt.pt.y ), cv::Point( pt.pt.x+sz, pt.pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
+        line( img, cv::Point( pt.pt.x, pt.pt.y-sz ), cv::Point( pt.pt.x, pt.pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
+    }
 }
 
 

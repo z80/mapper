@@ -14,14 +14,16 @@
 class PointDesc
 {
 public:
-    cv::Point2d  screenPos;
-    cv::Point3d  worldPos;
+    cv::Point2f  screenPos;
+    cv::Point3f  worldPos;
+    int          selfIndex;
     int          matchedIndex;
     bool         triangulated;
 
     PointDesc()
     {
         matchedIndex = -1;
+        selfIndex    = -1;
     }
 
     PointDesc( const PointDesc & inst )
@@ -38,7 +40,10 @@ public:
         if ( this != &inst )
         {
             screenPos    = inst.screenPos;
+            worldPos     = inst.worldPos;
+            selfIndex    = inst.selfIndex;
             matchedIndex = inst.matchedIndex;
+            triangulated = inst.triangulated;
         }
         return *this;
     }
@@ -54,14 +59,10 @@ public:
     const FeatureDesc & operator=( const FeatureDesc & inst );
 
 public:
-    // Feature features for recognition.
-    cv::Mat feature;
-
     // Feature history and position.
     std::list<PointDesc> screenPos;
 
     cv::Mat camToWorld;
-    cv::Mat camMatrix;
 };
 
 
@@ -82,12 +83,15 @@ private:
     void subtractBackgroung( const cv::Mat & orig, cv::Mat & subtracted );
     int  match( const cv::Mat & img, const cv::Mat & camToWorld );
 
+    // debug utilities.
+    void drawFeatures( cv::Mat & img );
+
     cv::Ptr<cv::Feature2D>         detector;
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
-    cv::Mat                   descs;
+    cv::Mat                   descs, descsPrev;
     std::vector<cv::KeyPoint> keypoints;
-    std::vector< std::vector<cv::DMatch> > matches;
+    std::vector<cv::DMatch>   matches;
 
     std::vector<FeatureDesc> frames;
 

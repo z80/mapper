@@ -3,7 +3,6 @@
 
 FeatureDesc::FeatureDesc()
 {
-    triangulated = false;
 }
 
 FeatureDesc::~FeatureDesc()
@@ -21,16 +20,18 @@ const FeatureDesc & FeatureDesc::operator=( const FeatureDesc & inst )
     if ( this != &inst )
     {
         screenPos.clear();
-        for( std::list<PointDesc>::const_iterator i=inst.screenPos.begin();
+        for( std::vector<PointDesc>::const_iterator i=inst.screenPos.begin();
              i!=inst.screenPos.end(); i++ )
         {
             screenPos.push_back( *i );
         }
-        triangulated = inst.triangulated;
-        if ( triangulated )
-            worldPos = inst.worldPos;
+        camToWorld = inst.camToWorld;
     }
     return *this;
+}
+
+bool FeatureDesc::addPoint( int index, int newIndex, const cv::Point2f & screenPos, const cv::Mat & camToWorld )
+{
 }
 
 
@@ -82,7 +83,7 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
     subtractBackgroung( blurred, subtracted );
 
     // Debugging.
-    cv:Mat imgWithFeatures = img.clone();
+    cv::Mat imgWithFeatures = img.clone();
     drawFeatures( imgWithFeatures );
     imshow( "Features", imgWithFeatures );
     imshow( "Subtracted", subtracted );
@@ -140,6 +141,7 @@ int FeatureLocator::match( const cv::Mat & img, const cv::Mat & camToWorld )
 
     FeatureDesc desc;
     desc.camToWorld = camToWorld;
+    int matched = 0;
     // If there are previous frames analyzed.
     if ( frames.size() < 1 )
     {
@@ -156,29 +158,27 @@ int FeatureLocator::match( const cv::Mat & img, const cv::Mat & camToWorld )
             i++;
         }
         frames.push_back( desc );
-        return 0;
     }
     else
     {
         // Perform match in the case of existing previous frames.
-        int matched = 0;
         matcher->knnMatch( descsPrev, descs, matches, 2 );
         for( unsigned int i=0; i<matches.size(); i++ )
         {
-            if ( matches[i][0].distance < nn_match_ratio * matches[i][1].distance )
+            if ( matches[i][0].distance < ( nn_match_ratio * matches[i][1].distance ) )
             {
                 // Add point to the list.
                 PointDesc pd;
                 pd.matchedIndex = matches[i][0].trainIdx;
                 pd.selfIndex    = matches[i][1].queryIdx;
-                pd.screenPos = keypoints[i].pt;
+                pd.screenPos    = keypoints[i].pt;
                 desc.screenPos.push_back( pd );
                 matched += 1;
             }
         }
-        return matched;
     }
     descsPrev = descs.clone();
+    return matched;
 }
 
 bool FeatureLocator::triangulatePoints()

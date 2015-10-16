@@ -146,7 +146,7 @@ enum Mode { LOOK_FOR_QR, TRACK_POINTS, PREDICT };
 
 int main()
 {
-    CamLocator locator( 5, 7, 0.02 );
+    CamLocator camLocator( 5, 7, 0.02 );
 
 
 
@@ -174,9 +174,9 @@ int main()
     fs[ "distortion_coefficients" ] >> distCoeffs;
     fs.release();
 
-    locator.setCamera( cameraMatrix, distCoeffs );
+    camLocator.setCamera( cameraMatrix, distCoeffs );
     
-    FeatureLocator locator;
+    FeatureLocator featureLocator;
 
     if(capture.isOpened())
     {
@@ -194,11 +194,11 @@ int main()
                 break;
 
             cv::Mat camToWorld4x4;
-            bool res = locator.findChessboard( undistorted, camToWorld4x4 );
-            if !res
+            bool res = camLocator.findChessboard( undistorted, camToWorld4x4 );
+            if ( !res )
                 continue;
 
-            locator.processFrame( undistorted, camToWorld4x4 );
+            featureLocator.processFrame( undistorted, camToWorld4x4 );
         }
     }
     return 0;

@@ -11,18 +11,57 @@
 #include <list>
 #include <vector>
 
+/*
+class TrackedPoint
+{
+public:
+    std::vector<cv::Point2f>  screenPos;
+    std::vector<cv::Mat>      camToWorld;
+    bool                      triangulated;
+    cv::Point3f               worldPos;
+    int                       lastIndex; // It's index in the latest (previous) recognition
+
+    RawPoint()  {}
+    ~RawPoint() {}
+
+    const RawPoint & operator=( const RawPoint & inst )
+    {
+        if ( this != &inst )
+        {
+            screenPos  = inst.screenPos;
+            camToWorld = inst.camToWorld;
+        }
+        return *this;
+    }
+
+    RawPoint( const RawPoint & inst )
+    {
+        *this = inst;
+    }
+};
+
+class TrackedPoints
+{
+public:
+    TrackedPoints();
+    ~TrackedPoints();
+
+
+};
+*/
+
+
 class PointDesc
 {
 public:
-    cv::Point2f  screenPos;
+    std::vector<cv::Point2f>  screenPos;
+    std::vector<cv::Mat>      camToWorld;
     cv::Point3f  worldPos;
     int          selfIndex;
-    int          matchedIndex;
     bool         triangulated;
 
     PointDesc()
     {
-        matchedIndex = -1;
         selfIndex    = -1;
     }
 
@@ -40,9 +79,9 @@ public:
         if ( this != &inst )
         {
             screenPos    = inst.screenPos;
+            camToWorld   = inst.camToWorld;
             worldPos     = inst.worldPos;
             selfIndex    = inst.selfIndex;
-            matchedIndex = inst.matchedIndex;
             triangulated = inst.triangulated;
         }
         return *this;
@@ -58,9 +97,11 @@ public:
     FeatureDesc( const FeatureDesc & inst );
     const FeatureDesc & operator=( const FeatureDesc & inst );
 
+    bool addPoint( int index, int newIndex, const cv::Point2f & screenPos, const cv::Mat & camToWorld );
+
 public:
     // Feature history and position.
-    std::list<PointDesc> screenPos;
+    std::vector<PointDesc> screenPos;
 
     cv::Mat camToWorld;
 };
@@ -86,12 +127,15 @@ private:
     // debug utilities.
     void drawFeatures( cv::Mat & img );
 
+    std::vector<RawPoint>          rawPoints;
+
     cv::Ptr<cv::Feature2D>         detector;
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
-    cv::Mat                   descs, descsPrev;
-    std::vector<cv::KeyPoint> keypoints;
-    std::vector<cv::DMatch>   matches;
+    cv::Mat                                descs, 
+                                           descsPrev;
+    std::vector<cv::KeyPoint>              keypoints;
+    std::vector< std::vector<cv::DMatch> > matches;
 
     std::vector<FeatureDesc> frames;
 

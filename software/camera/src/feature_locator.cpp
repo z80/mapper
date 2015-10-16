@@ -32,6 +32,8 @@ const FeatureDesc & FeatureDesc::operator=( const FeatureDesc & inst )
 
 bool FeatureDesc::addPoint( int index, int newIndex, const cv::Point2f & screenPos, const cv::Mat & camToWorld )
 {
+    // Looking for point with existing index.
+    return true;
 }
 
 

@@ -73,6 +73,11 @@ FeatureLocator::~FeatureLocator()
 
 }
 
+void FeatureLocator::setCameraMatrix( const cv::Mat & projMatrix )
+{
+    this->projMatrix = projMatrix.clone();
+}
+
 bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWorld )
 {
     cv::Mat scaled;
@@ -91,6 +96,10 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
     imshow( "Subtracted", subtracted );
     // End of debugging.
 
+
+    // Processing frame and features detection.
+    this->camToWorld = camToWorld.clone();
+    detectFeatures( subtracted );
 
     return false;
 }
@@ -123,70 +132,142 @@ void FeatureLocator::subtractBackgroung( const cv::Mat & orig, cv::Mat & subtrac
                            tresholdWndSz, 0.0 );
 }
 
-int FeatureLocator::match( const cv::Mat & img, const cv::Mat & camToWorld )
+void FeatureLocator::detectFeatures( const cv::Mat & img )
 {
     detector->detect( img, keypoints );
-    detector->compute( img, keypoints, descs );
-
-    // Copy obtained features.
-    //FeatureDesc desc;
-    //desc.screenPos.resize( keypoints.size() );
-    //desc.feature    = descs;
-    //desc.camToWorld = camToWorld;
-    //unsigned i = 0;
-    //for( std::vector<cv::KeyPoint>::const_iterator it=keypoints.begin(); it!=keypoints.end(); it++ )
-    //{
-    //    cv::KeyPoint kp = *it;
-    //    desc.screenPos[ i ] = kp.pt;
-    //    i++;
-    //}
-
-    FeatureDesc desc;
-    desc.camToWorld = camToWorld;
-    int matched = 0;
-    // If there are previous frames analyzed.
-    if ( frames.size() < 1 )
-    {
-        // Add all points to the list of potential points.
-        desc.screenPos.resize( keypoints.size() );
-        unsigned i = 0;
-        for( std::vector<cv::KeyPoint>::const_iterator it=keypoints.begin(); it!=keypoints.end(); it++ )
-        {
-            cv::KeyPoint kp = *it;
-            PointDesc pd;
-            pd.screenPos = kp.pt;
-            pd.selfIndex = i;
-            desc.screenPos[ i ] = pd;
-            i++;
-        }
-        frames.push_back( desc );
-    }
-    else
-    {
-        // Perform match in the case of existing previous frames.
-        matcher->knnMatch( descsPrev, descs, matches, 2 );
-        for( unsigned int i=0; i<matches.size(); i++ )
-        {
-            if ( matches[i][0].distance < ( nn_match_ratio * matches[i][1].distance ) )
-            {
-                // Add point to the list.
-                PointDesc pd;
-                pd.matchedIndex = matches[i][0].trainIdx;
-                pd.selfIndex    = matches[i][1].queryIdx;
-                pd.screenPos    = keypoints[i].pt;
-                desc.screenPos.push_back( pd );
-                matched += 1;
-            }
-        }
-    }
-    descsPrev = descs.clone();
-    return matched;
+    detector->compute( img, keypoints, features );
 }
+
+void FeatureLocator::analyzeMatches()
+{
+    // Check if it is the very first frame.
+    if ( worldFrames.size() == 0 )
+        addAll();
+    else
+        analyze();
+}
+
+void FeatureLocator::addAll()
+{
+    // 1) Add features.
+    featuresPrev = features;
+    // 2) Add all points.
+    int ind = 0;
+    for ( std::vector<cv::KeyPoint>::const_iterator it=keypoints.begin(); it!=keypoints.end(); it++ )
+    {
+        std::vector<cv::Point2f> pts;
+        cv::KeyPoint kp = *it;
+        pts.push_back( kp.pt );
+        pointFrames.insert( std::pair< int, std::vector<cv::Point2f> >( ind, pts ) );
+    }
+    // 3) add worldMatrix.
+    worldFrames.push_back( camToWorld.clone() );
+}
+
+void FeatureLocator::analyze()
+{
+    //unsigned frameIndex = featureFrames.size();
+    matcher->knnMatch( featuresPrev, features, matches, 1 );
+    featuresPrev = features;
+
+    pointFramesNew.clear();
+    unsigned maxSz = 0;
+
+    for( unsigned int i=0; i<matches.size(); i++ )
+    {
+        // Add point to the list.
+        cv::DMatch m = matches[i][0];
+        int trainInd = m.trainIdx;
+        int queryInd = m.queryIdx;
+        std::map< int, std::vector<cv::Point2f> >::iterator it = pointFrames.find( trainInd );
+        if ( it != pointFrames.end() )
+        {
+            std::vector<cv::Point2f> & arr = pointFrames[ trainInd ];
+            arr.push_back( keypoints[trainInd].pt );
+            pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+            maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
+        }
+        else
+        {
+            std::vector<cv::Point2f> arr;
+            arr.push_back( keypoints[trainInd].pt );
+            pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+            maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
+        }
+    }
+    pointFrames = pointFramesNew;
+
+    // Crop world history length.
+    int sz = static_cast<int>( worldFrames.size() );
+    int maxSize = static_cast<int>( maxSz );
+    int from = sz - maxSz + 1;
+    worldFramesNew.clear();
+    for ( int i=from; i<worldFrames.size(); i++ )
+        worldFramesNew.push_back( worldFrames[i] );
+    worldFramesNew.push_back( camToWorld );
+    worldFrames = worldFramesNew;
+}
+
 
 bool FeatureLocator::triangulatePoints()
 {
-    // Find most remote camera positions.
-    //cv::triangulatePoints( 
+    int camHistSz = static_cast<int>( worldFrames.size() );
+    // Find the most remote camera positions for each point and triangulate the point.
+    for ( std::map< int, std::vector<cv::Point2f> >::iterator listIter = pointFrames.begin();
+          listIter != pointFrames.end(); listIter++ )
+    {
+        double d = 0.0;
+        int bestPtInd1 = -1;
+        int bestPtInd2 = -1;
+        int bestWorldInd1 = -1;
+        int bestWorldInd2 = -1;
+        std::vector<cv::Point2f> & pts = listIter->second;
+        unsigned histSize = static_cast<int>( pts.size() );
+        // Loop over points and find the most distant camera positions.
+        int ptsCnt = static_cast<int>( pts.size() );
+        for ( int ptInd1=0; ptInd1<ptsCnt; ptInd1++ )
+        {
+            int posInd1 = camHistSz - histSz + ptInd1;
+            cv::Mat & m = worldFrames[ posInd ];
+            double x1 = m.at<double>( 0, 3 );
+            double y1 = m.at<double>( 1, 3 );
+            double z1 = m.at<double>( 2, 3 );
+
+            for ( int ptInd2=0; ptInd2<ptsCnt; ptInd2++ )
+            {
+                if ( ptInd1 == ptInd2 )
+                    continue;
+
+                int posInd2 = camHistSz - histSz + ptInd2;
+                cv::Mat & m = worldFrames[ posInd2 ];
+                double x2 = m.at<double>( 0, 3 );
+                double y2 = m.at<double>( 1, 3 );
+                double z2 = m.at<double>( 2, 3 );
+
+                double dx = x2 - x1;
+                double dy = y2 - y1;
+                double dz = z2 - z1;
+                double dd = dx*dx + dy*dy + dz*dz;
+                if ( dd > d )
+                {
+                    d = dd;
+                    bestPtInd1 = ptInd1;
+                    bestPtInd2 = ptInd2;
+                    bestWorldInd1 = posInd1;
+                    bestWorldInd2 = posInd2;
+                }
+            }
+        }
+        // Triangulate point if there are appropriate camera positions.
+        // if ( !camToWorld.empty() )
+        {
+            if ( bestPtInd1 >= 0 )
+            {
+                // cv::triangulatePoints( projMatrix, projMatrix, )
+            }
+        }
+    }
+
     return true;
 }
 

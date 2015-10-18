@@ -10,45 +10,7 @@
 
 #include <list>
 #include <vector>
-
-/*
-class TrackedPoint
-{
-public:
-    std::vector<cv::Point2f>  screenPos;
-    std::vector<cv::Mat>      camToWorld;
-    bool                      triangulated;
-    cv::Point3f               worldPos;
-    int                       lastIndex; // It's index in the latest (previous) recognition
-
-    RawPoint()  {}
-    ~RawPoint() {}
-
-    const RawPoint & operator=( const RawPoint & inst )
-    {
-        if ( this != &inst )
-        {
-            screenPos  = inst.screenPos;
-            camToWorld = inst.camToWorld;
-        }
-        return *this;
-    }
-
-    RawPoint( const RawPoint & inst )
-    {
-        *this = inst;
-    }
-};
-
-class TrackedPoints
-{
-public:
-    TrackedPoints();
-    ~TrackedPoints();
-
-
-};
-*/
+#include <map>
 
 
 class PointDesc
@@ -114,19 +76,28 @@ public:
     FeatureLocator();
     ~FeatureLocator();
 
-    bool processFrame( const cv::Mat & img, const cv::Mat & camToWorld );
+    void setCameraMatrix( const cv::Mat & projMatrix );
+
+    bool processFrame( const cv::Mat & img, const cv::Mat & camToWorld = cv::Mat() );
     bool triangulatePoints();
     bool calcCameraPosition();
 
+    void resetTracking();
 private:
     void rescaleImage( const cv::Mat & orig, cv::Mat & scaled );
     void blurImage( const cv::Mat & orig, cv::Mat & blurred );
     void subtractBackgroung( const cv::Mat & orig, cv::Mat & subtracted );
+
+    void detectFeatures( const cv::Mat & img );
+    void analyzeMatches();
+    void addAll();
+    void analyze();
     int  match( const cv::Mat & img, const cv::Mat & camToWorld );
 
     // debug utilities.
     void drawFeatures( cv::Mat & img );
 
+    /*
     std::vector<RawPoint>          rawPoints;
 
     cv::Ptr<cv::Feature2D>         detector;
@@ -138,6 +109,35 @@ private:
     std::vector< std::vector<cv::DMatch> > matches;
 
     std::vector<FeatureDesc> frames;
+    */
+
+    // Analyzers.
+    cv::Ptr<cv::Feature2D>         detector;
+    cv::Ptr<cv::DescriptorMatcher> matcher;
+
+
+    // To just hold current values.
+    cv::Mat                                projMatrix;
+    cv::Mat                                camToWorld;
+    std::vector<cv::KeyPoint>              keypoints;
+    std::vector< std::vector<cv::DMatch> > matches;
+
+    // For instant recognition.
+    std::vector<cv::Point2f> points,
+                             pointsPrev;
+
+    cv::Mat                  features,
+                             featuresPrev;
+
+    // Tracked points history.
+    std::map< int, std::vector<cv::Point2f> > pointFrames,
+                                              pointFramesNew;
+    // World matrix hostory.
+    std::vector<cv::Mat>                worldFrames,
+                                        worldFramesNew;
+    // Features history.
+    //std::list<cv::Mat>                featureFrames;
+
 
     // Settings.
     cv::Size imageSz;

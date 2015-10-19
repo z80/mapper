@@ -92,7 +92,7 @@ private:
     void analyzeMatches();
     void addAll();
     void analyze();
-    int  match( const cv::Mat & img, const cv::Mat & camToWorld );
+    bool triangulateOne( int index, cv::Point3f & r );
 
     // debug utilities.
     void drawFeatures( cv::Mat & img );
@@ -132,6 +132,8 @@ private:
     // Tracked points history.
     std::map< int, std::vector<cv::Point2f> > pointFrames,
                                               pointFramesNew;
+    std::map< int, cv::Point3f > worldPoints,
+                                 worldPointsNew;
     // World matrix hostory.
     std::vector<cv::Mat>                worldFrames,
                                         worldFramesNew;
@@ -144,6 +146,9 @@ private:
     int      smoothSz;
     int      tresholdWndSz;
     double   nn_match_ratio; // = 0.8f; // Nearest-neighbour matching ratio
+    // Triangulation conditions.
+    double triangMinDist;
+    double triangMinTang;
 };
 
 

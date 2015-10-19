@@ -66,6 +66,9 @@ FeatureLocator::FeatureLocator()
     smoothSz       = 5;
     tresholdWndSz  = 101;
     nn_match_ratio = 0.8f;
+
+    triangMinDist = 0.2;
+    triangMinTang = 0.1;
 }
 
 FeatureLocator::~FeatureLocator()
@@ -171,6 +174,7 @@ void FeatureLocator::analyze()
     featuresPrev = features;
 
     pointFramesNew.clear();
+    worldPointsNew.clear();
     unsigned maxSz = 0;
 
     for( unsigned int i=0; i<matches.size(); i++ )
@@ -193,9 +197,14 @@ void FeatureLocator::analyze()
             arr.push_back( keypoints[trainInd].pt );
             pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
             maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
+
         }
+        std::map<int, cv::Point3f>::iterator wi = worldPoints.find( trainInd );
+        if ( wi != worldPoints.end() )
+            worldPointsNew.insert( std::pair<int, cv::Point3f>( queryInd, wi->second ) );
     }
     pointFrames = pointFramesNew;
+    worldPoints = worldPointsNew;
 
     // Crop world history length.
     int sz = static_cast<int>( worldFrames.size() );
@@ -208,6 +217,76 @@ void FeatureLocator::analyze()
     worldFrames = worldFramesNew;
 }
 
+bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
+{
+    double fx = projMatrix.at<double>( 0, 0 );
+    double fy = projMatrix.at<double>( 1, 1 );
+    double cx = projMatrix.at<double>( 0, 2 );
+    double cy = projMatrix.at<double>( 1, 2 );
+    const std::vector<cv::Point2f> & pts = pointFrames[ index ];
+
+    int sz = static_cast<int>( pts.size() );
+    int worldSz = static_cast<int>( worldFrames.size() );
+
+    cv::Mat A( 3*sz, 3, CV_64FC1 );
+    cv::Mat B( 3*sz, 1, CV_64FC1 );
+
+    for ( int i=0; i<sz; i++ )
+    {
+        int worldIndex = worldSz - sz + i;
+        const cv::Mat wrld = worldFrames[ worldIndex ].clone();
+        cv::Point2f at = pts[i];
+
+        cv::Mat m( 4, 1, CV_64FC1 );
+        double x = (static_cast<double>( at.x ) - cx) / fx;
+        double y = (static_cast<double>( at.y ) - cy) / fy;
+        double z = 1.0;
+        double l = sqrt( x*x + y*y + z*z );
+        x /= l;
+        y /= l;
+        z /= l;
+        m.at<double>( 0, 0 ) = x;
+        m.at<double>( 1, 0 ) = y;
+        m.at<double>( 2, 0 ) = z;
+        m.at<double>( 3, 0 ) = 0.0; // Yes, 0 to ignore translation part.
+
+        // Camera position.
+        double r0[3];
+        r0[0] = m.at<double>( 0, 3 );
+        r0[1] = m.at<double>( 1, 3 );
+        r0[2] = m.at<double>( 2, 3 );
+
+        // Convert to world ref. frame.
+        m = wrld*m;
+        double a[3];
+        a[0] = m.at<double>( 0, 0 );
+        a[1] = m.at<double>( 1, 0 );
+        a[2] = m.at<double>( 2, 0 );
+
+        A.at<double>( 3*i, 0 ) = 1.0 - a[0]*a[0];
+        A.at<double>( 3*i, 1 ) = -a[0]*a[1];
+        A.at<double>( 3*i, 2 ) = -a[0]*a[2];
+
+        A.at<double>( 3*i+1, 0 ) = -a[0]*a[1];
+        A.at<double>( 3*i+1, 1 ) = 1.0 - a[1]*a[1];
+        A.at<double>( 3*i+1, 2 ) = -a[1]*a[2];
+
+        A.at<double>( 3*i+2, 0 ) = -a[0]*a[2];
+        A.at<double>( 3*i+2, 1 ) = -a[1]*a[2];
+        A.at<double>( 3*i+2, 2 ) = 1.0 - a[2]*a[2];
+
+        B.at<double>( 3*i, 0 )   = (1.0 - a[0]*a[0])*r0[0] - a[0]*a[1]*r0[1] - a[0]*a[2]*r0[2];
+        B.at<double>( 3*i+1, 0 ) = -a[0]*a[1]*r0[0] + (1.0 - a[1]*a[1])*r0[1] - a[1]*a[2]*r0[2];
+        B.at<double>( 3*i+1, 0 ) = -a[0]*a[2]*r0[0] - a[1]*a[2]*r0[1] + (1.0 - a[2]*a[2])*r0[2];
+    }
+    cv::Mat invA = A.inv( cv::DECOMP_SVD );
+    cv::Mat R = invA * B;
+    r.x = R.at<double>( 0, 0 );
+    r.y = R.at<double>( 1, 0 );
+    r.z = R.at<double>( 2, 0 );
+
+    return true;
+}
 
 bool FeatureLocator::triangulatePoints()
 {
@@ -216,19 +295,25 @@ bool FeatureLocator::triangulatePoints()
     for ( std::map< int, std::vector<cv::Point2f> >::iterator listIter = pointFrames.begin();
           listIter != pointFrames.end(); listIter++ )
     {
+        // First check if this point is triangulated.
+        // And try only if it is not.
+        if ( worldPoints.find( listIter->first ) != worldPoints.end() )
+            continue;
+
+
         double d = 0.0;
         int bestPtInd1 = -1;
         int bestPtInd2 = -1;
         int bestWorldInd1 = -1;
         int bestWorldInd2 = -1;
         std::vector<cv::Point2f> & pts = listIter->second;
-        unsigned histSize = static_cast<int>( pts.size() );
+        unsigned histSz = static_cast<int>( pts.size() );
         // Loop over points and find the most distant camera positions.
         int ptsCnt = static_cast<int>( pts.size() );
         for ( int ptInd1=0; ptInd1<ptsCnt; ptInd1++ )
         {
             int posInd1 = camHistSz - histSz + ptInd1;
-            cv::Mat & m = worldFrames[ posInd ];
+            cv::Mat & m = worldFrames[ posInd1 ];
             double x1 = m.at<double>( 0, 3 );
             double y1 = m.at<double>( 1, 3 );
             double z1 = m.at<double>( 2, 3 );
@@ -263,7 +348,27 @@ bool FeatureLocator::triangulatePoints()
         {
             if ( bestPtInd1 >= 0 )
             {
+                // Check distance between max distant camera positions.
+                cv::Mat m1 = worldFrames[ bestWorldInd1 ].clone();
+                cv::Mat m2 = worldFrames[ bestWorldInd2 ].clone();
+                double dx = m1.at<double>( 0, 3 ) - m2.at<double>( 0, 3 );
+                double dy = m1.at<double>( 1, 3 ) - m2.at<double>( 1, 3 );
+                double dz = m1.at<double>( 2, 3 ) - m2.at<double>( 2, 3 );
+                double d = sqrt( dx*dx + dy*dy + dz*dz );
+                if ( d < triangMinDist )
+                    continue;
+
+                // Call triangulation.
                 // cv::triangulatePoints( projMatrix, projMatrix, )
+                int index = listIter->first;
+                cv::Point3f r;
+                bool res = triangulateOne( index, r );
+                if ( res )
+                {
+                    // Remember triangulation only if tangent is not less then
+                    // minimal boundary value for it.
+
+                }
             }
         }
     }

@@ -122,7 +122,7 @@ private:
     cv::Mat                                distCoefs;
     cv::Mat                                camToWorld;
     std::vector<cv::KeyPoint>              keypoints;
-    std::vector< std::vector<cv::DMatch> > matches;
+    std::vector< std::vector<cv::DMatch> > matches12, matches21;
 
     // For instant recognition.
     std::vector<cv::Point2f> points,
@@ -156,6 +156,9 @@ private:
     // Triangulation conditions.
     double triangMinDist;
     double triangMinTang;
+
+    double akaze_thresh;
+
 };
 
 

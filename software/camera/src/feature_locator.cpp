@@ -56,16 +56,24 @@ bool FeatureDesc::addPoint( int index, int newIndex, const cv::Point2f & screenP
 
 FeatureLocator::FeatureLocator()
 {
-    cv::Ptr<cv::ORB> orb = cv::ORB::create();
-    orb->setMaxFeatures( /*stats.keypoints*/ 5 );
-    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
+    akaze_thresh = 3e-3; // AKAZE detection threshold set to locate about 1000 keypoints
+    
+    //cv::Ptr<cv::ORB> orb = cv::ORB::create();
+    //orb->setMaxFeatures( /*stats.keypoints*/ 50 );
 
-    this->detector = orb;
+    cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+    akaze->setThreshold(akaze_thresh);
+    //akaze->setMaxFeatures( 50 );
+    //cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::makePtr<cv::BFMatcher>((int)cv::NORM_HAMMING, false);
+
+    //this->detector = orb;
+    this->detector = akaze;
     this->matcher  = matcher;
 
     imageSz        = cv::Size( 320, 240 );
     smoothSz       = 5;
-    tresholdWndSz  = 101;
+    tresholdWndSz  = 31;
     nn_match_ratio = 0.8f;
 
     triangMinDist = 0.2;
@@ -91,12 +99,13 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
     cv::Mat subtracted;
 
     rescaleImage( img, scaled );
-    blurImage( scaled, blurred );
-    subtractBackgroung( blurred, subtracted );
+    //blurImage( scaled, blurred );
+    //subtractBackgroung( blurred, subtracted );
 
     // Processing frame and features detection.
     this->camToWorld = camToWorld.clone();
-    detectFeatures( subtracted );
+    //detectFeatures( subtracted );
+    detectFeatures( scaled );
     analyzeMatches();
 
     // Debugging.
@@ -104,7 +113,7 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
     drawFeatures( imgWithFeatures );
     drawTracks( imgWithFeatures );
     imshow( "Features", imgWithFeatures );
-    imshow( "Subtracted", subtracted );
+    imshow( "Subtracted", scaled );
     // End of debugging.
 
     if ( this->camToWorld.empty() )
@@ -182,39 +191,77 @@ void FeatureLocator::addAll()
 void FeatureLocator::analyze()
 {
     //unsigned frameIndex = featureFrames.size();
-    matcher->knnMatch( featuresPrev, features, matches, 1 );
+    matches12.clear();
+    matches21.clear();
+
+    cv::Mat m2, m3;
+    m2 = featuresPrev.clone();
+    m3 = features.clone();
+    try {
+    matcher->knnMatch( featuresPrev, features, matches12, 2 );
+    matcher->knnMatch( m3, m2, matches21, 2 );
+    }
+    catch ( cv::Exception & e )
+    {
+        std::cout << e.what() << std::endl;
+    }
+
     featuresPrev = features;
 
     pointFramesNew.clear();
     worldPointsNew.clear();
     unsigned maxSz = 0;
 
-    unsigned int limitSz = ( matches.size() <= keypoints.size() ) ? matches.size() : keypoints.size();
+    unsigned int limitSz = ( matches12.size() <= keypoints.size() ) ? matches12.size() : keypoints.size();
     for( unsigned int i=0; i<limitSz; i++ )
     {
         // Add point to the list.
-        cv::DMatch m = matches[i][0];
-        int trainInd = m.trainIdx;
-        int queryInd = m.queryIdx;
-        std::map< int, std::vector<cv::Point2f> >::iterator it = pointFrames.find( trainInd );
-        if ( it != pointFrames.end() )
-        {
-            std::vector<cv::Point2f> & arr = pointFrames[ trainInd ];
-            arr.push_back( keypoints[queryInd].pt );
-            pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
-            maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
-        }
-        else
-        {
-            std::vector<cv::Point2f> arr;
-            arr.push_back( keypoints[queryInd].pt );
-            pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
-            maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
+        cv::DMatch m0 = matches12[i][0];
+        cv::DMatch m1 = matches12[i][1];
+        if ( ( m0.distance >= nn_match_ratio*m1.distance ) )
+            continue;
 
+        int trainInd = m0.trainIdx;
+        int queryInd = m0.queryIdx;
+
+        unsigned int limitSz2 = ( matches21.size() <= keypoints.size() ) ? matches21.size() : keypoints.size();
+        for ( unsigned int i2=0; i2<limitSz2; i2++ )
+        {
+            cv::DMatch m2 = matches21[i2][0];
+            if ( ( m0.queryIdx != m2.trainIdx ) ||
+                 ( m0.queryIdx != m2.trainIdx ) )
+                continue;
+
+            std::map< int, std::vector<cv::Point2f> >::iterator it = pointFrames.find( trainInd );
+            if ( it != pointFrames.end() )
+            {
+                std::vector<cv::Point2f> & arr = pointFrames[ trainInd ];
+
+                // Debugging.
+                std::cout << "prev: " << arr[arr.size()-1].x << ", " << arr[arr.size()-1].y << std::endl;
+                std::cout << "new:  " << keypoints[queryInd].pt.x << ", " << keypoints[queryInd].pt.y << std::endl;
+                std::cout << std::endl;
+
+
+                // / Debugging.
+
+
+                arr.push_back( keypoints[queryInd].pt );
+                pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+                maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
+            }
+            else
+            {
+                std::vector<cv::Point2f> arr;
+                arr.push_back( keypoints[queryInd].pt );
+                pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+                maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
+
+            }
+            std::map<int, cv::Point3f>::iterator wi = worldPoints.find( trainInd );
+            if ( wi != worldPoints.end() )
+                worldPointsNew.insert( std::pair<int, cv::Point3f>( queryInd, wi->second ) );
         }
-        std::map<int, cv::Point3f>::iterator wi = worldPoints.find( trainInd );
-        if ( wi != worldPoints.end() )
-            worldPointsNew.insert( std::pair<int, cv::Point3f>( queryInd, wi->second ) );
     }
     pointFrames = pointFramesNew;
     worldPoints = worldPointsNew;
@@ -488,14 +535,27 @@ void FeatureLocator::drawTracks( cv::Mat & img )
         {
             cv::Point pt1 = cv::Point( pts[i].x, pts[i].y );
             cv::Point pt2 = cv::Point( pts[i+1].x, pts[i+1].y );
+            pt1.x *= img.size().width / imageSz.width;
+            pt1.y *= img.size().height / imageSz.height;
+            pt2.x *= img.size().width / imageSz.width;
+            pt2.y *= img.size().height / imageSz.height;
             line( img, pt1, pt2, cv::Scalar( 200., 250., 0., 0.2 ), 2  );
         }
 
         const int SZ = 9;
-        cv::Point pt1 = cv::Point( pts[cnt].x-SZ, pts[cnt].y-SZ );
-        cv::Point pt2 = cv::Point( pts[cnt].x+SZ, pts[cnt].y+SZ );
-        cv::Point pt3 = cv::Point( pts[cnt].x-SZ, pts[cnt].y+SZ );
-        cv::Point pt4 = cv::Point( pts[cnt].x+SZ, pts[cnt].y-SZ );
+        cv::Point pt1 = cv::Point( pts[cnt].x-SZ, pts[cnt].y );
+        cv::Point pt2 = cv::Point( pts[cnt].x+SZ, pts[cnt].y );
+        cv::Point pt3 = cv::Point( pts[cnt].x, pts[cnt].y+SZ );
+        cv::Point pt4 = cv::Point( pts[cnt].x, pts[cnt].y-SZ );
+        pt1.x *= img.size().width / imageSz.width;
+        pt1.y *= img.size().height / imageSz.height;
+        pt2.x *= img.size().width / imageSz.width;
+        pt2.y *= img.size().height / imageSz.height;
+        pt3.x *= img.size().width / imageSz.width;
+        pt3.y *= img.size().height / imageSz.height;
+        pt4.x *= img.size().width / imageSz.width;
+        pt4.y *= img.size().height / imageSz.height;
+
         line( img, pt1, pt2, cv::Scalar( 0., 250., 200., 0.2 ), 2  );
         line( img, pt3, pt4, cv::Scalar( 0., 250., 200., 0.2 ), 2  );
     }

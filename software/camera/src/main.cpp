@@ -190,7 +190,7 @@ int main()
             Mat undistorted = image.clone();
             undistort( image, undistorted, cameraMatrix, distCoeffs );
 
-            int key = waitKey( 10 );
+            int key = waitKey( 1000 );
             if( key == 'q' )
                 break;
 

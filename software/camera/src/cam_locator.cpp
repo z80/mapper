@@ -62,7 +62,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
     cv::cvtColor( mat, pd->gray, CV_BGR2GRAY );
     cv::Size sz = cv::Size( pd->cols, pd->rows );
 
-    cv::imshow( "Grey", pd->gray );
+    //cv::imshow( "Grey", pd->gray );
 
 
     bool patternfound = cv::findChessboardCorners(  pd->gray, sz, pd->corners2d,
@@ -85,9 +85,17 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
         // locate camera;
         cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);
         cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64FC1);
-        tvec.at<double>( 2, 0 ) = 1.0;
+        bool useExtrinsicGuess = false;
+        if ( !camToWorld4x4.empty() )
+        {
+            cv::Mat rot = camToWorld4x4( cv::Rect( 0, 0, 3, 3 ) );
+            cv::Rodrigues( rot, rvec );
+            tvec = camToWorld4x4( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
+            useExtrinsicGuess = true;
+        }
+        else
+            tvec.at<double>( 2, 0 ) = 1.0;
 
-        const bool useExtrinsicGuess = false;
 
         // Pose estimation
         bool correspondence;

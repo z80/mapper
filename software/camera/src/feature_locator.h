@@ -76,7 +76,7 @@ public:
     FeatureLocator();
     ~FeatureLocator();
 
-    void setCameraMatrix( const cv::Mat & projMatrix );
+    void setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs );
 
     bool processFrame( const cv::Mat & img, const cv::Mat & camToWorld = cv::Mat() );
     bool triangulatePoints();
@@ -96,6 +96,7 @@ private:
 
     // debug utilities.
     void drawFeatures( cv::Mat & img );
+    void drawTracks( cv::Mat & img );
 
     /*
     std::vector<RawPoint>          rawPoints;
@@ -118,6 +119,7 @@ private:
 
     // To just hold current values.
     cv::Mat                                projMatrix;
+    cv::Mat                                distCoefs;
     cv::Mat                                camToWorld;
     std::vector<cv::KeyPoint>              keypoints;
     std::vector< std::vector<cv::DMatch> > matches;
@@ -137,6 +139,11 @@ private:
     // World matrix hostory.
     std::vector<cv::Mat>                worldFrames,
                                         worldFramesNew;
+    // For solvePnPRansac().
+    std::vector<cv::Point2f> corners2d;
+    std::vector<cv::Point3f> corners3d;
+
+
     // Features history.
     //std::list<cv::Mat>                featureFrames;
 

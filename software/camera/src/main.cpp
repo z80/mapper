@@ -177,6 +177,7 @@ int main()
     camLocator.setCamera( cameraMatrix, distCoeffs );
     
     FeatureLocator featureLocator;
+    featureLocator.setCameraMatrix( cameraMatrix, distCoeffs ); 
 
     if(capture.isOpened())
     {
@@ -195,8 +196,8 @@ int main()
 
             cv::Mat camToWorld4x4;
             bool res = camLocator.findChessboard( undistorted, camToWorld4x4 );
-            if ( !res )
-                continue;
+            //if ( !res )
+            //    continue;
 
             featureLocator.processFrame( undistorted, camToWorld4x4 );
         }

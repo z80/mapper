@@ -229,7 +229,7 @@ void FeatureLocator::analyze()
         {
             cv::DMatch m2 = matches21[i2][0];
             if ( ( m0.queryIdx != m2.trainIdx ) ||
-                 ( m0.queryIdx != m2.trainIdx ) )
+                 ( m0.trainIdx != m2.queryIdx ) )
                 continue;
 
             std::map< int, std::vector<cv::Point2f> >::iterator it = pointFrames.find( trainInd );

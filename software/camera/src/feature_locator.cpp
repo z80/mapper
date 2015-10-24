@@ -471,7 +471,7 @@ bool FeatureLocator::triangulatePoints()
                     r1.y -= y1;
                     r1.z -= z1;
 
-                    cv::Point3f r2 = r;\
+                    cv::Point3f r2 = r;
                     r2.x -= x2;
                     r2.y -= y2;
                     r2.z -= z2;

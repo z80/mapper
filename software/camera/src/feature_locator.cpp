@@ -561,7 +561,7 @@ bool FeatureLocator::calcCameraPosition()
 
 void FeatureLocator::drawFeatures( cv::Mat & img )
 {
-    const int SZ = 9;
+    const int SZ = 3;
     // Draw current features.
     for ( std::vector<cv::KeyPoint>::const_iterator i=keypoints.begin(); i!=keypoints.end(); i++ )
     {
@@ -573,8 +573,8 @@ void FeatureLocator::drawFeatures( cv::Mat & img )
         cv::Point pt2 = cv::Point( pt.x+SZ, pt.y+SZ );
         cv::Point pt3 = cv::Point( pt.x-SZ, pt.y+SZ );
         cv::Point pt4 = cv::Point( pt.x+SZ, pt.y-SZ );
-        line( img, pt1, pt2, cv::Scalar( 200., 0., 0., 0.2 ), 2  );
-        line( img, pt3, pt4, cv::Scalar( 0., 200., 0., 0.2 ), 2  );
+        line( img, pt1, pt2, cv::Scalar( 200., 0., 0., 0.2 ), 1  );
+        line( img, pt3, pt4, cv::Scalar( 0., 200., 0., 0.2 ), 1  );
     }
 }
 
@@ -592,10 +592,10 @@ void FeatureLocator::drawTracks( cv::Mat & img )
             pt1.y *= img.size().height / imageSz.height;
             pt2.x *= img.size().width / imageSz.width;
             pt2.y *= img.size().height / imageSz.height;
-            line( img, pt1, pt2, cv::Scalar( 200., 250., 0., 0.2 ), 2  );
+            line( img, pt1, pt2, cv::Scalar( 200., 250., 0., 0.2 ), 1  );
         }
 
-        const int SZ = 9;
+        const int SZ = 5;
         cv::Point pt1 = cv::Point( pts[cnt].x-SZ, pts[cnt].y );
         cv::Point pt2 = cv::Point( pts[cnt].x+SZ, pts[cnt].y );
         cv::Point pt3 = cv::Point( pts[cnt].x, pts[cnt].y+SZ );
@@ -609,8 +609,8 @@ void FeatureLocator::drawTracks( cv::Mat & img )
         pt4.x *= img.size().width / imageSz.width;
         pt4.y *= img.size().height / imageSz.height;
 
-        line( img, pt1, pt2, cv::Scalar( 0., 250., 200., 0.2 ), 2  );
-        line( img, pt3, pt4, cv::Scalar( 0., 250., 200., 0.2 ), 2  );
+        line( img, pt1, pt2, cv::Scalar( 0., 250., 200., 0.2 ), 1  );
+        line( img, pt3, pt4, cv::Scalar( 0., 250., 200., 0.2 ), 1  );
     }
 }
 

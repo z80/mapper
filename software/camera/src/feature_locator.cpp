@@ -58,17 +58,17 @@ FeatureLocator::FeatureLocator()
 {
     akaze_thresh = 3e-3; // AKAZE detection threshold set to locate about 1000 keypoints
     
-    //cv::Ptr<cv::ORB> orb = cv::ORB::create();
-    //orb->setMaxFeatures( /*stats.keypoints*/ 50 );
+    cv::Ptr<cv::ORB> orb = cv::ORB::create();
+    orb->setMaxFeatures( /*stats.keypoints*/ 50 );
 
-    cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
-    akaze->setThreshold(akaze_thresh);
+    //cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+    //akaze->setThreshold(akaze_thresh);
     //akaze->setMaxFeatures( 50 );
     //cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
     cv::Ptr<cv::DescriptorMatcher> matcher = cv::makePtr<cv::BFMatcher>((int)cv::NORM_HAMMING, false);
 
-    //this->detector = orb;
-    this->detector = akaze;
+    this->detector = orb;
+    //this->detector = akaze;
     this->matcher  = matcher;
 
     imageSz        = cv::Size( 320, 240 );

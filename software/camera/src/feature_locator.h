@@ -121,8 +121,9 @@ private:
     cv::Mat                                projMatrix;
     cv::Mat                                distCoefs;
     cv::Mat                                camToWorld;
-    std::vector<cv::KeyPoint>              keypoints;
-    std::vector< std::vector<cv::DMatch> > matches12, matches21;
+    std::vector<cv::KeyPoint>              keypoints,
+                                           keypointsPrev;
+    std::vector< std::vector<cv::DMatch> > matches;
 
     // For instant recognition.
     std::vector<cv::Point2f> points,
@@ -158,6 +159,8 @@ private:
     double triangMinTang;
 
     double akaze_thresh;
+    double inlier_threshold;
+
 
 };
 

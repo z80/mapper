@@ -190,12 +190,12 @@ int main()
             Mat undistorted = image.clone();
             undistort( image, undistorted, cameraMatrix, distCoeffs );
 
-            int key = waitKey( 1000 );
+            int key = waitKey( 33 );
             if( key == 'q' )
                 break;
 
             cv::Mat camToWorld4x4;
-            bool res = camLocator.findChessboard( undistorted, camToWorld4x4 );
+            //bool res = camLocator.findChessboard( undistorted, camToWorld4x4 );
             //if ( !res )
             //    continue;
 

@@ -57,21 +57,21 @@ bool FeatureDesc::addPoint( int index, int newIndex, const cv::Point2f & screenP
 FeatureLocator::FeatureLocator()
 {
     akaze_thresh = 3e-3; // AKAZE detection threshold set to locate about 1000 keypoints
+    inlier_threshold = 2.5f * 20.0f; // Distance threshold to identify inliers
     
-    cv::Ptr<cv::ORB> orb = cv::ORB::create();
-    orb->setMaxFeatures( /*stats.keypoints*/ 50 );
+    //cv::Ptr<cv::ORB> orb = cv::ORB::create();
+    //orb->setMaxFeatures( /*stats.keypoints*/ 50 );
 
-    //cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+    cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
     //akaze->setThreshold(akaze_thresh);
-    //akaze->setMaxFeatures( 50 );
     //cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
     cv::Ptr<cv::DescriptorMatcher> matcher = cv::makePtr<cv::BFMatcher>((int)cv::NORM_HAMMING, false);
 
-    this->detector = orb;
-    //this->detector = akaze;
+    //this->detector = orb;
+    this->detector = akaze;
     this->matcher  = matcher;
 
-    imageSz        = cv::Size( 320, 240 );
+    imageSz        = cv::Size( 640, 480 );
     smoothSz       = 5;
     tresholdWndSz  = 31;
     nn_match_ratio = 0.8f;
@@ -132,7 +132,7 @@ void FeatureLocator::rescaleImage( const cv::Mat & orig, cv::Mat & scaled )
 {
     //scaled = img.clone();
     cv::resize( orig, scaled, imageSz );
-    cv::cvtColor( scaled, scaled, CV_RGB2GRAY );
+    //cv::cvtColor( scaled, scaled, CV_RGB2GRAY );
 }
 
 void FeatureLocator::blurImage( const cv::Mat & orig, cv::Mat & blurred )
@@ -174,7 +174,8 @@ void FeatureLocator::analyzeMatches()
 void FeatureLocator::addAll()
 {
     // 1) Add features.
-    featuresPrev = features;
+    featuresPrev = features.clone();
+    keypointsPrev = keypoints;
     // 2) Add all points.
     int ind = 0;
     for ( std::vector<cv::KeyPoint>::const_iterator it=keypoints.begin(); it!=keypoints.end(); it++ )
@@ -191,58 +192,69 @@ void FeatureLocator::addAll()
 void FeatureLocator::analyze()
 {
     //unsigned frameIndex = featureFrames.size();
-    matches12.clear();
-    matches21.clear();
+    matches.clear();
 
-    cv::Mat m2, m3;
-    m2 = featuresPrev.clone();
-    m3 = features.clone();
     try {
-    matcher->knnMatch( featuresPrev, features, matches12, 2 );
-    matcher->knnMatch( m3, m2, matches21, 2 );
+        matcher->knnMatch( features, featuresPrev, matches, 2 );
     }
     catch ( cv::Exception & e )
     {
         std::cout << e.what() << std::endl;
     }
 
-    featuresPrev = features;
+    featuresPrev = features.clone();
 
     pointFramesNew.clear();
     worldPointsNew.clear();
     unsigned maxSz = 0;
 
-    unsigned int limitSz = ( matches12.size() <= keypoints.size() ) ? matches12.size() : keypoints.size();
-    for( unsigned int i=0; i<limitSz; i++ )
-    {
-        // Add point to the list.
-        cv::DMatch m0 = matches12[i][0];
-        cv::DMatch m1 = matches12[i][1];
-        if ( ( m0.distance >= nn_match_ratio*m1.distance ) )
-            continue;
+    std::vector<cv::KeyPoint> matched1, matched2, inliers1, inliers2;
+    std::vector<int> indsPrev, inds;
+    std::vector<cv::DMatch> good_matches;
+    for(size_t i = 0; i < matches.size(); i++) {
+        cv::DMatch first = matches[i][0];
+        float dist1 = matches[i][0].distance;
+        float dist2 = matches[i][1].distance;
 
-        int trainInd = m0.trainIdx;
-        int queryInd = m0.queryIdx;
+        if(dist1 < nn_match_ratio * dist2) {
+            matched1.push_back(keypointsPrev[first.trainIdx]);
+            indsPrev.push_back( first.trainIdx );
+            matched2.push_back(keypoints[first.queryIdx]);
+            inds.push_back( first.queryIdx );
+        }
+    }
 
-        unsigned int limitSz2 = ( matches21.size() <= keypoints.size() ) ? matches21.size() : keypoints.size();
-        for ( unsigned int i2=0; i2<limitSz2; i2++ )
+    for(unsigned i = 0; i < matched1.size(); i++) {
+        //Mat col = Mat::ones(3, 1, CV_64F);
+        //col.at<double>(0) = matched1[i].pt.x;
+        //col.at<double>(1) = matched1[i].pt.y;
+
+        //col = homography * col;
+        //col /= col.at<double>(2);
+        //double dist = sqrt( pow(col.at<double>(0) - matched2[i].pt.x, 2) +
+        //                    pow(col.at<double>(1) - matched2[i].pt.y, 2));
+        double dist = sqrt( pow(matched1[i].pt.x - matched2[i].pt.x, 2) +
+                            pow(matched1[i].pt.y - matched2[i].pt.y, 2));
+
+        if(dist < inlier_threshold)
         {
-            cv::DMatch m2 = matches21[i2][0];
-            if ( ( m0.queryIdx != m2.trainIdx ) ||
-                 ( m0.trainIdx != m2.queryIdx ) )
-                continue;
-
+            //int new_i = static_cast<int>(inliers1.size());
+            //inliers1.push_back(matched1[i]);
+            //inliers2.push_back(matched2[i]);
+            //good_matches.push_back( matches[i] );
+            int trainInd = indsPrev[i];
+            int queryInd = inds[i];
             std::map< int, std::vector<cv::Point2f> >::iterator it = pointFrames.find( trainInd );
             if ( it != pointFrames.end() )
             {
                 std::vector<cv::Point2f> & arr = pointFrames[ trainInd ];
 
                 // Debugging.
+                /*
                 std::cout << "prev: " << arr[arr.size()-1].x << ", " << arr[arr.size()-1].y << std::endl;
                 std::cout << "new:  " << keypoints[queryInd].pt.x << ", " << keypoints[queryInd].pt.y << std::endl;
                 std::cout << std::endl;
-
-
+                */
                 // / Debugging.
 
 
@@ -256,12 +268,27 @@ void FeatureLocator::analyze()
                 arr.push_back( keypoints[queryInd].pt );
                 pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
                 maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
-
-            }
+             }
             std::map<int, cv::Point3f>::iterator wi = worldPoints.find( trainInd );
             if ( wi != worldPoints.end() )
                 worldPointsNew.insert( std::pair<int, cv::Point3f>( queryInd, wi->second ) );
+
         }
+    }
+
+    unsigned int limitSz = ( matches.size() <= keypoints.size() ) ? matches.size() : keypoints.size();
+    for( unsigned int i=0; i<limitSz; i++ )
+    {
+        // Add point to the list.
+        cv::DMatch m0 = matches[i][0];
+        cv::DMatch m1 = matches[i][1];
+        if ( ( m0.distance >= nn_match_ratio*m1.distance ) )
+            continue;
+
+        int trainInd = m0.trainIdx;
+        int queryInd = m0.queryIdx;
+
+
     }
     pointFrames = pointFramesNew;
     worldPoints = worldPointsNew;
@@ -275,6 +302,8 @@ void FeatureLocator::analyze()
         worldFramesNew.push_back( worldFrames[i] );
     worldFramesNew.push_back( camToWorld );
     worldFrames = worldFramesNew;
+
+    keypointsPrev = keypoints;
 }
 
 bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
@@ -427,7 +456,31 @@ bool FeatureLocator::triangulatePoints()
                 {
                     // Remember triangulation only if tangent is not less then
                     // minimal boundary value for it.
+                    cv::Mat m = worldFrames[ bestPtInd1 ];
+                    double x1 = m.at<double>( 0, 3 );
+                    double y1 = m.at<double>( 1, 3 );
+                    double z1 = m.at<double>( 2, 3 );
 
+                    m = worldFrames[ bestPtInd2 ];
+                    double x2 = m.at<double>( 0, 3 );
+                    double y2 = m.at<double>( 1, 3 );
+                    double z2 = m.at<double>( 2, 3 );
+
+                    cv::Point3f r1 = r;
+                    r1.x -= x1;
+                    r1.y -= y1;
+                    r1.z -= z1;
+
+                    cv::Point3f r2 = r;\
+                    r2.x -= x2;
+                    r2.y -= y2;
+                    r2.z -= z2;
+
+                    double co = r1.dot( r2 )/sqrt( r1.dot( r1 ) * r2.dot( r2 ) );
+                    double si = sqrt( 1.0 - co*co );
+                    double ta = si/co;
+                    if ( ta > triangMinTang )
+                        worldPoints[ index ] = r;
                 }
             }
         }

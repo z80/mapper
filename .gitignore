@@ -28,6 +28,7 @@ proguard/
 
 software/.build
 software/.build.app
+software/app
 
 _temp
 

@@ -23,6 +23,12 @@ public:
     void finish(); // Stop tracking all points and calc resulting 3D positions.
 
 private:
+    void prepareImage( const cv::Mat & frame );
+    void calcOpticalFlow();
+    void countOpticalFlow();
+    void calc3dPoints();
+    void calc3dPoint();
+
     // To just hold current values.
     cv::Mat projMatrix;
     cv::Mat distCoefs;

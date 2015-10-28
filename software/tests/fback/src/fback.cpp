@@ -45,6 +45,7 @@ int main(int, char**)
     {
         cap >> frame;
         cvtColor(frame, gray, COLOR_BGR2GRAY);
+        cv::resize( gray, gray, cv::Size( 160, 120 ) );
 
         if( !prevgray.empty() )
         {

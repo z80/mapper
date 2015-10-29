@@ -29,6 +29,9 @@ private:
     void calc3dPoints();
     void calc3dPoint();
 
+    std::vector<cv::Point2f> & pointHistXy( int row, int col );
+    // How to find points which don't move any more.
+
     // To just hold current values.
     cv::Mat projMatrix;
     cv::Mat distCoefs;

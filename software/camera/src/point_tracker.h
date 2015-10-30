@@ -26,11 +26,15 @@ private:
     void prepareImage( const cv::Mat & frame );
     void calcOpticalFlow();
     void countOpticalFlow();
-    void calc3dPoints();
-    void calc3dPoint();
+    void calc3dPoint( std::vector<cv::Point2f> & points );
 
     std::vector<cv::Point2f> & pointHistXy( int row, int col );
-    // How to find points which don't move any more.
+    void pushPointHistXy( int row, int col, std::vector<cv::Point2f> & points );
+    int longestPointHist() const;
+    // How to find points which don't move any more. Just if
+    // there is no displacement at a particular frame add new
+    // empty array with just current point. And use previous
+    // point history for triangulation.
 
     // To just hold current values.
     cv::Mat projMatrix;
@@ -44,7 +48,7 @@ private:
 
     std::map< int, std::vector<cv::Point2f> > pointHist,
                                               pointHistNew;
-    std::vector< cv::Mat > worldHist;
+    std::vector< cv::Mat > worldHist, worldHistNew;
 };
 
 #endif

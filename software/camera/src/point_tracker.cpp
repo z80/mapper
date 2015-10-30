@@ -49,19 +49,88 @@ void PointTracker::countOpticalFlow()
         {
             int index = i + imageSz.width * i;
             cv::Point2f dr = uflow.at<cv::Point2f>(i, j);
+
+            std::vector<cv::Point2f> & points = pointHistXy( j, i );
+            // Determine if there was a movement.
+            if ( (fabs(dr.x) < 1.0) && fabs(dr.y) < 1.0 )
+            {
+                // No movement. Triangulate if there are at least two points in history.
+                // Otherwise it obviously doesn't make sense.
+                if ( points.size() > 1 )
+                    calc3dPoint( points );
+                // Clear history.
+                points.clear();
+                // Push current position.
+                cv::Point2f at = cv::Point2f( static_cast<float>( j ), static_cast<float>( i ) );
+                points.push_back( at );
+                // Put it to a new array
+                pushPointHistXy( j, i, points );
+            }
+            else
+            {
+                // Movement exists.
+                // Push current position plus displacement.
+                cv::Point2f at = cv::Point2f( static_cast<float>( j ) + dr.x, static_cast<float>( i ) + dr.y );
+                points.push_back( at );
+                // Put it to a new array
+                int col = cvRound( at.x );
+                int row = cvRound( at.y );
+
+                pushPointHistXy( row, col, points );
+            }
         }
     }
+
+    // Trim world history.
+    int ptSz = longestPointHist();
+    int wSz = static_cast<int>( worldHist.size() );
+    worldHistNew.clear();
+    for ( int i=0; i<sz; i++ )
+    {
+        int ind = wSz - ptSz + i;
+        cv::Mat m = worldHist[ ind ].clone();
+        worldHistNew.push_back( m );
+    }
+    worldHist = worldHistNew;
 }
 
-void PointTracker::calc3dPoints()
+void PointTracker::calc3dPoint( std::vector<cv::Point2f> & points )
 {
 
 }
 
-void PointTracker::calc3dPoint()
+std::vector<cv::Point2f> & PointTracker::pointHistXy( int row, int col )
 {
+    int index = imageSz.width * col + row;
+    std::map< int, std::vector<cv::Point2f> >::iterator at = pointHist.find( index );
+    if ( at != pointHist.end() )
+        return at.second;
 
+    pointHist.insert( std::pair< int, std::vector<cv::Point2f> >( index, std::vector<cv::Point2f>() ) );
+    std::vector<cv::Point2f> & points = pointHist[ index ];
+    return points;
 }
+
+void PointTracker::pushPointHistXy( int row, int col, std::vector<cv::Point2f> & points )
+{
+    int index = imageSz.width * col + row;
+    pointHistNew.insert( std::pair< int, std::vector<cv::Point2f> >( index, points ) );
+}
+
+int PointTracker::longestPointHist() const
+{
+    int sz = 0;
+    std::map< int, std::vector<cv::Point2f> >::const_iterator at;
+    for ( at=pointHist.begin(); at!=pointHist.end(); at++ )
+    {
+        int length = static_cast<int>( at->second.size() );
+        sz = ( sz < length ) ? length : sz;
+    }
+    return sz;
+}
+
+
+
 
 
 

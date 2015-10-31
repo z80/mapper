@@ -24,6 +24,9 @@ void PointTracker::setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & 
 
 void PointTracker::process( const cv::Mat & frame, const cv::Mat & worldM )
 {
+    worldHist.push_back( worldM.clone() );
+
+
     prepareImage( frame );
     calcOpticalFlow();
     if ( !flow.empty() )
@@ -54,6 +57,7 @@ void PointTracker::calcOpticalFlow()
 
 void PointTracker::countOpticalFlow()
 {
+    pointHistNew.clear();
     for ( int i=0; i<imageSz.height; i++ )
     {
         for ( int j=0; j<imageSz.width; j++ )

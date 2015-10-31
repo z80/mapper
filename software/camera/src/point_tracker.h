@@ -20,13 +20,13 @@ public:
 
     void setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs );
     void process( const cv::Mat & frame, const cv::Mat & worldM );
-    void finish(); // Stop tracking all points and calc resulting 3D positions.
+    void clear(); // Stop tracking all points and calc resulting 3D positions.
 
 private:
     void prepareImage( const cv::Mat & frame );
     void calcOpticalFlow();
     void countOpticalFlow();
-    void calc3dPoint( std::vector<cv::Point2f> & points );
+    void calc3dPoint( std::vector<cv::Point2f> & points, cv::Point3f & at, cv::Point3f & from );
 
     std::vector<cv::Point2f> & pointHistXy( int row, int col );
     void pushPointHistXy( int row, int col, std::vector<cv::Point2f> & points );
@@ -42,13 +42,18 @@ private:
 
     cv::UMat gray,
              grayPrev,
-             flow;
+             uflow;
+    cv::Mat  flow;
 
     cv::Size imageSz;
 
     std::map< int, std::vector<cv::Point2f> > pointHist,
                                               pointHistNew;
     std::vector< cv::Mat > worldHist, worldHistNew;
+
+    // Derived points in space and appropriate camera positions.
+    std::vector<cv::Point3f> points3d,
+                             camera3d;
 };
 
 #endif

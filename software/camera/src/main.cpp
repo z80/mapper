@@ -11,6 +11,7 @@
 
 #include "cam_locator.h"
 #include "feature_locator.h"
+#include "point_tracker.h"
 
 using namespace cv;
 using namespace std;
@@ -178,6 +179,8 @@ int main()
     
     FeatureLocator featureLocator;
     featureLocator.setCameraMatrix( cameraMatrix, distCoeffs ); 
+    PointTracker  pointTracker;
+    pointTracker.setCameraMatrix( cameraMatrix, distCoeffs );
 
     if(capture.isOpened())
     {
@@ -200,6 +203,7 @@ int main()
             //    continue;
 
             featureLocator.processFrame( undistorted, camToWorld4x4 );
+            pointTracker.process( undistorted, camToWorld4x4 );
         }
     }
     return 0;

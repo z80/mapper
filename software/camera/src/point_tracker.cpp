@@ -96,7 +96,9 @@ void PointTracker::countOpticalFlow()
 
 void PointTracker::calc3dPoint( std::vector<cv::Point2f> & points )
 {
-
+    // This is triangulation using all conserved point positions 
+    // with all appropriate camera positions.
+    // ..... to be implemented.
 }
 
 std::vector<cv::Point2f> & PointTracker::pointHistXy( int row, int col )

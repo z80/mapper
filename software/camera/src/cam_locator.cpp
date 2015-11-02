@@ -2,6 +2,7 @@
 #include "cam_locator.h"
 #include "opencv2/calib3d.hpp"
 #include <iostream>
+#include "text_drawer.h"
 
 class CamLocator::PD
 {

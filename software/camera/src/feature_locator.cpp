@@ -1,5 +1,6 @@
 
 #include "feature_locator.h"
+#include "text_drawer.h"
 #include <iostream>
 
 FeatureDesc::FeatureDesc()
@@ -112,8 +113,18 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
     cv::Mat imgWithFeatures = img.clone();
     drawFeatures( imgWithFeatures );
     drawTracks( imgWithFeatures );
+
+    std::ostringstream o;
+    o << "features: " << featuresCnt();
+    Drawer::drawText( imgWithFeatures, o.str(), 0 );
+    o.clear();
+    o << "tracked: " << trackedCnt();
+    Drawer::drawText( imgWithFeatures, o.str(), 1 );
+    o << "located: " << triangulatedCnt();
+    Drawer::drawText( imgWithFeatures, o.str(), 2 );
+
     imshow( "Features", imgWithFeatures );
-    imshow( "Subtracted", scaled );
+    //imshow( "Subtracted", scaled );
     // End of debugging.
 
     if ( this->camToWorld.empty() )
@@ -126,6 +137,32 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
 
 
     return res;
+}
+
+int  FeatureLocator::featuresCnt() const
+{
+    int cnt = static_cast<int>( pointFrames.size() );
+    return cnt;
+}
+
+int  FeatureLocator::trackedCnt() const
+{
+    int cnt = 0;
+    for ( std::map< int, std::vector<cv::Point2f> >::const_iterator it = pointFrames.begin(); it != pointFrames.end(); it++ )
+    {
+        const std::vector<cv::Point2f> & pts = it->second;
+        if ( pts.size() > 5 )
+            cnt += 1;
+    }
+
+    //int cnt = static_cast<int>( worldPoints.size() );
+    return cnt;
+}
+
+int  FeatureLocator::triangulatedCnt() const
+{
+    int cnt = static_cast<int>( worldPoints.size() );
+    return cnt;
 }
 
 void FeatureLocator::rescaleImage( const cv::Mat & orig, cv::Mat & scaled )

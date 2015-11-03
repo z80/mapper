@@ -1,5 +1,6 @@
 
 #include "point_tracker.h"
+#include "points_file.h"
 
 #include "opencv2/video/tracking.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -33,6 +34,13 @@ void PointTracker::process( const cv::Mat & frame, const cv::Mat & worldM )
         countOpticalFlow();
 }
 
+bool PointTracker::writePoints( const std::string & fname )
+{
+    PointsFile pf( fname );
+    bool res = pf.write( points3d, camera3d );
+    return res;
+}
+
 void PointTracker::clear()
 {
     points3d.clear();
@@ -49,7 +57,7 @@ void PointTracker::calcOpticalFlow()
 {
     if( !grayPrev.empty() )
     {
-        cv::calcOpticalFlowFarneback( grayPrev, gray, uflow, 0.5, 6, 30, 3, 5, 1.2, 0);
+        cv::calcOpticalFlowFarneback( grayPrev, gray, uflow, 0.5, 6, 30, 3, 5, 1.2, 0 );
         uflow.copyTo( flow );
     }
     grayPrev = gray.clone();

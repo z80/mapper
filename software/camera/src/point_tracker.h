@@ -20,6 +20,7 @@ public:
 
     void setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs );
     void process( const cv::Mat & frame, const cv::Mat & worldM );
+    bool writePoints( const std::string & fname = "./points.dat" );
     void clear(); // Stop tracking all points and calc resulting 3D positions.
 
 private:

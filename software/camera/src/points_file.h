@@ -16,11 +16,15 @@
 class PointsFile
 {
 public:
-    PointsFile( const std::string & fname );
+    PointsFile( const std::string & fname = "./points.dat" );
     ~PointsFile();
 
     bool write( const std::vector<cv::Point3f> & ats, const std::vector<cv::Point3f> & froms );
-    bool read( const std::vector<cv::Point3f> & ats, const std::vector<cv::Point3f> & froms );
+    bool read( std::vector<cv::Point3f> & ats, std::vector<cv::Point3f> & froms );
+
+    std::ofstream out;
+    std::ifstream in;
+    std::string   fname;
 };
 
 

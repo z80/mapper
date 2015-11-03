@@ -60,16 +60,16 @@ FeatureLocator::FeatureLocator()
     akaze_thresh = 3e-3; // AKAZE detection threshold set to locate about 1000 keypoints
     inlier_threshold = 2.5f * 20.0f; // Distance threshold to identify inliers
     
-    cv::Ptr<cv::ORB> orb = cv::ORB::create();
-    orb->setMaxFeatures( /*stats.keypoints*/ 1024 );
+    //cv::Ptr<cv::ORB> orb = cv::ORB::create();
+    //orb->setMaxFeatures( /*stats.keypoints*/ 1024 );
 
-    //cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
-    //akaze->setThreshold(akaze_thresh);
+    cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+    akaze->setThreshold(akaze_thresh);
     //cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
     cv::Ptr<cv::DescriptorMatcher> matcher = cv::makePtr<cv::BFMatcher>((int)cv::NORM_HAMMING, false);
 
-    this->detector = orb;
-    //this->detector = akaze;
+    //this->detector = orb;
+    this->detector = akaze;
     this->matcher  = matcher;
 
     imageSz        = cv::Size( 640, 480 );
@@ -299,6 +299,8 @@ void FeatureLocator::analyze()
                 arr.push_back( keypoints[queryInd].pt );
                 pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
                 maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
+                // Remove from pointFrames.
+                pointFrames.erase( it );
             }
             else
             {
@@ -334,9 +336,9 @@ void FeatureLocator::analyze()
     // Crop world history length.
     int sz = static_cast<int>( worldFrames.size() );
     int maxSize = static_cast<int>( maxSz );
-    int from = sz - maxSz + 1;
+    int from = sz - maxSize + 1;
     worldFramesNew.clear();
-    for ( int i=from; i<worldFrames.size(); i++ )
+    for ( int i=from; i<sz; i++ )
         worldFramesNew.push_back( worldFrames[i] );
     worldFrames = worldFramesNew;
 
@@ -378,9 +380,9 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
 
         // Camera position.
         double r0[3];
-        r0[0] = m.at<double>( 0, 3 );
-        r0[1] = m.at<double>( 1, 3 );
-        r0[2] = m.at<double>( 2, 3 );
+        r0[0] = wrld.at<double>( 0, 3 );
+        r0[1] = wrld.at<double>( 1, 3 );
+        r0[2] = wrld.at<double>( 2, 3 );
 
         // Convert to world ref. frame.
         m = wrld*m;

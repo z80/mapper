@@ -83,6 +83,7 @@ int main()
         int triangulatedCnt = 0;
         bool res;
 
+        cv::Mat camToWorld4x4;
         for(;;)
         {
             capture >> image;
@@ -95,7 +96,6 @@ int main()
             if( key == 'q' )
                 break;
 
-            cv::Mat camToWorld4x4;
             if ( triangulatedCnt < 5 )
             {
                 res = camLocator.findChessboard( undistorted, camToWorld4x4 );

@@ -152,9 +152,9 @@ void PointTracker::calc3dPoint( std::vector<cv::Point2f> & points,
 
         // Camera position.
         double r0[3];
-        r0[0] = m.at<double>( 0, 3 );
-        r0[1] = m.at<double>( 1, 3 );
-        r0[2] = m.at<double>( 2, 3 );
+        r0[0] = wrld.at<double>( 0, 3 );
+        r0[1] = wrld.at<double>( 1, 3 );
+        r0[2] = wrld.at<double>( 2, 3 );
 
         // Remember the very first camera position to find appropriate
         // surface plane direction afterwards.

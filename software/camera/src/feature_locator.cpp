@@ -133,6 +133,10 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
         if ( !res )
             return false;
     }
+    // Add worldMatrix.
+    worldFrames.push_back( camToWorld.clone() );
+
+
     bool res = triangulatePoints();
 
 
@@ -222,13 +226,10 @@ void FeatureLocator::addAll()
         pts.push_back( kp.pt );
         pointFrames.insert( std::pair< int, std::vector<cv::Point2f> >( ind, pts ) );
     }
-    // 3) add worldMatrix.
-    worldFrames.push_back( camToWorld.clone() );
 }
 
 void FeatureLocator::analyze()
 {
-    //unsigned frameIndex = featureFrames.size();
     matches.clear();
 
     try {
@@ -337,7 +338,6 @@ void FeatureLocator::analyze()
     worldFramesNew.clear();
     for ( int i=from; i<worldFrames.size(); i++ )
         worldFramesNew.push_back( worldFrames[i] );
-    worldFramesNew.push_back( camToWorld );
     worldFrames = worldFramesNew;
 
     keypointsPrev = keypoints;
@@ -592,7 +592,7 @@ bool FeatureLocator::calcCameraPosition()
             objToCam.at<double>( iy, 3 ) = tvec.at<double>( iy, 0 );
         }
         objToCam.at<double>( 3, 3 ) = 1.0;
-        camToWorld = objToCam.inv();    
+        camToWorld = objToCam.inv();
     return true;
 }
 

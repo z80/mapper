@@ -159,8 +159,8 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                     correspondence = false;
                     std::cout << e.what() << std::endl;
                 }
-                cv::imshow( "Chessboard", pd->gray );
             }
+            cv::imshow( "Chessboard", pd->gray );
             if ( correspondence )
             {
                 std::cout << "x: " << camToWorld4x4.at<double>( 0, 3 ) << " ";
@@ -171,6 +171,8 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
 
         return true;
     }
+    if ( pd->debug )
+        cv::imshow( "Chessboard", pd->gray );
 
     return false;
 }

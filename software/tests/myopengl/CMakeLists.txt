@@ -30,7 +30,7 @@ qt5_add_resources( qrc_src ${qrc} )
 set( src ${src} ${qrc_src} )
 
 if ( WIN32 )
-    list( APPEND src "src/icon.rc" )
+    #list( APPEND src "src/icon.rc" )
     set( BLD_TYPE WIN32 )
 else ( WIN32 )
     set( BLD_TYPE "" )

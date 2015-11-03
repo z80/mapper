@@ -80,6 +80,9 @@ int main()
     if(capture.isOpened())
     {
         cout << "Capture is opened" << endl;
+        int triangulatedCnt = 0;
+        bool res;
+
         for(;;)
         {
             capture >> image;
@@ -93,12 +96,18 @@ int main()
                 break;
 
             cv::Mat camToWorld4x4;
-            //bool res = camLocator.findChessboard( undistorted, camToWorld4x4 );
-            //if ( !res )
-            //    continue;
+            if ( triangulatedCnt < 5 )
+            {
+                res = camLocator.findChessboard( undistorted, camToWorld4x4 );
+                if ( !res )
+                    continue;
+            }
 
-            featureLocator.processFrame( undistorted, camToWorld4x4 );
-            //pointTracker.process( undistorted, camToWorld4x4 );
+            if ( ( !camToWorld4x4.empty() ) || ( triangulatedCnt >= 5 ) )
+                res = featureLocator.processFrame( undistorted, camToWorld4x4 );
+            triangulatedCnt = featureLocator.triangulatedCnt();
+            if ( !camToWorld4x4.empty() )
+                pointTracker.process( undistorted, camToWorld4x4 );
         }
     }
     return 0;

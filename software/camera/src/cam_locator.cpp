@@ -89,10 +89,19 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
         bool useExtrinsicGuess = false;
         if ( !camToWorld4x4.empty() )
         {
-            cv::Mat rot = camToWorld4x4( cv::Rect( 0, 0, 3, 3 ) );
+            cv::Mat m = camToWorld4x4.inv();
+            cv::Mat rot = m( cv::Rect( 0, 0, 3, 3 ) );
             cv::Rodrigues( rot, rvec );
-            tvec = camToWorld4x4( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
+            tvec = m( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
             useExtrinsicGuess = true;
+
+            std::cout << "guess: ";
+            std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
+            std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
+            std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
+            std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
+            std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
+            std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
         }
         else
             tvec.at<double>( 2, 0 ) = 1.0;
@@ -106,9 +115,26 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                                             rvec, tvec,
                                             useExtrinsicGuess, CV_ITERATIVE );
             */
+
+            /*
+            std::cout << "before: ";
+            std::cout << "r0: " << rvec.at<double>( 0, 3 ) << " ";
+            std::cout << "r1: " << rvec.at<double>( 1, 3 ) << " ";
+            std::cout << "r2: " << rvec.at<double>( 2, 3 ) << "      ";
+            std::cout << "t0: " << tvec.at<double>( 0, 3 ) << " ";
+            std::cout << "t1: " << tvec.at<double>( 1, 3 ) << " ";
+            std::cout << "t2: " << tvec.at<double>( 2, 3 ) << std::endl;
+            */
             correspondence = cv::solvePnPRansac( cv::Mat(pd->corners3d), cv::Mat(pd->corners2d), pd->cameraMatrix, pd->distCoeffs,
                                             rvec, tvec,
                                             useExtrinsicGuess, CV_ITERATIVE );
+            std::cout << "after: ";
+            std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
+            std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
+            std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
+            std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
+            std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
+            std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
         }
         catch ( cv::Exception & e )
         {
@@ -130,12 +156,31 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
             {
                 objToCam.at<double>( iy, ix ) = rot.at<double>( iy, ix );
             }
-            objToCam.at<double>( iy, 3 ) = tvec.at<double>( iy, 0 );
+            objToCam.at<double>( iy, 3 ) = tvec.at<double>( iy );
         }
         objToCam.at<double>( 3, 3 ) = 1.0;
-        // According to numbers at least tvec represents
-        // camera position is space.
-        camToWorld4x4 = objToCam.clone(); //objToCam.inv();
+        camToWorld4x4 = objToCam.inv(); //objToCam.clone(); //objToCam.inv();
+
+
+
+
+        cv::Mat m = camToWorld4x4.inv();
+        rot = m( cv::Rect( 0, 0, 3, 3 ) );
+        cv::Rodrigues( rot, rvec );
+        tvec = m( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
+
+        std::cout << "check: ";
+        std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
+        std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
+        std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
+        std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
+        std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
+        std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl << std::endl;
+
+
+
+
+
 
         if ( pd->debug )
         {

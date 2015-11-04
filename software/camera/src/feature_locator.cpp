@@ -77,8 +77,8 @@ FeatureLocator::FeatureLocator()
     tresholdWndSz  = 31;
     nn_match_ratio = 0.8f;
 
-    triangMinDist = 0.05;
-    triangMinTang = 0.02;
+    triangMinDist = 0.15;
+    triangMinTang = 0.05;
 }
 
 FeatureLocator::~FeatureLocator()
@@ -625,9 +625,11 @@ bool FeatureLocator::calcCameraPosition()
         }
         if ( !camToWorld.empty() )
         {
-            cv::Mat rot = camToWorld( cv::Rect( 0, 0, 3, 3 ) );
+            // Initial guess.
+            cv::Mat m = camToWorld.inv();
+            cv::Mat rot = m( cv::Rect( 0, 0, 3, 3 ) );
             cv::Rodrigues( rot, rvec );
-            tvec = camToWorld( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
+            tvec = m( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
             useExtrinsicGuess = true;
         }
         else
@@ -681,7 +683,7 @@ bool FeatureLocator::calcCameraPosition()
             objToCam.at<double>( iy, 3 ) = tvec.at<double>( iy, 0 );
         }
         objToCam.at<double>( 3, 3 ) = 1.0;
-        camToWorld = objToCam.clone(); //objToCam.inv();
+        camToWorld = objToCam.inv(); //objToCam.clone(); //objToCam.inv();
 
         std::cout << "px: " << camToWorld.at<double>( 0, 3 ) << " ";
         std::cout << "py: " << camToWorld.at<double>( 1, 3 ) << " ";

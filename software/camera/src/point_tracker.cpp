@@ -194,11 +194,15 @@ void PointTracker::calc3dPoint( std::vector<cv::Point2f> & points,
 
         B.at<double>( 3*i, 0 )   = (1.0 - a[0]*a[0])*r0[0] - a[0]*a[1]*r0[1] - a[0]*a[2]*r0[2];
         B.at<double>( 3*i+1, 0 ) = -a[0]*a[1]*r0[0] + (1.0 - a[1]*a[1])*r0[1] - a[1]*a[2]*r0[2];
-        B.at<double>( 3*i+1, 0 ) = -a[0]*a[2]*r0[0] - a[1]*a[2]*r0[1] + (1.0 - a[2]*a[2])*r0[2];
+        B.at<double>( 3*i+2, 0 ) = -a[0]*a[2]*r0[0] - a[1]*a[2]*r0[1] + (1.0 - a[2]*a[2])*r0[2];
     }
 
-    cv::Mat invA = A.inv( cv::DECOMP_SVD );
-    cv::Mat R = invA * B;
+    cv::Mat Atr = A.t();
+    cv::Mat AtrA = Atr * A;
+    cv::Mat invAtrA = AtrA.inv();
+    //cv::Mat unity = invAtrA * AtrA;
+    cv::Mat AtrB = Atr * B;
+    cv::Mat R = invAtrA * AtrB;
     at.x = R.at<double>( 0, 0 );
     at.y = R.at<double>( 1, 0 );
     at.z = R.at<double>( 2, 0 );

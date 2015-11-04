@@ -133,7 +133,9 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
             objToCam.at<double>( iy, 3 ) = tvec.at<double>( iy, 0 );
         }
         objToCam.at<double>( 3, 3 ) = 1.0;
-        camToWorld4x4 = objToCam.inv();
+        // According to numbers at least tvec represents
+        // camera position is space.
+        camToWorld4x4 = objToCam.clone(); //objToCam.inv();
 
         if ( pd->debug )
         {
@@ -152,7 +154,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                     pt = pd->corners2d[pd->corners2d.size() - 1 ];
                     cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
                     cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
-                    cv::imshow( "Chessboard", pd->gray );
+                    cv::imshow( "Chessboard", preview );
                 }
                 catch ( cv::Exception & e )
                 {
@@ -162,6 +164,9 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
             }
             if ( correspondence )
             {
+                std::cout << "x0: " << objToCam.at<double>( 0, 3 ) << " ";
+                std::cout << "y0: " << objToCam.at<double>( 1, 3 ) << " ";
+                std::cout << "z0: " << objToCam.at<double>( 2, 3 ) << "      ";
                 std::cout << "x: " << camToWorld4x4.at<double>( 0, 3 ) << " ";
                 std::cout << "y: " << camToWorld4x4.at<double>( 1, 3 ) << " ";
                 std::cout << "z: " << camToWorld4x4.at<double>( 2, 3 ) << std::endl;

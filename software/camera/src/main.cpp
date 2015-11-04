@@ -107,6 +107,8 @@ int main()
                 if ( !res )
                     continue;
             }
+            else
+                camToWorld4x4 = cv::Mat();
 
             if ( ( !camToWorld4x4.empty() ) || ( triangulatedCnt >= 5 ) )
                 res = featureLocator.processFrame( undistorted, camToWorld4x4 );

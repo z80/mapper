@@ -78,7 +78,7 @@ public:
 
     void setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs );
 
-    bool processFrame( const cv::Mat & img, const cv::Mat & camToWorld = cv::Mat() );
+    bool processFrame( const cv::Mat & img, cv::Mat & camToWorld );
 
     int  featuresCnt() const;
     int  trackedCnt() const;

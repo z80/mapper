@@ -14,6 +14,7 @@ if ( WIN32 )
     configure_msvc_runtime()
 elseif ( UNIX )
     include( "./settings.unix.cmake" )
+    set( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++11 )
 endif ( WIN32 )
 
 include(cmake/OpenCVUtils.cmake)

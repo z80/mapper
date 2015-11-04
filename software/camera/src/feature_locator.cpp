@@ -92,7 +92,7 @@ void FeatureLocator::setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat 
     this->distCoefs  = distCoefs.clone();
 }
 
-bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWorld )
+bool FeatureLocator::processFrame( const cv::Mat & img, cv::Mat & camToWorld )
 {
     cv::Mat scaled;
     //cv::Mat gray;
@@ -131,7 +131,16 @@ bool FeatureLocator::processFrame( const cv::Mat & img, const cv::Mat & camToWor
     {
         bool res = calcCameraPosition();
         if ( !res )
+        {
+            // If failed to calc camera position
+            // should also clear the latest points layer
+            // in points history.
+            // As quick and dirty solution just
+            // push previous matrix.
+            worldFrames.push_back( worldFrames[ worldFrames.size()-1 ].clone() );
             return false;
+        }
+        camToWorld = this->camToWorld.clone();
     }
     // Add worldMatrix.
     worldFrames.push_back( camToWorld.clone() );
@@ -316,20 +325,6 @@ void FeatureLocator::analyze()
         }
     }
 
-    unsigned int limitSz = ( matches.size() <= keypoints.size() ) ? matches.size() : keypoints.size();
-    for( unsigned int i=0; i<limitSz; i++ )
-    {
-        // Add point to the list.
-        cv::DMatch m0 = matches[i][0];
-        cv::DMatch m1 = matches[i][1];
-        if ( ( m0.distance >= nn_match_ratio*m1.distance ) )
-            continue;
-
-        int trainInd = m0.trainIdx;
-        int queryInd = m0.queryIdx;
-
-
-    }
     pointFrames = pointFramesNew;
     worldPoints = worldPointsNew;
 
@@ -407,7 +402,7 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
         B.at<double>( 3*i+1, 0 ) = -a[0]*a[1]*r0[0] + (1.0 - a[1]*a[1])*r0[1] - a[1]*a[2]*r0[2];
         B.at<double>( 3*i+2, 0 ) = -a[0]*a[2]*r0[0] - a[1]*a[2]*r0[1] + (1.0 - a[2]*a[2])*r0[2];
     }
-    std::cout << "A: " << std::endl;
+    /*std::cout << "A: " << std::endl;
     for ( int row=0; row<A.rows; row++ )
     {
         for ( int col=0; col<A.cols; col++ )
@@ -427,12 +422,12 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
         }
         std::cout << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     cv::Mat Atr = A.t();
     cv::Mat AtrA = Atr * A;
 
-    std::cout << "AtrA: " << std::endl;
+    /*std::cout << "AtrA: " << std::endl;
     for ( int row=0; row<AtrA.rows; row++ )
     {
         for ( int col=0; col<AtrA.cols; col++ )
@@ -441,11 +436,11 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
         }
         std::cout << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     cv::Mat invAtrA = AtrA.inv();
 
-    std::cout << "invAtrA: " << std::endl;
+    /*std::cout << "invAtrA: " << std::endl;
     for ( int row=0; row<invAtrA.rows; row++ )
     {
         for ( int col=0; col<invAtrA.cols; col++ )
@@ -454,11 +449,11 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
         }
         std::cout << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     cv::Mat unity = invAtrA * AtrA;
 
-    std::cout << "unity: " << std::endl;
+    /*std::cout << "unity: " << std::endl;
     for ( int row=0; row<unity.rows; row++ )
     {
         for ( int col=0; col<unity.cols; col++ )
@@ -467,11 +462,11 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
         }
         std::cout << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     cv::Mat AtrB = Atr * B;
 
-    std::cout << "AtrB: " << std::endl;
+    /*std::cout << "AtrB: " << std::endl;
     for ( int row=0; row<AtrB.rows; row++ )
     {
         for ( int col=0; col<AtrB.cols; col++ )
@@ -480,11 +475,11 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
         }
         std::cout << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     cv::Mat R = invAtrA * AtrB;
 
-    std::cout << "invAtrA * AtrB: " << std::endl;
+    /*std::cout << "invAtrA * AtrB: " << std::endl;
     for ( int row=0; row<R.rows; row++ )
     {
         for ( int col=0; col<R.cols; col++ )
@@ -493,7 +488,7 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
         }
         std::cout << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     r.x = R.at<double>( 0, 0 );
     r.y = R.at<double>( 1, 0 );
@@ -642,10 +637,16 @@ bool FeatureLocator::calcCameraPosition()
         corners3d.clear();
         for ( std::map< int, cv::Point3f >::const_iterator it=worldPoints.begin(); it!=worldPoints.end(); it++ )
         {
+            int index = it->first;
+            // Actually it's strange. All 3d point indices MUSt be
+            // a subset of 2d point arrays map indices.
+            // But due to some reacon they aren't.
+            std::map< int, std::vector<cv::Point2f> >::iterator arr_it = pointFrames.find( index );
+            if ( arr_it == pointFrames.end() )
+                continue;
             cv::Point3f pt3 = it->second;
             corners3d.push_back( pt3 );
-            int index = it->first;
-            const std::vector<cv::Point2f> & pts = worldFrames[ index ];
+            const std::vector<cv::Point2f> & pts = pointFrames[ index ];
             cv::Point2f pt2 = pts[ pts.size()-1 ];
             corners2d.push_back( pt2 );
         }
@@ -680,7 +681,12 @@ bool FeatureLocator::calcCameraPosition()
             objToCam.at<double>( iy, 3 ) = tvec.at<double>( iy, 0 );
         }
         objToCam.at<double>( 3, 3 ) = 1.0;
-        camToWorld = objToCam.inv();
+        camToWorld = objToCam.clone(); //objToCam.inv();
+
+        std::cout << "px: " << camToWorld.at<double>( 0, 3 ) << " ";
+        std::cout << "py: " << camToWorld.at<double>( 1, 3 ) << " ";
+        std::cout << "pz: " << camToWorld.at<double>( 2, 3 ) << std::endl;
+
     return true;
 }
 

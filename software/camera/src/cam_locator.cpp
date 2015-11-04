@@ -139,7 +139,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
         {
             if ( patternfound )
             {
-                cv::Mat preview = mat;
+                cv::Mat preview = mat.clone();
                 try {
                     int sz = 9;
                     //cv::drawChessboardCorners( preview, sz, cv::Mat(pd->corners2d), patternfound );
@@ -152,7 +152,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                     pt = pd->corners2d[pd->corners2d.size() - 1 ];
                     cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
                     cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
-
+                    cv::imshow( "Chessboard", pd->gray );
                 }
                 catch ( cv::Exception & e )
                 {
@@ -160,7 +160,6 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                     std::cout << e.what() << std::endl;
                 }
             }
-            cv::imshow( "Chessboard", pd->gray );
             if ( correspondence )
             {
                 std::cout << "x: " << camToWorld4x4.at<double>( 0, 3 ) << " ";

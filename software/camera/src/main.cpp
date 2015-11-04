@@ -95,6 +95,11 @@ int main()
             uchar key = (uchar)waitKey( 33 );
             if( key == 'q' )
                 break;
+            if( key == 's' )
+            {
+                pointTracker.writePoints();
+                pointTracker.clear();
+            }
 
             if ( triangulatedCnt < 5 )
             {
@@ -106,8 +111,8 @@ int main()
             if ( ( !camToWorld4x4.empty() ) || ( triangulatedCnt >= 5 ) )
                 res = featureLocator.processFrame( undistorted, camToWorld4x4 );
             triangulatedCnt = featureLocator.triangulatedCnt();
-            if ( !camToWorld4x4.empty() )
-                pointTracker.process( undistorted, camToWorld4x4 );
+            //if ( !camToWorld4x4.empty() )
+            //    pointTracker.process( undistorted, camToWorld4x4 );
         }
     }
     return 0;

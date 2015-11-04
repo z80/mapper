@@ -77,8 +77,8 @@ FeatureLocator::FeatureLocator()
     tresholdWndSz  = 31;
     nn_match_ratio = 0.8f;
 
-    triangMinDist = 0.2;
-    triangMinTang = 0.1;
+    triangMinDist = 0.05;
+    triangMinTang = 0.02;
 }
 
 FeatureLocator::~FeatureLocator()
@@ -405,10 +405,96 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
 
         B.at<double>( 3*i, 0 )   = (1.0 - a[0]*a[0])*r0[0] - a[0]*a[1]*r0[1] - a[0]*a[2]*r0[2];
         B.at<double>( 3*i+1, 0 ) = -a[0]*a[1]*r0[0] + (1.0 - a[1]*a[1])*r0[1] - a[1]*a[2]*r0[2];
-        B.at<double>( 3*i+1, 0 ) = -a[0]*a[2]*r0[0] - a[1]*a[2]*r0[1] + (1.0 - a[2]*a[2])*r0[2];
+        B.at<double>( 3*i+2, 0 ) = -a[0]*a[2]*r0[0] - a[1]*a[2]*r0[1] + (1.0 - a[2]*a[2])*r0[2];
     }
-    cv::Mat invA = A.inv( cv::DECOMP_SVD );
-    cv::Mat R = invA * B;
+    std::cout << "A: " << std::endl;
+    for ( int row=0; row<A.rows; row++ )
+    {
+        for ( int col=0; col<A.cols; col++ )
+        {
+            std::cout << A.at<double>( row, col ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "B: " << std::endl;
+    for ( int row=0; row<B.rows; row++ )
+    {
+        for ( int col=0; col<B.cols; col++ )
+        {
+            std::cout << B.at<double>( row, col ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    cv::Mat Atr = A.t();
+    cv::Mat AtrA = Atr * A;
+
+    std::cout << "AtrA: " << std::endl;
+    for ( int row=0; row<AtrA.rows; row++ )
+    {
+        for ( int col=0; col<AtrA.cols; col++ )
+        {
+            std::cout << AtrA.at<double>( row, col ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    cv::Mat invAtrA = AtrA.inv();
+
+    std::cout << "invAtrA: " << std::endl;
+    for ( int row=0; row<invAtrA.rows; row++ )
+    {
+        for ( int col=0; col<invAtrA.cols; col++ )
+        {
+            std::cout << invAtrA.at<double>( row, col ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    cv::Mat unity = invAtrA * AtrA;
+
+    std::cout << "unity: " << std::endl;
+    for ( int row=0; row<unity.rows; row++ )
+    {
+        for ( int col=0; col<unity.cols; col++ )
+        {
+            std::cout << unity.at<double>( row, col ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    cv::Mat AtrB = Atr * B;
+
+    std::cout << "AtrB: " << std::endl;
+    for ( int row=0; row<AtrB.rows; row++ )
+    {
+        for ( int col=0; col<AtrB.cols; col++ )
+        {
+            std::cout << AtrB.at<double>( row, col ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    cv::Mat R = invAtrA * AtrB;
+
+    std::cout << "invAtrA * AtrB: " << std::endl;
+    for ( int row=0; row<R.rows; row++ )
+    {
+        for ( int col=0; col<R.cols; col++ )
+        {
+            std::cout << R.at<double>( row, col ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
     r.x = R.at<double>( 0, 0 );
     r.y = R.at<double>( 1, 0 );
     r.z = R.at<double>( 2, 0 );

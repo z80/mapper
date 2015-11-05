@@ -60,16 +60,16 @@ FeatureLocator::FeatureLocator()
     akaze_thresh = 3e-3; // AKAZE detection threshold set to locate about 1000 keypoints
     inlier_threshold = 2.5f * 20.0f; // Distance threshold to identify inliers
     
-    //cv::Ptr<cv::ORB> orb = cv::ORB::create();
-    //orb->setMaxFeatures( /*stats.keypoints*/ 1024 );
+    cv::Ptr<cv::ORB> orb = cv::ORB::create();
+    orb->setMaxFeatures( /*stats.keypoints*/ 1024 );
 
-    cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
-    akaze->setThreshold(akaze_thresh);
+    //cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+    //akaze->setThreshold(akaze_thresh);
     //cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
     cv::Ptr<cv::DescriptorMatcher> matcher = cv::makePtr<cv::BFMatcher>((int)cv::NORM_HAMMING, false);
 
-    //this->detector = orb;
-    this->detector = akaze;
+    this->detector = orb;
+    //this->detector = akaze;
     this->matcher  = matcher;
 
     imageSz        = cv::Size( 640, 480 );
@@ -77,8 +77,8 @@ FeatureLocator::FeatureLocator()
     tresholdWndSz  = 31;
     nn_match_ratio = 0.8f;
 
-    triangMinDist = 0.05;
-    triangMinTang = 0.05;
+    triangMinDist = 0.15;
+    triangMinTang = 0.1;
 }
 
 FeatureLocator::~FeatureLocator()
@@ -134,7 +134,8 @@ bool FeatureLocator::processFrame( const cv::Mat & img, cv::Mat & camToWorld )
             // in points history.
             // As quick and dirty solution just
             // push previous matrix.
-            worldFrames.push_back( worldFrames[ worldFrames.size()-1 ].clone() );
+            if ( worldFrames.size() > 0 )
+                worldFrames.push_back( worldFrames[ worldFrames.size()-1 ].clone() );
             return false;
         }
         camToWorld = this->camToWorld.clone();

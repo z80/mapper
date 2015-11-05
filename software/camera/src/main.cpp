@@ -101,6 +101,7 @@ int main()
                 pointTracker.clear();
             }
 
+            /*
             if ( triangulatedCnt < 5 )
             {
                 res = camLocator.findChessboard( undistorted, camToWorld4x4 );
@@ -109,7 +110,11 @@ int main()
             }
             else
                 camToWorld4x4 = cv::Mat();
+            */
 
+            res = camLocator.findChessboard( undistorted, camToWorld4x4 );
+            if ( !res )
+                camToWorld4x4 = cv::Mat();
             if ( ( !camToWorld4x4.empty() ) || ( triangulatedCnt >= 5 ) )
                 res = featureLocator.processFrame( undistorted, camToWorld4x4 );
             triangulatedCnt = featureLocator.triangulatedCnt();

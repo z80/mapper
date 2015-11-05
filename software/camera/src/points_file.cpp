@@ -40,7 +40,7 @@ bool PointsFile::read( std::vector<cv::Point3f> & ats, std::vector<cv::Point3f> 
         return false;
 
     // Extraction of a sub-match
-    std::regex base_regex("([\\d.\\e\\-]+)\\.txt");
+    std::regex base_regex("([\\d\\.eE\\-]+)\\.txt");
     std::smatch base_match;
     std::string line;
     while ( std::getline( in, line ) )

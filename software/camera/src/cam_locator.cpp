@@ -39,6 +39,9 @@ CamLocator::CamLocator( int rows, int cols, double step )
         // Revert reference frame to match with camera reference frame.
         // Otherwise there is no ritation/translation pair converting 
         // left-handed into right-handed RF.
+
+        // The only thing is that Z axis is directed downwards under the floor 
+        // when ref-frame is recalculated.
         double y = static_cast<double>(iy) * step;
         for ( int ix=0; ix<cols; ix++ )
         {
@@ -99,13 +102,13 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
             tvec = m( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
             useExtrinsicGuess = true;
 
-            std::cout << "guess: ";
-            std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
-            std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
-            std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
-            std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
-            std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
-            std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
+            //std::cout << "guess: ";
+            //std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
+            //std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
+            //std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
+            //std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
+            //std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
+            //std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
         }
         else
             tvec.at<double>( 2, 0 ) = 1.0;
@@ -120,25 +123,16 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                                             useExtrinsicGuess, CV_ITERATIVE );
             */
 
-            /*
-            std::cout << "before: ";
-            std::cout << "r0: " << rvec.at<double>( 0, 3 ) << " ";
-            std::cout << "r1: " << rvec.at<double>( 1, 3 ) << " ";
-            std::cout << "r2: " << rvec.at<double>( 2, 3 ) << "      ";
-            std::cout << "t0: " << tvec.at<double>( 0, 3 ) << " ";
-            std::cout << "t1: " << tvec.at<double>( 1, 3 ) << " ";
-            std::cout << "t2: " << tvec.at<double>( 2, 3 ) << std::endl;
-            */
             correspondence = cv::solvePnPRansac( cv::Mat(pd->corners3d), cv::Mat(pd->corners2d), pd->cameraMatrix, pd->distCoeffs,
                                             rvec, tvec,
                                             useExtrinsicGuess, CV_ITERATIVE );
-            std::cout << "after: ";
-            std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
-            std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
-            std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
-            std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
-            std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
-            std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
+            //std::cout << "after: ";
+            //std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
+            //std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
+            //std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
+            //std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
+            //std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
+            //std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
         }
         catch ( cv::Exception & e )
         {
@@ -168,18 +162,18 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
 
 
 
-        cv::Mat m = camToWorld4x4.inv();
-        rot = m( cv::Rect( 0, 0, 3, 3 ) );
-        cv::Rodrigues( rot, rvec );
-        tvec = m( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
+        //cv::Mat m = camToWorld4x4.inv();
+        //rot = m( cv::Rect( 0, 0, 3, 3 ) );
+        //cv::Rodrigues( rot, rvec );
+        //tvec = m( cv::Rect( 3, 0, 1, 3 ) ); // (!!!) should checke if dimentions are in their places.
 
-        std::cout << "check: ";
-        std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
-        std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
-        std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
-        std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
-        std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
-        std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
+        //std::cout << "check: ";
+        //std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
+        //std::cout << "r1: " << rvec.at<double>( 1 ) << " ";
+        //std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
+        //std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
+        //std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
+        //std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
 
 
 
@@ -193,7 +187,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                 cv::Mat preview = mat.clone();
                 try {
                     int sz = 9;
-                    cv::drawChessboardCorners( preview, cv::Size(sz, sz), cv::Mat(pd->corners2d), patternfound );
+                    //cv::drawChessboardCorners( preview, cv::Size(sz, sz), cv::Mat(pd->corners2d), patternfound );
                     cv::Point2f pt = pd->corners2d[0];
                     cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
                     cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
@@ -213,9 +207,9 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
             }
             if ( correspondence )
             {
-                std::cout << "x0: " << objToCam.at<double>( 0, 3 ) << " ";
-                std::cout << "y0: " << objToCam.at<double>( 1, 3 ) << " ";
-                std::cout << "z0: " << objToCam.at<double>( 2, 3 ) << "      ";
+                //std::cout << "x0: " << objToCam.at<double>( 0, 3 ) << " ";
+                //std::cout << "y0: " << objToCam.at<double>( 1, 3 ) << " ";
+                //std::cout << "z0: " << objToCam.at<double>( 2, 3 ) << "      ";
                 std::cout << "x: " << camToWorld4x4.at<double>( 0, 3 ) << " ";
                 std::cout << "y: " << camToWorld4x4.at<double>( 1, 3 ) << " ";
                 std::cout << "z: " << camToWorld4x4.at<double>( 2, 3 ) << std::endl << std::endl;

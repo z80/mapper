@@ -77,7 +77,7 @@ FeatureLocator::FeatureLocator()
     tresholdWndSz  = 31;
     nn_match_ratio = 0.8f;
 
-    triangMinDist = 0.15;
+    triangMinDist = 0.05;
     triangMinTang = 0.05;
 }
 
@@ -115,13 +115,10 @@ bool FeatureLocator::processFrame( const cv::Mat & img, cv::Mat & camToWorld )
     drawTracks( imgWithFeatures );
 
     std::ostringstream o;
-    o << "features: " << featuresCnt();
-    Drawer::drawText( imgWithFeatures, o.str(), 0 );
-    o.clear();
+    //o << "features: " << featuresCnt();
     o << "tracked: " << trackedCnt();
-    Drawer::drawText( imgWithFeatures, o.str(), 1 );
     o << "located: " << triangulatedCnt();
-    Drawer::drawText( imgWithFeatures, o.str(), 2 );
+    Drawer::drawText( imgWithFeatures, o.str(), 0 );
 
     imshow( "Features", imgWithFeatures );
     //imshow( "Subtracted", scaled );
@@ -555,7 +552,7 @@ bool FeatureLocator::triangulatePoints()
         // Triangulate point if there are appropriate camera positions.
         // if ( !camToWorld.empty() )
         {
-            if ( bestPtInd1 >= 0 )
+            if ( ( bestPtInd1 >= 0 ) && ( histSz >= 15 ) )
             {
                 // Check distance between max distant camera positions.
                 cv::Mat m1 = worldFrames[ bestWorldInd1 ].clone();

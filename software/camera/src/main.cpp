@@ -110,11 +110,11 @@ int main()
             else
                 camToWorld4x4 = cv::Mat();
 
-            //if ( ( !camToWorld4x4.empty() ) || ( triangulatedCnt >= 5 ) )
-            //    res = featureLocator.processFrame( undistorted, camToWorld4x4 );
-            //triangulatedCnt = featureLocator.triangulatedCnt();
-            //if ( !camToWorld4x4.empty() )
-            //    pointTracker.process( undistorted, camToWorld4x4 );
+            if ( ( !camToWorld4x4.empty() ) || ( triangulatedCnt >= 5 ) )
+                res = featureLocator.processFrame( undistorted, camToWorld4x4 );
+            triangulatedCnt = featureLocator.triangulatedCnt();
+            if ( !camToWorld4x4.empty() )
+                pointTracker.process( undistorted, camToWorld4x4 );
         }
     }
     return 0;

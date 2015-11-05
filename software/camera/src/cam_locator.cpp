@@ -35,7 +35,11 @@ CamLocator::CamLocator( int rows, int cols, double step )
     int index = 0;
     for ( int iy=0; iy<rows; iy++ )
     {
-        double y = static_cast<double>(rows-1-iy) * step;
+        //double y = static_cast<double>(rows-1-iy) * step;
+        // Revert reference frame to match with camera reference frame.
+        // Otherwise there is no ritation/translation pair converting 
+        // left-handed into right-handed RF.
+        double y = static_cast<double>(iy) * step;
         for ( int ix=0; ix<cols; ix++ )
         {
             double x = static_cast<double>(ix) * step;
@@ -175,7 +179,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
         std::cout << "r2: " << rvec.at<double>( 2 ) << "      ";
         std::cout << "t0: " << tvec.at<double>( 0 ) << " ";
         std::cout << "t1: " << tvec.at<double>( 1 ) << " ";
-        std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl << std::endl;
+        std::cout << "t2: " << tvec.at<double>( 2 ) << std::endl;
 
 
 
@@ -189,14 +193,14 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                 cv::Mat preview = mat.clone();
                 try {
                     int sz = 9;
-                    //cv::drawChessboardCorners( preview, sz, cv::Mat(pd->corners2d), patternfound );
+                    cv::drawChessboardCorners( preview, cv::Size(sz, sz), cv::Mat(pd->corners2d), patternfound );
                     cv::Point2f pt = pd->corners2d[0];
                     cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
                     cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
-                    pt = pd->corners2d[pd->corners2d.size() - pd->cols ];
+                    pt = pd->corners2d[pd->cols-1 ];
                     cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
                     cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
-                    pt = pd->corners2d[pd->corners2d.size() - 1 ];
+                    pt = pd->corners2d[pd->corners2d.size() - pd->cols ];
                     cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
                     cv::line( preview, cv::Point( pt.x, pt.y-sz ), cv::Point( pt.x, pt.y+sz ), cv::Scalar( 0., 200., 0., 0.2 ), 2  );
                     cv::imshow( "Chessboard", preview );
@@ -214,7 +218,7 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                 std::cout << "z0: " << objToCam.at<double>( 2, 3 ) << "      ";
                 std::cout << "x: " << camToWorld4x4.at<double>( 0, 3 ) << " ";
                 std::cout << "y: " << camToWorld4x4.at<double>( 1, 3 ) << " ";
-                std::cout << "z: " << camToWorld4x4.at<double>( 2, 3 ) << std::endl;
+                std::cout << "z: " << camToWorld4x4.at<double>( 2, 3 ) << std::endl << std::endl;
             }
         }
 

@@ -48,7 +48,7 @@ enum Mode { LOOK_FOR_QR, TRACK_POINTS, PREDICT };
 
 int main()
 {
-    CamLocator camLocator( 5, 7, 0.02 );
+    CamLocator camLocator( 5, 7, 0.034 );
 
 
     cout << "Built with OpenCV " << CV_VERSION << endl;

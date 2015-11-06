@@ -70,18 +70,20 @@ int main()
     fs[ "distortion_coefficients" ] >> distCoeffs;
     fs.release();
 
-    camLocator.setCamera( cameraMatrix, distCoeffs );
+    camLocator.setCamera( cameraMatrix );
     
     FeatureLocator featureLocator;
-    featureLocator.setCameraMatrix( cameraMatrix, distCoeffs ); 
+    featureLocator.setCameraMatrix( cameraMatrix );
     PointTracker  pointTracker;
-    pointTracker.setCameraMatrix( cameraMatrix, distCoeffs );
+    pointTracker.setCameraMatrix( cameraMatrix );
 
     if(capture.isOpened())
     {
         cout << "Capture is opened" << endl;
         int triangulatedCnt = 0;
         bool res;
+        bool chessBoardState = false,
+             chessBoardStatePrev = false;
 
         cv::Mat camToWorld4x4;
         for(;;)
@@ -112,9 +114,18 @@ int main()
                 camToWorld4x4 = cv::Mat();
             */
 
-            res = camLocator.findChessboard( undistorted, camToWorld4x4 );
-            if ( !res )
+            chessBoardState = camLocator.findChessboard( undistorted, camToWorld4x4 );
+            if ( !chessBoardState )
+            {
                 camToWorld4x4 = cv::Mat();
+                if ( chessBoardStatePrev )
+                {
+                    res = featureLocator.triangulatePoints( true );
+                    triangulatedCnt = featureLocator.triangulatedCnt();
+                    std::cout << "Triangulated, result: " << (res ? "OK!" : "Failed!") << std::endl;
+                }
+            }
+            chessBoardStatePrev = chessBoardState;
             if ( ( !camToWorld4x4.empty() ) || ( triangulatedCnt >= 5 ) )
                 res = featureLocator.processFrame( undistorted, camToWorld4x4 );
             triangulatedCnt = featureLocator.triangulatedCnt();

@@ -17,10 +17,9 @@ PointTracker::~PointTracker()
 
 }
 
-void PointTracker::setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs )
+void PointTracker::setCameraMatrix( const cv::Mat & projMatrix )
 {
     this->projMatrix = projMatrix.clone();
-    this->distCoefs  = distCoefs.clone();
 }
 
 void PointTracker::process( const cv::Mat & frame, const cv::Mat & worldM )
@@ -143,11 +142,11 @@ void PointTracker::calc3dPoint( std::vector<cv::Point2f> & points,
     {
         int worldIndex = worldSz - sz + i;
         const cv::Mat wrld = worldHist[ worldIndex ].clone();
-        cv::Point2f at = points[i];
+        cv::Point2f pt = points[i];
 
         cv::Mat m( 4, 1, CV_64FC1 );
-        double x = (static_cast<double>( at.x ) - cx) / fx;
-        double y = (static_cast<double>( at.y ) - cy) / fy;
+        double x = (static_cast<double>( pt.x ) - cx) / fx;
+        double y = (static_cast<double>( pt.y ) - cy) / fy;
         double z = 1.0;
         double l = sqrt( x*x + y*y + z*z );
         x /= l;
@@ -215,7 +214,8 @@ std::vector<cv::Point2f> & PointTracker::pointHistXy( int row, int col )
     if ( at != pointHist.end() )
         return at->second;
 
-    pointHist.insert( std::pair< int, std::vector<cv::Point2f> >( index, std::vector<cv::Point2f>() ) );
+    //pointHist.insert( std::pair< int, std::vector<cv::Point2f> >( index, std::vector<cv::Point2f>() ) );
+    pointHist[ index ] = std::vector<cv::Point2f>();
     std::vector<cv::Point2f> & points = pointHist[ index ];
     return points;
 }
@@ -223,7 +223,8 @@ std::vector<cv::Point2f> & PointTracker::pointHistXy( int row, int col )
 void PointTracker::pushPointHistXy( int row, int col, std::vector<cv::Point2f> & points )
 {
     int index = imageSz.width * col + row;
-    pointHistNew.insert( std::pair< int, std::vector<cv::Point2f> >( index, points ) );
+    //pointHistNew.insert( std::pair< int, std::vector<cv::Point2f> >( index, points ) );
+    pointHistNew[ index ] = points;
 }
 
 int PointTracker::longestPointHist() const

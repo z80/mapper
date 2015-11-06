@@ -86,10 +86,9 @@ FeatureLocator::~FeatureLocator()
 
 }
 
-void FeatureLocator::setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs )
+void FeatureLocator::setCameraMatrix( const cv::Mat & projMatrix )
 {
     this->projMatrix = projMatrix.clone();
-    this->distCoefs  = distCoefs.clone();
 }
 
 bool FeatureLocator::processFrame( const cv::Mat & img, cv::Mat & camToWorld )
@@ -143,11 +142,7 @@ bool FeatureLocator::processFrame( const cv::Mat & img, cv::Mat & camToWorld )
     // Add worldMatrix.
     worldFrames.push_back( camToWorld.clone() );
 
-
-    bool res = triangulatePoints();
-
-
-    return res;
+    return true;
 }
 
 int  FeatureLocator::featuresCnt() const
@@ -231,7 +226,8 @@ void FeatureLocator::addAll()
         std::vector<cv::Point2f> pts;
         cv::KeyPoint kp = *it;
         pts.push_back( kp.pt );
-        pointFrames.insert( std::pair< int, std::vector<cv::Point2f> >( ind, pts ) );
+        //pointFrames.insert( std::pair< int, std::vector<cv::Point2f> >( ind, pts ) );
+        pointFrames[ ind ] = pts;
     }
 }
 
@@ -304,7 +300,8 @@ void FeatureLocator::analyze()
 
 
                 arr.push_back( keypoints[queryInd].pt );
-                pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+                //pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+                pointFramesNew[ queryInd ] = arr;
                 maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
                 // Remove from pointFrames.
                 pointFrames.erase( it );
@@ -313,12 +310,14 @@ void FeatureLocator::analyze()
             {
                 std::vector<cv::Point2f> arr;
                 arr.push_back( keypoints[queryInd].pt );
-                pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+                //pointFramesNew.insert( std::pair< int, std::vector<cv::Point2f> >( queryInd, arr ) );
+                pointFramesNew[ queryInd ] = arr;
                 maxSz = ( maxSz > arr.size() ) ? maxSz : arr.size();
              }
             std::map<int, cv::Point3f>::iterator wi = worldPoints.find( trainInd );
             if ( wi != worldPoints.end() )
-                worldPointsNew.insert( std::pair<int, cv::Point3f>( queryInd, wi->second ) );
+                //worldPointsNew.insert( std::pair<int, cv::Point3f>( queryInd, wi->second ) );
+                worldPointsNew[ queryInd ] = wi->second;
 
         }
     }
@@ -495,7 +494,7 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
     return true;
 }
 
-bool FeatureLocator::triangulatePoints()
+bool FeatureLocator::triangulatePoints( bool triangulateAll )
 {
     int camHistSz = static_cast<int>( worldFrames.size() );
     // Find the most remote camera positions for each point and triangulate the point.
@@ -504,7 +503,8 @@ bool FeatureLocator::triangulatePoints()
     {
         // First check if this point is triangulated.
         // And try only if it is not.
-        if ( worldPoints.find( listIter->first ) != worldPoints.end() )
+        if ( ( !triangulateAll ) &&
+           ( worldPoints.find( listIter->first ) != worldPoints.end() ) )
             continue;
 
 
@@ -654,9 +654,13 @@ bool FeatureLocator::calcCameraPosition()
         // Pose estimation
         bool correspondence;
         try {
-            correspondence = cv::solvePnPRansac( cv::Mat(corners3d), cv::Mat(corners2d), projMatrix, distCoefs,
-                                            rvec, tvec,
-                                            useExtrinsicGuess, CV_ITERATIVE );
+            correspondence = cv::solvePnPRansac( cv::Mat(corners3d),
+                                                 cv::Mat(corners2d),
+                                                 projMatrix,
+                                                 cv::Mat(),
+                                                 rvec, tvec,
+                                                 useExtrinsicGuess,
+                                                 CV_ITERATIVE );
         }
         catch ( cv::Exception & e )
         {

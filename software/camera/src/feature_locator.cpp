@@ -448,7 +448,7 @@ bool FeatureLocator::triangulateOne( int index, cv::Point3f & r )
     }
     std::cout << std::endl;*/
 
-    cv::Mat unity = invAtrA * AtrA;
+    //cv::Mat unity = invAtrA * AtrA;
 
     /*std::cout << "unity: " << std::endl;
     for ( int row=0; row<unity.rows; row++ )

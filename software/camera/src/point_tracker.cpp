@@ -85,7 +85,7 @@ void PointTracker::countOpticalFlow( bool force )
             {
                 // No movement. Triangulate if there are at least two points in history.
                 // Otherwise it obviously doesn't make sense.
-                if ( points.size() > 5 )
+                if ( points.size() > 1 )
                 {
                     cv::Point3f at, from;
                     calc3dPoint( points, at, from );

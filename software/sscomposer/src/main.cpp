@@ -69,7 +69,7 @@ int main()
 
         pointTracker.process( undistorted, cameraPos );
 
-        cv::imshow( "image", image );
+        cv::imshow( "image", undistorted );
         cv::waitKey( 1 );
     }
 

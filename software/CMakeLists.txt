@@ -26,3 +26,7 @@ ocv_clear_vars(OpenCVModules_TARGETS)
 add_subdirectory( "./calibration" )
 add_subdirectory( "./camera" )
 add_subdirectory( "./tests" )
+add_subdirectory( "./ssmaker" )
+add_subdirectory( "./sscomposer" )
+
+

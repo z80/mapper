@@ -40,6 +40,11 @@ bool PointTracker::writePoints( const std::string & fname )
     return res;
 }
 
+void PointTracker::finish()
+{
+    countOpticalFlow( true );
+}
+
 void PointTracker::clear()
 {
     points3d.clear();
@@ -49,20 +54,20 @@ void PointTracker::clear()
 void PointTracker::prepareImage( const cv::Mat & frame )
 {
     cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-    cv::resize( gray, gray, imageSz );
+    //cv::resize( gray, gray, imageSz );
 }
 
 void PointTracker::calcOpticalFlow()
 {
     if( !grayPrev.empty() )
     {
-        cv::calcOpticalFlowFarneback( grayPrev, gray, uflow, 0.5, 6, 30, 3, 5, 1.2, 0 );
+        cv::calcOpticalFlowFarneback( grayPrev, gray, uflow, 0.5, 3, 15, 3, 5, 1.2, 0 );
         uflow.copyTo( flow );
     }
     grayPrev = gray.clone();
 }
 
-void PointTracker::countOpticalFlow()
+void PointTracker::countOpticalFlow( bool force )
 {
     pointHistNew.clear();
     for ( int i=0; i<imageSz.height; i++ )
@@ -74,7 +79,9 @@ void PointTracker::countOpticalFlow()
 
             std::vector<cv::Point2f> & points = pointHistXy( j, i );
             // Determine if there was a movement.
-            if ( (fabs(dr.x) < 1.0) && fabs(dr.y) < 1.0 )
+            // Or if I force calculation :)
+            if ( ( (fabs(dr.x) < 1.0) && fabs(dr.y) < 1.0 ) ||
+                 ( force ) )
             {
                 // No movement. Triangulate if there are at least two points in history.
                 // Otherwise it obviously doesn't make sense.
@@ -97,7 +104,13 @@ void PointTracker::countOpticalFlow()
             {
                 // Movement exists.
                 // Push current position plus displacement.
-                cv::Point2f at = cv::Point2f( static_cast<float>( j ) + dr.x, static_cast<float>( i ) + dr.y );
+                cv::Point2f at;
+                if ( points.size() > 0 )
+                    at = points[ points.size()-1 ];
+                else
+                    at = cv::Point2f( static_cast<float>( j ), static_cast<float>( i ) );
+
+                at = cv::Point2f( at.x + dr.x, at.y + dr.y );
                 points.push_back( at );
                 // Put it to a new array
                 int col = cvRound( at.x );

@@ -21,12 +21,13 @@ public:
     void setCameraMatrix( const cv::Mat & projMatrix );
     void process( const cv::Mat & frame, const cv::Mat & worldM );
     bool writePoints( const std::string & fname = "./points.dat" );
-    void clear(); // Stop tracking all points and calc resulting 3D positions.
+    void finish(); // Calc all 3d points not waiting for stop movement.
+    void clear(); // Clear point buffers.
 
 private:
     void prepareImage( const cv::Mat & frame );
     void calcOpticalFlow();
-    void countOpticalFlow();
+    void countOpticalFlow( bool force = false );
     void calc3dPoint( std::vector<cv::Point2f> & points, cv::Point3f & at, cv::Point3f & from );
 
     std::vector<cv::Point2f> & pointHistXy( int row, int col );

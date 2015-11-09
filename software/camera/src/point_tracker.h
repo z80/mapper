@@ -48,6 +48,7 @@ private:
     cv::Mat  flow;
 
     cv::Size imageSz;
+    int      minHistSz;
 
     std::map< int, std::vector<cv::Point2f> > pointHist,
                                               pointHistNew;

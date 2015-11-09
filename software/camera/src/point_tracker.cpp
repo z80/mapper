@@ -10,6 +10,7 @@
 PointTracker::PointTracker()
 {
     imageSz = cv::Size( 160, 120 );
+    minHistSz = 5;
 }
 
 PointTracker::~PointTracker()
@@ -55,6 +56,8 @@ void PointTracker::prepareImage( const cv::Mat & frame )
 {
     cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
     //cv::resize( gray, gray, imageSz );
+    // instead adjust image size
+    imageSz = cv::Size( gray.cols, gray.rows );
 }
 
 void PointTracker::calcOpticalFlow()
@@ -77,15 +80,15 @@ void PointTracker::countOpticalFlow( bool force )
             int index = i + imageSz.width * i;
             cv::Point2f dr = flow.at<cv::Point2f>(i, j);
 
-            std::vector<cv::Point2f> & points = pointHistXy( j, i );
+            std::vector<cv::Point2f> & points = pointHistXy( i, j );
             // Determine if there was a movement.
             // Or if I force calculation :)
-            if ( ( (fabs(dr.x) < 1.0) && fabs(dr.y) < 1.0 ) ||
+            if ( ( (fabs(dr.x) < 0.5) && fabs(dr.y) < 0.5 ) ||
                  ( force ) )
             {
                 // No movement. Triangulate if there are at least two points in history.
                 // Otherwise it obviously doesn't make sense.
-                if ( points.size() > 1 )
+                if ( points.size() >= minHistSz )
                 {
                     cv::Point3f at, from;
                     calc3dPoint( points, at, from );
@@ -98,7 +101,7 @@ void PointTracker::countOpticalFlow( bool force )
                 cv::Point2f at = cv::Point2f( static_cast<float>( j ), static_cast<float>( i ) );
                 points.push_back( at );
                 // Put it to a new array
-                pushPointHistXy( j, i, points );
+                pushPointHistXy( i, j, points );
             }
             else
             {
@@ -120,6 +123,8 @@ void PointTracker::countOpticalFlow( bool force )
             }
         }
     }
+
+    pointHist = pointHistNew;
 
     // Trim world history.
     int ptSz = longestPointHist();

@@ -1,4 +1,5 @@
 <<<<<<< HEAD:android/camera2basic/.idea/libraries/support_v4_23_0_0.xml
+<<<<<<< HEAD:android/camera2basic/.idea/libraries/support_v4_23_0_0.xml
 <component name="libraryTable">
   <library name="support-v4-23.0.0">
     <ANNOTATIONS>
@@ -15,6 +16,8 @@
     </SOURCES>
   </library>
 =======
+=======
+>>>>>>> 42f4075400761e03a06ea6af811a43ce8b601442:android/Camera2Basic/.idea/libraries/support_v4_23_0_0.xml
 <component name="libraryTable">
   <library name="support-v4-23.0.0">
     <ANNOTATIONS>
@@ -30,5 +33,8 @@
       <root url="jar://$USER_HOME$/Android/Sdk/extras/android/m2repository/com/android/support/support-v4/23.0.0/support-v4-23.0.0-sources.jar!/" />
     </SOURCES>
   </library>
+<<<<<<< HEAD:android/camera2basic/.idea/libraries/support_v4_23_0_0.xml
+>>>>>>> 42f4075400761e03a06ea6af811a43ce8b601442:android/Camera2Basic/.idea/libraries/support_v4_23_0_0.xml
+=======
 >>>>>>> 42f4075400761e03a06ea6af811a43ce8b601442:android/Camera2Basic/.idea/libraries/support_v4_23_0_0.xml
 </component>

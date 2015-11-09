@@ -45,7 +45,7 @@ int main(int, char**)
     {
         cap >> frame;
         cvtColor(frame, gray, COLOR_BGR2GRAY);
-        cv::resize( gray, gray, cv::Size( 160, 120 ) );
+        cv::resize( gray, gray, cv::Size( 320, 240 ) );
 
         if( !prevgray.empty() )
         {
@@ -55,7 +55,7 @@ int main(int, char**)
             drawOptFlowMap(flow, cflow, 16, 1.5, Scalar(0, 255, 0));
             imshow("flow", cflow);
         }
-        if(waitKey(30)>=0)
+        if(waitKey(200)>=0)
             break;
         std::swap(prevgray, gray);
     }

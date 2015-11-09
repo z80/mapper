@@ -23,7 +23,7 @@ bool PointsFile::write( const std::vector<cv::Point3f> & ats, const std::vector<
     {
         const cv::Point3f & at = ats[i];
         const cv::Point3f & from = froms[i];
-        out << at.x << ", " << at.y << ", " << at.z << ", " << from.x << ", " << from.y << ", " << from.z << std::endl;
+        out << at.x << "; " << at.y << "; " << at.z << "; " << from.x << "; " << from.y << "; " << from.z << std::endl;
     }
     out.close();
     return true;

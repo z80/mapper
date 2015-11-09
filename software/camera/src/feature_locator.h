@@ -76,7 +76,7 @@ public:
     FeatureLocator();
     ~FeatureLocator();
 
-    void setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs );
+    void setCameraMatrix( const cv::Mat & projMatrix );
 
     bool processFrame( const cv::Mat & img, cv::Mat & camToWorld );
 
@@ -84,7 +84,7 @@ public:
     int  trackedCnt() const;
     int  triangulatedCnt() const;
 
-    bool triangulatePoints();
+    bool triangulatePoints( bool triangulateAll = false );
     bool calcCameraPosition();
 
     void resetTracking();
@@ -124,7 +124,6 @@ private:
 
     // To just hold current values.
     cv::Mat                                projMatrix;
-    cv::Mat                                distCoefs;
     cv::Mat                                camToWorld;
     std::vector<cv::KeyPoint>              keypoints,
                                            keypointsPrev;

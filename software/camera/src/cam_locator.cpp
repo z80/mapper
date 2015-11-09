@@ -17,7 +17,6 @@ public:
     cv::Mat gray;
     cv::Mat camTrans, camRot;
     cv::Mat cameraMatrix;
-    cv::Mat distCoeffs;
 
     bool debug;
 };
@@ -58,10 +57,9 @@ CamLocator::~CamLocator()
     delete pd;
 }
 
-void CamLocator::setCamera( const cv::Mat & cameraMatrix, const cv::Mat & distCoefs )
+void CamLocator::setCamera( const cv::Mat & cameraMatrix )
 {
     pd->cameraMatrix = cameraMatrix;
-    pd->distCoeffs   = distCoefs;
 }
 
 bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
@@ -123,9 +121,13 @@ bool CamLocator::findChessboard( const cv::Mat & mat, cv::Mat & camToWorld4x4 )
                                             useExtrinsicGuess, CV_ITERATIVE );
             */
 
-            correspondence = cv::solvePnPRansac( cv::Mat(pd->corners3d), cv::Mat(pd->corners2d), pd->cameraMatrix, pd->distCoeffs,
-                                            rvec, tvec,
-                                            useExtrinsicGuess, CV_ITERATIVE );
+            correspondence = cv::solvePnPRansac( cv::Mat(pd->corners3d),
+                                                 cv::Mat(pd->corners2d),
+                                                 pd->cameraMatrix,
+                                                 cv::Mat(),
+                                                 rvec, tvec,
+                                                 useExtrinsicGuess,
+                                                 CV_ITERATIVE );
             //std::cout << "after: ";
             //std::cout << "r0: " << rvec.at<double>( 0 ) << " ";
             //std::cout << "r1: " << rvec.at<double>( 1 ) << " ";

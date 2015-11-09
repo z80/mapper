@@ -10,6 +10,7 @@
 PointTracker::PointTracker()
 {
     imageSz = cv::Size( 160, 120 );
+    minHistSz = 5;
 }
 
 PointTracker::~PointTracker()
@@ -17,10 +18,9 @@ PointTracker::~PointTracker()
 
 }
 
-void PointTracker::setCameraMatrix( const cv::Mat & projMatrix, const cv::Mat & distCoefs )
+void PointTracker::setCameraMatrix( const cv::Mat & projMatrix )
 {
     this->projMatrix = projMatrix.clone();
-    this->distCoefs  = distCoefs.clone();
 }
 
 void PointTracker::process( const cv::Mat & frame, const cv::Mat & worldM )
@@ -41,6 +41,11 @@ bool PointTracker::writePoints( const std::string & fname )
     return res;
 }
 
+void PointTracker::finish()
+{
+    countOpticalFlow( true );
+}
+
 void PointTracker::clear()
 {
     points3d.clear();
@@ -50,20 +55,22 @@ void PointTracker::clear()
 void PointTracker::prepareImage( const cv::Mat & frame )
 {
     cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-    cv::resize( gray, gray, imageSz );
+    //cv::resize( gray, gray, imageSz );
+    // instead adjust image size
+    imageSz = cv::Size( gray.cols, gray.rows );
 }
 
 void PointTracker::calcOpticalFlow()
 {
     if( !grayPrev.empty() )
     {
-        cv::calcOpticalFlowFarneback( grayPrev, gray, uflow, 0.5, 6, 30, 3, 5, 1.2, 0 );
+        cv::calcOpticalFlowFarneback( grayPrev, gray, uflow, 0.5, 3, 15, 3, 5, 1.2, 0 );
         uflow.copyTo( flow );
     }
     grayPrev = gray.clone();
 }
 
-void PointTracker::countOpticalFlow()
+void PointTracker::countOpticalFlow( bool force )
 {
     pointHistNew.clear();
     for ( int i=0; i<imageSz.height; i++ )
@@ -73,13 +80,15 @@ void PointTracker::countOpticalFlow()
             int index = i + imageSz.width * i;
             cv::Point2f dr = flow.at<cv::Point2f>(i, j);
 
-            std::vector<cv::Point2f> & points = pointHistXy( j, i );
+            std::vector<cv::Point2f> & points = pointHistXy( i, j );
             // Determine if there was a movement.
-            if ( (fabs(dr.x) < 1.0) && fabs(dr.y) < 1.0 )
+            // Or if I force calculation :)
+            if ( ( (fabs(dr.x) < 0.5) && fabs(dr.y) < 0.5 ) ||
+                 ( force ) )
             {
                 // No movement. Triangulate if there are at least two points in history.
                 // Otherwise it obviously doesn't make sense.
-                if ( points.size() > 5 )
+                if ( points.size() >= minHistSz )
                 {
                     cv::Point3f at, from;
                     calc3dPoint( points, at, from );
@@ -92,13 +101,19 @@ void PointTracker::countOpticalFlow()
                 cv::Point2f at = cv::Point2f( static_cast<float>( j ), static_cast<float>( i ) );
                 points.push_back( at );
                 // Put it to a new array
-                pushPointHistXy( j, i, points );
+                pushPointHistXy( i, j, points );
             }
             else
             {
                 // Movement exists.
                 // Push current position plus displacement.
-                cv::Point2f at = cv::Point2f( static_cast<float>( j ) + dr.x, static_cast<float>( i ) + dr.y );
+                cv::Point2f at;
+                if ( points.size() > 0 )
+                    at = points[ points.size()-1 ];
+                else
+                    at = cv::Point2f( static_cast<float>( j ), static_cast<float>( i ) );
+
+                at = cv::Point2f( at.x + dr.x, at.y + dr.y );
                 points.push_back( at );
                 // Put it to a new array
                 int col = cvRound( at.x );
@@ -108,6 +123,8 @@ void PointTracker::countOpticalFlow()
             }
         }
     }
+
+    pointHist = pointHistNew;
 
     // Trim world history.
     int ptSz = longestPointHist();
@@ -143,11 +160,11 @@ void PointTracker::calc3dPoint( std::vector<cv::Point2f> & points,
     {
         int worldIndex = worldSz - sz + i;
         const cv::Mat wrld = worldHist[ worldIndex ].clone();
-        cv::Point2f at = points[i];
+        cv::Point2f pt = points[i];
 
         cv::Mat m( 4, 1, CV_64FC1 );
-        double x = (static_cast<double>( at.x ) - cx) / fx;
-        double y = (static_cast<double>( at.y ) - cy) / fy;
+        double x = (static_cast<double>( pt.x ) - cx) / fx;
+        double y = (static_cast<double>( pt.y ) - cy) / fy;
         double z = 1.0;
         double l = sqrt( x*x + y*y + z*z );
         x /= l;
@@ -215,7 +232,8 @@ std::vector<cv::Point2f> & PointTracker::pointHistXy( int row, int col )
     if ( at != pointHist.end() )
         return at->second;
 
-    pointHist.insert( std::pair< int, std::vector<cv::Point2f> >( index, std::vector<cv::Point2f>() ) );
+    //pointHist.insert( std::pair< int, std::vector<cv::Point2f> >( index, std::vector<cv::Point2f>() ) );
+    pointHist[ index ] = std::vector<cv::Point2f>();
     std::vector<cv::Point2f> & points = pointHist[ index ];
     return points;
 }
@@ -223,7 +241,8 @@ std::vector<cv::Point2f> & PointTracker::pointHistXy( int row, int col )
 void PointTracker::pushPointHistXy( int row, int col, std::vector<cv::Point2f> & points )
 {
     int index = imageSz.width * col + row;
-    pointHistNew.insert( std::pair< int, std::vector<cv::Point2f> >( index, points ) );
+    //pointHistNew.insert( std::pair< int, std::vector<cv::Point2f> >( index, points ) );
+    pointHistNew[ index ] = points;
 }
 
 int PointTracker::longestPointHist() const

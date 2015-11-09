@@ -6,6 +6,8 @@
       <root url="file://$PROJECT_DIR$/Application/build/intermediates/exploded-aar/com.android.support/support-v13/23.0.0/res" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://C:/Programs/Android/android-sdk/extras/android/m2repository/com/android/support/support-v13/23.0.0/support-v13-23.0.0-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

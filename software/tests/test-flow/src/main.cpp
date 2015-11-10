@@ -15,7 +15,7 @@
 
 void drawText( cv::Mat & image, const std::string & stri, int line=0 );
 void initPoints( cv::Size sz );
-void appPoint( int row, int col, cv::Point2f displacement );
+void appPoint( cv::Size sz, int row, int col, cv::Point2f displacement );
 void framePoints();
 
 int main()
@@ -142,6 +142,8 @@ void drawText( cv::Mat & image, const std::string & stri, int line )
 
 
 std::map< int, std::vector<cv::Point2f> > frames;
+std::map< int, std::vector<cv::Point2f> > framesStopped;
+std::map< int, std::vector<cv::Point2f> > framesNew;
 void initPoints( cv::Size sz )
 {
     for ( int col=0; col<sz.width; col++ )
@@ -158,12 +160,34 @@ void initPoints( cv::Size sz )
 }
 
 
-void appPoint( int row, int col, cv::Point2f displacement )
+void appPoint( cv::Size sz, int row, int col, cv::Point2f displacement )
 {
+    int index = row * sz.width + col;
+    double x = static_cast<double>(col) + displacement.x;
+    double y = static_cast<double>(row) + displacement.y;
+    int newIndex = cvRound( y ) * sz.width + cvRound( x );
+    std::map< int, std::vector<cv::Point2f> >::iterator it = frames.find( index );
+    cv::Point2f pt = cv::Point2f( static_cast<float>(col) + displacement.x, static_cast<float>(row) + displacement.y );
+    if ( it != frames.end() )
+    {
+        if ( ( dabs( displacement.x ) >= 0.5 ) && 
+             ( dabs( displacement.y ) >= 0.5 ) )
+        {
+            std::vector<cv::Point2f> & pts = frames[index];
+            pts.push_back( pt );
+            framesNew[ newIndex ] = pts;
+        }
+        else
+        {
+            int origIndex = .....;
+            framesDone[ origIndex ] = .....;
+        }
+    }
 }
 
 void framePoints()
 {
+    frames = framesNew;
 }
 
 

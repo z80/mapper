@@ -10,6 +10,7 @@
 #include "opencv2/videoio/videoio.hpp"
 
 #include <iostream>
+#include <map>
 
 
 void drawText( cv::Mat & image, const std::string & stri, int line=0 );
@@ -139,6 +140,31 @@ void drawText( cv::Mat & image, const std::string & stri, int line )
              1, cv::LINE_AA); // line thickness and type
 }
 
+
+std::map< int, std::vector<cv::Point2f> > frames;
+void initPoints( cv::Size sz )
+{
+    for ( int col=0; col<sz.width; col++ )
+    {
+        for ( int row=0; row<sz.height; row++ )
+        {
+            cv::Point2f pt = cv::Point2f( static_cast<float>(col), static_cast<float>(row) );
+            int index = row * sz.width + col;
+            std::vector<cv::Point2f> pts;
+            pts.push_back( pt );
+            frames[index] = pts;
+        }
+    }
+}
+
+
+void appPoint( int row, int col, cv::Point2f displacement )
+{
+}
+
+void framePoints()
+{
+}
 
 
 

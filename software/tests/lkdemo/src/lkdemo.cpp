@@ -43,7 +43,7 @@ int main( int argc, char** argv )
     TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
     Size subPixWinSize(10,10), winSize(31,31);
 
-    const int MAX_COUNT = 500;
+    const int MAX_COUNT = 5000;
     bool needToInit = false;
     bool nightMode = false;
 
@@ -78,7 +78,7 @@ int main( int argc, char** argv )
 
         if( needToInit )
         {
-            // automatic initialization
+            // automatic inineedToInittialization
             goodFeaturesToTrack(gray, points[1], MAX_COUNT, 0.01, 10, Mat(), 9, 0, 0.04);
             cornerSubPix(gray, points[1], subPixWinSize, Size(-1,-1), termcrit);
             addRemovePt = false;

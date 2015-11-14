@@ -63,13 +63,16 @@ FeatureLocator::FeatureLocator()
     //cv::Ptr<cv::ORB> orb = cv::ORB::create();
     //orb->setMaxFeatures( /*stats.keypoints*/ 1024 );
 
-    cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
-    akaze->setThreshold(akaze_thresh);
+    //cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+    //akaze->setThreshold(akaze_thresh);
+
+    cv::Ptr<cv::MSER> detector = cv::MSER::create();
+
     cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create( "BruteForce-Hamming" );
     //cv::Ptr<cv::DescriptorMatcher> matcher = cv::makePtr<cv::BFMatcher>((int)cv::NORM_HAMMING, false);
 
-    //this->detector = orb;
-    this->detector = akaze;
+    this->detector = detector;
+    //this->detector = akaze;
     this->matcher  = matcher;
 
     imageSz        = cv::Size( 640, 480 );

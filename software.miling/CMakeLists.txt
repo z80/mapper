@@ -1,5 +1,5 @@
 
-project( mapper )
+project( camlocator )
 cmake_minimum_required(VERSION 2.8)
 
 set( ROOT ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -26,7 +26,7 @@ ocv_clear_vars(OpenCVModules_TARGETS)
 add_subdirectory( "./calibration" )
 add_subdirectory( "./camera" )
 add_subdirectory( "./tests" )
-add_subdirectory( "./ssmaker" )
-add_subdirectory( "./sscomposer" )
+#add_subdirectory( "./ssmaker" )
+#add_subdirectory( "./sscomposer" )
 
 

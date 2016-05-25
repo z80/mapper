@@ -32,6 +32,8 @@ int eps       = 5;
 int threshholdWindowSz = 3;
 
 const double EDGE_SIZE = 10.0;
+cv::Mat      perspectiveCumulative;
+int          perspectiveQty;
 
 int main(int argc, const char ** argv)
 {
@@ -43,6 +45,25 @@ int main(int argc, const char ** argv)
         return 1;
     }
 
+    // Locad calibrated camera parameters.
+    FileStorage fs( "./data/out_camera_data.xml", FileStorage::READ); // Read the settings
+    if (!fs.isOpened())
+    {
+          cout << "Could not open the configuration file" << endl;
+          return -1;
+    }
+
+    cv::Mat  = Mat::eye(3, 3, CV_64F);
+    cv::Mat  = Mat::zeros(5, 1, CV_64F);
+
+    fs[ "camera_matrix" ] >> cameraMatrix;
+    fs[ "distortion_coefficients" ] >> distCoeffs;
+    fs.release();
+
+    perspectiveCumulative = cv::CALIB_ZERO_DISPARITY( 3, 3, CV_64F );
+    perspectiveQty        = 0;
+
+
     namedWindow( "src", CV_WINDOW_AUTOSIZE );
     createTrackbar( "Blur value:",        "src", &blurValue,          max_thresh, 0 );
     createTrackbar( "Treshold from:",     "src", &thresholdValue,     max_thresh,    0 );
@@ -52,6 +73,9 @@ int main(int argc, const char ** argv)
     while ( true )
     {
         inputCapture >> img;
+        Mat undistorted = img.clone();
+        undistort( img, undistorted, cameraMatrix, distCoeffs );
+        img = undistorted.clone();
         
         gray.create( img.rows, img.cols, CV_8UC1 );
         blurred.create( img.rows, img.cols, CV_8UC1 );
@@ -77,6 +101,16 @@ int main(int argc, const char ** argv)
         int res = 0;
         if ( waitKey( 200 ) == 'q' )
             break;
+        // Saving perspective transform into a file.
+        FileStorage fs( "./perspective.xml", FileStorage::WRITE ); // Read the settings
+        if (!fs.isOpened())
+        {
+              cout << "Could not open the configuration file" << endl;
+              return -1;
+        }
+        fs << "perspective" << perspectiveCumulative / static_cast<double>( perspectiveQty );
+        fs.release();
+
     }
     inputCapture.release();
 
@@ -197,6 +231,9 @@ void thresh_callback(int, void* )
 
         namedWindow( "Result", CV_WINDOW_NORMAL /*CV_WINDOW_AUTOSIZE*/ );
         imshow( "Result", rotated );
+
+        perspectiveCumulative += warpPerspectiveMatrix;
+        perspectiveQty        += 1;
     }
     /// Show in a window
     //namedWindow( "Contours", CV_WINDOW_NORMAL /*CV_WINDOW_AUTOSIZE*/ );

@@ -46,7 +46,7 @@ int main(int argc, const char ** argv)
     }
 
     // Locad calibrated camera parameters.
-    FileStorage fs( "./data/out_camera_data.xml", FileStorage::READ); // Read the settings
+    FileStorage fs( "./data/out_camera_data.xml", FileStorage::READ ); // Read the settings
     if (!fs.isOpened())
     {
           cout << "Could not open the configuration file" << endl;
@@ -60,8 +60,19 @@ int main(int argc, const char ** argv)
     fs[ "distortion_coefficients" ] >> distCoeffs;
     fs.release();
 
-    perspectiveCumulative = Mat::zeros( 3, 3, CV_64F );
-    perspectiveQty        = 0;
+
+    FileStorage fs( "./perspective.xml", FileStorage::READ ); // Read the settings
+    if (!fs.isOpened())
+    {
+          cout << "Could not open the configuration file" << endl;
+          return -1;
+    }
+    cv::Mat perspective;
+    fs[ "perspective" ] >> perspective;
+    fs.release();
+
+
+
 
 
     namedWindow( "src", CV_WINDOW_AUTOSIZE );

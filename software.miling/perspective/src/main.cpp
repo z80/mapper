@@ -20,11 +20,15 @@ void thresh_callback(int, void* );
 Mat img, gray;
 
 const double EDGE_SIZE = 1.0;
-cv::Mat      A;
+cv::Mat A, accumA, meanA;
+int     accumCnt = 0;
+bool    displayBoard = true;
+
 
 void drawCorners( cv::Mat & img, std::vector<cv::Point2f> & pts );
 void drawMatrix( cv::Mat & img );
 void calcProj( std::vector<cv::Point2f> & pts );
+void displayA( cv::Mat & img );
 
 int main(int argc, const char ** argv)
 {
@@ -51,6 +55,9 @@ int main(int argc, const char ** argv)
     fs[ "distortion_coefficients" ] >> distCoeffs;
     fs.release();
 
+    accumA = cv::Mat::zeros(8, 1, CV_64F);
+    accumCnt = 0;
+
     while ( true )
     {
         inputCapture >> img;
@@ -61,19 +68,31 @@ int main(int argc, const char ** argv)
         thresh_callback( 0, 0 );
 
         int res = 0;
-        if ( waitKey( 200 ) == 'q' )
+        if ( res = waitKey( 200 ) )
         {
-            // Saving perspective transform into a file.
-            FileStorage fs( "./perspective.xml", FileStorage::WRITE ); // Read the settings
-            if (!fs.isOpened())
+            if ( res == 'q' )
             {
-                  cout << "Could not open the configuration file" << endl;
-                  return -1;
+                // Saving perspective transform into a file.
+                FileStorage fs( "./perspective.xml", FileStorage::WRITE ); // Read the settings
+                if (!fs.isOpened())
+                {
+                      cout << "Could not open the configuration file" << endl;
+                      return -1;
+                }
+                fs << "perspective" << A;
+                fs.release();
+                // Exit loop.
+                break;
             }
-            fs << "perspective" << A;
-            fs.release();
-            // Exit loop.
-            break;
+            else if ( res == 'd' )
+            {
+                displayBoard = !displayBoard;
+            }
+            else if ( res == 'r' )
+            {
+                accumA = cv::Mat::zeros(8, 1, CV_64F);
+                accumCnt = 0;
+            }
         }
     }
     inputCapture.release();
@@ -104,12 +123,9 @@ void thresh_callback(int, void* )
             std::cout << e.what() << std::endl;
         }
 
-        drawCorners( img, corners2d );
         calcProj( corners2d );
-        //cv::circle( img, pt, 5, cv::Scalar( 200., 0., 0., 0.2 ) );
-        //cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
-
-
+        drawCorners( img, corners2d );
+        displayA( img );
     }
     /// Show in a window
     //namedWindow( "Contours", CV_WINDOW_NORMAL /*CV_WINDOW_AUTOSIZE*/ );
@@ -126,7 +142,8 @@ void drawCorners( cv::Mat & img, std::vector<cv::Point2f> & pts )
         cv::circle( img, pt, 5, cv::Scalar( 200., 0., 0., 0.2 ) );
         if ( first )
             first = false;
-        cv::line( img, ptPrev, pt, cv::Scalar( 0., 0., 100., 0.2 ), 2  );
+        else
+            cv::line( img, ptPrev, pt, cv::Scalar( 0., 0., 100., 0.2 ), 2  );
         ptPrev = pt;
     }
 }
@@ -177,6 +194,26 @@ void calcProj( std::vector<cv::Point2f> & pts )
     cv::Mat XtY = trX * Y;
     cv::Mat A = XtX * XtY;
     ::A = A.clone();
+
+    accumCnt += 1;
+    accumA   += A;
+    meanA    = accumA.mul( 1.0/static_cast<double>(accumCnt) );
+}
+
+void displayA( cv::Mat & img )
+{
+    //std::ostringstream os;
+    char stri[128];
+    const Scalar GREEN(0, 100, 0);
+    cv::Mat & A = meanA;
+    sprintf( stri, "%5.2f, %5.2f, %5.2f", A.at<double>(0, 0), A.at<double>(1, 0), A.at<double>(2, 0) );
+    cv::putText( img, stri, cv::Point( 10, 10 ), 1, 1, GREEN );
+    sprintf( stri, "%5.2f, %5.2f, %5.2f", A.at<double>(3, 0), A.at<double>(4, 0), A.at<double>(5, 0) );
+    cv::putText( img, stri, cv::Point( 10, 30 ), 1, 1, GREEN );
+    sprintf( stri, "%5.2f, %5.2f, 1.000", A.at<double>(6, 0), A.at<double>(7, 0) );
+    cv::putText( img, stri, cv::Point( 10, 50 ), 1, 1, GREEN );
+    sprintf( stri, "cnt = %5i", accumCnt );
+    cv::putText( img, stri, cv::Point( 10, 70 ), 1, 1, GREEN );
 }
 
 

@@ -61,15 +61,15 @@ int main(int argc, const char ** argv)
     fs.release();
 
 
-    FileStorage fs( "./perspective.xml", FileStorage::READ ); // Read the settings
-    if (!fs.isOpened())
+    FileStorage fsP( "./perspective.xml", FileStorage::READ ); // Read the settings
+    if (!fsP.isOpened())
     {
           cout << "Could not open the configuration file" << endl;
           return -1;
     }
     cv::Mat perspective;
-    fs[ "perspective" ] >> perspective;
-    fs.release();
+    fsP[ "perspective" ] >> perspective;
+    fsP.release();
 
 
 

@@ -17,28 +17,19 @@ using namespace std;
 
 void thresh_callback(int, void* );
 
-int thresh = 184;
-int max_thresh = 255;
-RNG rng(12345);
-
 Mat img, gray;
-Mat blurred;
-Mat toProcess;
-int thresholdValue = 192;
-int cutoffTo   = 255;
 
-int blurValue = 10;
-int eps       = 5;
-int threshholdWindowSz = 3;
+const double EDGE_SIZE = 1.0;
+cv::Mat      A;
 
-const double EDGE_SIZE = 10.0;
-cv::Mat      perspectiveCumulative;
-int          perspectiveQty;
+void drawCorners( cv::Mat & img, std::vector<cv::Point2f> & pts );
+void drawMatrix( cv::Mat & img );
+void calcProj( std::vector<cv::Point2f> & pts );
 
 int main(int argc, const char ** argv)
 {
     VideoCapture inputCapture;
-    inputCapture.open( 0 );
+    inputCapture.open( 1 );
     if ( !inputCapture.isOpened() )
     {
         cout << "Failed to open camera!";
@@ -60,57 +51,30 @@ int main(int argc, const char ** argv)
     fs[ "distortion_coefficients" ] >> distCoeffs;
     fs.release();
 
-    perspectiveCumulative = Mat::zeros( 3, 3, CV_64F );
-    perspectiveQty        = 0;
-
-
-    namedWindow( "src", CV_WINDOW_AUTOSIZE );
-    createTrackbar( "Blur value:",        "src", &blurValue,          max_thresh, 0 );
-    createTrackbar( "Treshold from:",     "src", &thresholdValue,     max_thresh,    0 );
-    createTrackbar( "Treshold wnd size:", "src", &threshholdWindowSz, 300, 0 );
-    createTrackbar( "Contour epsilon:",   "src", &eps,                100, 0 );
-
     while ( true )
     {
         inputCapture >> img;
         Mat undistorted = img.clone();
-        undistort( img, undistorted, cameraMatrix, distCoeffs );
+        //undistort( undistorted, undistorted, cameraMatrix, distCoeffs );
         img = undistorted.clone();
         
-        gray.create( img.rows, img.cols, CV_8UC1 );
-        blurred.create( img.rows, img.cols, CV_8UC1 );
-
-        cvtColor( img, gray, CV_RGB2GRAY );
-        
-        if ( blurValue > 0 )
-            blur( gray, blurred, Size( blurValue, blurValue ) );
-        else
-            blurred = gray;
-        
-        threshold( blurred, toProcess, thresholdValue, cutoffTo, THRESH_BINARY );
-        //if ( threshholdWindowSz < 1 )
-        //    threshholdWindowSz = 1;
-        //adaptiveThreshold( blurred, toProcess, thresholdValue,
-        //                   ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY,
-        //                   threshholdWindowSz*2+1, 0.0 );
-
         thresh_callback( 0, 0 );
 
-        imshow( "src", img );
-        imshow( "For processing", toProcess );
         int res = 0;
         if ( waitKey( 200 ) == 'q' )
-            break;
-        // Saving perspective transform into a file.
-        FileStorage fs( "./perspective.xml", FileStorage::WRITE ); // Read the settings
-        if (!fs.isOpened())
         {
-              cout << "Could not open the configuration file" << endl;
-              return -1;
+            // Saving perspective transform into a file.
+            FileStorage fs( "./perspective.xml", FileStorage::WRITE ); // Read the settings
+            if (!fs.isOpened())
+            {
+                  cout << "Could not open the configuration file" << endl;
+                  return -1;
+            }
+            fs << "perspective" << A;
+            fs.release();
+            // Exit loop.
+            break;
         }
-        fs << "perspective" << perspectiveCumulative / static_cast<double>( perspectiveQty );
-        fs.release();
-
     }
     inputCapture.release();
 
@@ -119,127 +83,101 @@ int main(int argc, const char ** argv)
 
 void thresh_callback(int, void* )
 {
-    Mat canny_output;
-    vector<vector<Point> > contours;
-    vector<Vec4i> hierarchy;
+    cv::cvtColor( img, gray, CV_BGR2GRAY );
+    cv::Size sz = cv::Size( 7, 7 );
+    std::vector<cv::Point2f> corners2d;
 
-    /// Detect edges using canny
-    //Canny( blurred, canny_output, thresh, thresh*2, 3 );
-    // Dilate helps to remove potential holes between edge segments
-    //dilate( canny_output, canny_output, Mat(), Point(-1,-1) );
-    /// Find contours
-    //findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-    Mat cont = toProcess.clone();
-    MatSize sz = toProcess.size;
-    findContours( cont, contours, hierarchy, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    bool patternfound = cv::findChessboardCorners(  gray, sz, corners2d,
+                                                    cv::CALIB_CB_ADAPTIVE_THRESH +
+                                                    cv::CALIB_CB_NORMALIZE_IMAGE +
+                                                    cv::CALIB_CB_FAST_CHECK );
 
-    const double minArea = 1000.0;
-    double maxArea = minArea;
-    int maxIndex = -1;
-    std::vector<cv::Point> square;
-    for ( unsigned i=0; i<contours.size(); i++ )
+    if ( patternfound )
     {
-        std::vector<cv::Point> approx;
-        Mat v = Mat( contours[i] );
-        double e = static_cast<double>(eps) * 0.01;
-        cv::approxPolyDP( v, approx,
-                          arcLength( v, true )*e, true );
-        if ( ( approx.size() == 4 ) )
-        {
-            double area = contourArea( v, false );
-            if ( area > maxArea )
-            {
-                maxArea  = area;
-                maxIndex = i;
-                square   = approx;
-            }
+        try {
+
+            cv::cornerSubPix( gray, corners2d, cv::Size(11, 11), cv::Size(-1, -1),
+                              cv::TermCriteria( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1 ) );
         }
-    }
-
-    /// Draw contours
-    //Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
-    //Mat drawing = Mat::zeros( blurred.size(), CV_8UC3 );
-    for( int i = 0; i<contours.size(); i++ )
-    {
-        Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-        //drawContours( drawing, contours, i, color, 1, 8, hierarchy, 0, Point() );
-        drawContours( img, contours, i, color, 1, 8, hierarchy, 0, Point() );
-    }
-
-    if ( square.size() > 3 )
-    {
-        Point pt;
-        // Sort elements in decending Y direction.
-        for ( unsigned i=0; i<3; i++ )
+        catch ( cv::Exception & e )
         {
-            for ( unsigned j=i+1; j<4; j++ )
-            {
-                if (square[i].y > square[j].y)
-                {
-                    pt = square[i];
-                    square[i] = square[j];
-                    square[j] = pt;
-                }
-            }
-        }
-        // Sort first two in X accending.
-        if ( square[0].x > square[1].x )
-        {
-            pt = square[0];
-            square[0] = square[1];
-            square[1] = pt;
-
-        }
-        // Sort last two in X decending.
-        if ( square[2].x < square[3].x )
-        {
-            pt = square[2];
-            square[2] = square[3];
-            square[3] = pt;
-
+            std::cout << e.what() << std::endl;
         }
 
-        //line( drawing, square[0], square[1], Scalar( 255, 0, 0 ), 3 );
-        //line( drawing, square[1], square[2], Scalar( 0, 255, 0 ), 3 );
-        //line( drawing, square[2], square[3], Scalar( 0, 0, 255 ), 3 );
-        //line( drawing, square[3], square[0], Scalar( 255, 0, 0 ), 3 );
-        line( img, square[0], square[1], Scalar( 255, 0, 0 ), 3 );
-        line( img, square[1], square[2], Scalar( 0, 255, 0 ), 3 );
-        line( img, square[2], square[3], Scalar( 0, 0, 255 ), 3 );
-        line( img, square[3], square[0], Scalar( 255, 0, 0 ), 3 );
+        drawCorners( img, corners2d );
+        calcProj( corners2d );
+        //cv::circle( img, pt, 5, cv::Scalar( 200., 0., 0., 0.2 ) );
+        //cv::line( preview, cv::Point( pt.x-sz, pt.y ), cv::Point( pt.x+sz, pt.y ), cv::Scalar( 200., 0., 0., 0.2 ), 2  );
 
-        RotatedRect box = minAreaRect( cv::Mat(square) );
 
-        cv::Point2f src_vertices[4];
-        src_vertices[0] = square[0];
-        src_vertices[1] = square[1];
-        src_vertices[2] = square[2];
-        src_vertices[3] = square[3];
-
-        Point2f dst_vertices[4];
-        dst_vertices[0] = Point( -EDGE_SIZE/2.0, EDGE_SIZE );
-        dst_vertices[1] = Point(  EDGE_SIZE/2.0, EDGE_SIZE );
-        dst_vertices[2] = Point( -EDGE_SIZE/2.0, 2.0*EDGE_SIZE );
-        dst_vertices[3] = Point(  EDGE_SIZE/2.0, 2.0*EDGE_SIZE );
-
-        //Mat warpAffineMatrix = getAffineTransform(src_vertices, dst_vertices);
-        Mat warpPerspectiveMatrix = getPerspectiveTransform( src_vertices, dst_vertices );
-        cv::Mat rotated;
-        cv::Size size( box.boundingRect().width, box.boundingRect().height );
-        //warpAffine( img, rotated, warpAffineMatrix, size, INTER_LINEAR, BORDER_CONSTANT);
-        warpPerspective( img, rotated, warpPerspectiveMatrix, size, INTER_LINEAR, BORDER_CONSTANT);
-
-        namedWindow( "Result", CV_WINDOW_NORMAL /*CV_WINDOW_AUTOSIZE*/ );
-        imshow( "Result", rotated );
-
-        perspectiveCumulative += warpPerspectiveMatrix;
-        perspectiveQty        += 1;
     }
     /// Show in a window
     //namedWindow( "Contours", CV_WINDOW_NORMAL /*CV_WINDOW_AUTOSIZE*/ );
-    //imshow( "Contours", drawing );
+    imshow( "img", img );
 }
 
+void drawCorners( cv::Mat & img, std::vector<cv::Point2f> & pts )
+{
+    bool first = true;
+    cv::Point2f ptPrev;
+    for ( std::vector<cv::Point2f>::const_iterator i=pts.begin(); i!=pts.end(); i++ )
+    {
+        const cv::Point2f & pt = *i;
+        cv::circle( img, pt, 5, cv::Scalar( 200., 0., 0., 0.2 ) );
+        if ( first )
+            first = false;
+        cv::line( img, ptPrev, pt, cv::Scalar( 0., 0., 100., 0.2 ), 2  );
+        ptPrev = pt;
+    }
+}
+
+void drawMatrix( cv::Mat & img )
+{
+
+}
+
+void calcProj( std::vector<cv::Point2f> & pts )
+{
+    cv::Size sz = cv::Size( 7, 7 );
+    cv::Mat X = Mat::eye(2*pts.size(), 8, CV_64F);
+    cv::Mat Y = Mat::eye(2*pts.size(), 1, CV_64F);
+    for ( int i=0; i<pts.size(); i++ )
+    {
+        cv::Point2f pt = pts.at( i );
+        Y.at<double>( 2*i,     0 ) = pt.x;
+        Y.at<double>( 2*i + 1, 0 ) = pt.y;
+        double x1, x2;
+        int row = i / sz.width;
+        int col = i - (sz.width * row);
+        x1 = static_cast<double>( col ) - static_cast<double>( sz.width )/2.0;
+        x1 *= EDGE_SIZE;
+        x2 = static_cast<double>( sz.height-1 + row );
+        x2 *= EDGE_SIZE;
+        X.at<double>( 2*i, 0 ) = x1;
+        X.at<double>( 2*i, 1 ) = x2;
+        X.at<double>( 2*i, 2 ) = 1.0;
+        X.at<double>( 2*i, 3 ) = 0.0;
+        X.at<double>( 2*i, 4 ) = 0.0;
+        X.at<double>( 2*i, 5 ) = 0.0;
+        X.at<double>( 2*i, 6 ) = -x1*pt.x;
+        X.at<double>( 2*i, 7 ) = -x2*pt.x;
+        X.at<double>( 2*i+1, 0 ) = 0.0;
+        X.at<double>( 2*i+1, 1 ) = 0.0;
+        X.at<double>( 2*i+1, 2 ) = 0.0;
+        X.at<double>( 2*i+1, 3 ) = x1;
+        X.at<double>( 2*i+1, 4 ) = x2;
+        X.at<double>( 2*i+1, 5 ) = 1.0;
+        X.at<double>( 2*i+1, 6 ) = -x1*pt.y;
+        X.at<double>( 2*i+1, 7 ) = -x2*pt.y;
+    }
+    cv::Mat trX = X.clone();
+    trX = trX.t();
+    cv::Mat XtX = trX * X;
+    XtX = XtX.inv();
+    cv::Mat XtY = trX * Y;
+    cv::Mat A = XtX * XtY;
+    ::A = A.clone();
+}
 
 
 

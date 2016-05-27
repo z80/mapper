@@ -20,7 +20,7 @@ public:
     void resetPosition();
 
     void startDrillPos();
-    void appendDrillPos( double & r[], double & n[] );
+    void appendDrillPos( double r[], double n[] );
     void endDrillPos();
 
     void startLinePos();

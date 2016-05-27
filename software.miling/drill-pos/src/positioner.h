@@ -20,14 +20,15 @@ public:
     void resetPosition();
 
     void startDrillPos();
-    void appendDrillPos( double r[], double n[] );
+    void appendDrillPos( cv::Point2d r, cv::Point2d n );
     void endDrillPos();
 
     void startLinePos();
     void appendLinePos();
     void endLinePos();
 
-private:
+// Just for nuw public.
+public:
     std::vector<cv::Point2d> knownPts;
     double a[9]; // Ref. frame transformation.
     double R[2]; // Drill position.

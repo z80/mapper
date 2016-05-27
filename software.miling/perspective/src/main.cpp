@@ -29,7 +29,7 @@ void calcProj( std::vector<cv::Point2f> & pts );
 int main(int argc, const char ** argv)
 {
     VideoCapture inputCapture;
-    inputCapture.open( 1 );
+    inputCapture.open( 0 );
     if ( !inputCapture.isOpened() )
     {
         cout << "Failed to open camera!";

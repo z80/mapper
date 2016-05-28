@@ -33,7 +33,7 @@ void displayA( cv::Mat & img );
 int main(int argc, const char ** argv)
 {
     VideoCapture inputCapture;
-    inputCapture.open( 0 );
+    inputCapture.open( 1 );
     if ( !inputCapture.isOpened() )
     {
         cout << "Failed to open camera!";
@@ -70,6 +70,10 @@ int main(int argc, const char ** argv)
         int res = 0;
         if ( res = waitKey( 200 ) )
         {
+            if ( res < 0 )
+                continue;
+            res &= 0xff;
+            std::cout << res << std::endl;
             if ( res == 'q' )
             {
                 // Exit loop.

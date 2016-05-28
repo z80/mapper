@@ -41,6 +41,20 @@ void Positioner::endLinePos()
 {
 }
 
+void Positioner::prepareImage()
+{
+
+}
+
+void Positioner::detectTriangles()
+{
+
+}
+
+void Positioner::matchPoints()
+{
+
+}
 
 
 

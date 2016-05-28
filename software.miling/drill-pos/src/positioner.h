@@ -27,7 +27,12 @@ public:
     void appendLinePos();
     void endLinePos();
 
-// Just for nuw public.
+
+    void prepareImage();
+    void detectTriangles();
+    void matchPoints();
+
+// Just for now public.
 public:
     std::vector<cv::Point2d> knownPts;
     double a[9]; // Ref. frame transformation.

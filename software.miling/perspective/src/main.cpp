@@ -72,6 +72,11 @@ int main(int argc, const char ** argv)
         {
             if ( res == 'q' )
             {
+                // Exit loop.
+                break;
+            }
+            else if ( res == 's' )
+            {
                 // Saving perspective transform into a file.
                 FileStorage fs( "./perspective.xml", FileStorage::WRITE ); // Read the settings
                 if (!fs.isOpened())
@@ -81,8 +86,6 @@ int main(int argc, const char ** argv)
                 }
                 fs << "perspective" << A;
                 fs.release();
-                // Exit loop.
-                break;
             }
             else if ( res == 'd' )
             {

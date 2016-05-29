@@ -38,6 +38,8 @@ public:
     double a[9]; // Ref. frame transformation.
     double R[2]; // Drill position.
     double d;    // Drill diameter.
+
+    static const bool DEBUG;
 };
 
 

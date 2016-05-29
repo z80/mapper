@@ -16,29 +16,61 @@ public:
     Positioner();
     ~Positioner();
 
+    void loadSettings();
+
     void frame( cv::Mat & img );
     void resetPosition();
 
+    // Determining drill shift vector by
+    // rotating around stationary drill.
+    // For example, drill may ne places into
+    // a tight hole.
     void startDrillPos();
-    void appendDrillPos( cv::Point2d r, cv::Point2d n );
+    void appendDrillPos();
     void endDrillPos();
 
+    // Calibrating positioner axes.
+    void startAxesPos();
+    void appendAxesPos( int stepsX, int stepsY );
+    void finishAxesPos();
+
+    // Align to sample.
     void startLinePos();
     void appendLinePos();
     void endLinePos();
 
 
-    void prepareImage();
-    void detectTriangles();
-    void matchPoints();
+    void matchSquares( std::vector<std::vector<cv::Point>> & squares );
+    void applyPerspective( std::vector<std::vector<cv::Point>> & squares );
+    void applyCamera();
+    void matchSquares( int knownInd,
+                       int foundInd,
+                       std::vector<cv::Point> & knownPts,
+                       std::vector<cv::Point> & foundPts,
+                       std::vector<int> & newRects );
 
 // Just for now public.
 public:
-    std::vector<cv::Point2d> knownPts;
-    double a[9]; // Ref. frame transformation.
-    double R[2]; // Drill position.
-    double d;    // Drill diameter.
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+    cv::Mat perspective;
 
+    cv::Mat img2Floor; // Image position matrix.
+    cv::Point2d R;     // Drill position in camera ref frame.
+    double r;          // Drill radius.
+
+    // Probably will determine a few more.
+    cv::Mat cam2Tool;
+    cv::Mat sample2Cam;
+    // As a result need sample to tool.
+    // Which is supposed to be
+    // ptOnTool = cam2Tool*A*( R + sample2Cam * ptOnSample ).
+
+    std::vector<std::vector<cv::Point2d>> knownSquares,      //
+                                          locatedSquaresFloor; // After A.
+    std::vector<std::vector<cv::Point2d>> locatedSquaresImg; // After perspective.
+
+    static const double SEARCH_RANGE;
     static const bool DEBUG;
 };
 

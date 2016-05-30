@@ -2,8 +2,8 @@
 #include "positioner.h"
 
 const bool Positioner::DEBUG = true;
-const double Positioner::SEARCH_RANGE = 1.5; // This is in centimeters.
-const double Positioner::ALPHA = 0.1;
+const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
+const double Positioner::ALPHA = 0.2;
 
 
 static double angle( cv::Point pt1, cv::Point pt2, cv::Point pt0 );
@@ -181,6 +181,7 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
         cv::Mat A = (XtX * XtY).t();
 
         // Limit transformation to shift and rotation only.
+        /*
         double a00 = A.at<double>(0, 0);
         double a01 = A.at<double>(0, 1);
         double a10 = A.at<double>(1, 0);
@@ -188,11 +189,15 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
 
         double b00 = (a00 + a11)/2.0;
         double b10 = (a10 - a01)/2.0;
+        double l = sqrt( b00*b00 + b10*b10 );
+        b00 /= l;
+        b10 /= l;
         
         A.at<double>(0, 0) = b00;
         A.at<double>(0, 1) = b10;
         A.at<double>(1, 0) = -b10;
         A.at<double>(1, 1) = b00;
+        */
 
         img2Floor = img2Floor*(1.0-ALPHA) + A * ALPHA;
     }
@@ -391,7 +396,7 @@ void Positioner::dbgDisplay( cv::Point imgSz )
 {
     if ( !DEBUG )
         return;
-    const int sz = 1024;
+    const int sz = 512;
     const double SCALE = 20.0;
     cv::Mat img = cv::Mat( sz, sz, CV_8UC3, cv::Scalar( 0, 0, 0 ) );
 

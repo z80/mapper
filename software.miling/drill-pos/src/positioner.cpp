@@ -406,10 +406,10 @@ void Positioner::dbgDisplay( cv::Point imgSz )
     int knownSz = static_cast<int>(knownSquares.size());
     for ( int i=0; i<knownSz; i++ )
     {
-        cv::Point2d pt0 = knownSquares[i][0] * SCALE + cv::Point2d( sz/2, sz/2 );
-        cv::Point2d pt1 = knownSquares[i][1] * SCALE + cv::Point2d( sz/2, sz/2 );
-        cv::Point2d pt2 = knownSquares[i][2] * SCALE + cv::Point2d( sz/2, sz/2 );
-        cv::Point2d pt3 = knownSquares[i][3] * SCALE + cv::Point2d( sz/2, sz/2 );
+        cv::Point2d pt0 = knownSquares[i][0] * SCALE + cv::Point2d( sz/2, sz/4 );
+        cv::Point2d pt1 = knownSquares[i][1] * SCALE + cv::Point2d( sz/2, sz/4 );
+        cv::Point2d pt2 = knownSquares[i][2] * SCALE + cv::Point2d( sz/2, sz/4 );
+        cv::Point2d pt3 = knownSquares[i][3] * SCALE + cv::Point2d( sz/2, sz/4 );
         cv::line( img, pt0, pt1, GREEN );
         cv::line( img, pt1, pt2, GREEN );
         cv::line( img, pt2, pt3, GREEN );
@@ -418,10 +418,10 @@ void Positioner::dbgDisplay( cv::Point imgSz )
     int foundSz = static_cast<int>(locatedSquaresFloor.size());
     for ( int i=0; i<foundSz; i++ )
     {
-        cv::Point2d pt0 = locatedSquaresFloor[i][0] * SCALE + cv::Point2d( sz/2, sz/2 );
-        cv::Point2d pt1 = locatedSquaresFloor[i][1] * SCALE + cv::Point2d( sz/2, sz/2 );
-        cv::Point2d pt2 = locatedSquaresFloor[i][2] * SCALE + cv::Point2d( sz/2, sz/2 );
-        cv::Point2d pt3 = locatedSquaresFloor[i][3] * SCALE + cv::Point2d( sz/2, sz/2 );
+        cv::Point2d pt0 = locatedSquaresFloor[i][0] * SCALE + cv::Point2d( sz/2, sz/4 );
+        cv::Point2d pt1 = locatedSquaresFloor[i][1] * SCALE + cv::Point2d( sz/2, sz/4 );
+        cv::Point2d pt2 = locatedSquaresFloor[i][2] * SCALE + cv::Point2d( sz/2, sz/4 );
+        cv::Point2d pt3 = locatedSquaresFloor[i][3] * SCALE + cv::Point2d( sz/2, sz/4 );
         cv::line( img, pt0, pt1, RED );
         cv::line( img, pt1, pt2, RED );
         cv::line( img, pt2, pt3, RED );
@@ -465,10 +465,10 @@ void Positioner::dbgDisplay( cv::Point imgSz )
             pt[i] = ptF;
     }
 
-    cv::Point2d pt0 = (pt[0] * SCALE) + cv::Point2d( sz/2, sz/2 );
-    cv::Point2d pt1 = (pt[1] * SCALE) + cv::Point2d( sz/2, sz/2 );
-    cv::Point2d pt2 = (pt[2] * SCALE) + cv::Point2d( sz/2, sz/2 );
-    cv::Point2d pt3 = (pt[3] * SCALE) + cv::Point2d( sz/2, sz/2 );
+    cv::Point2d pt0 = (pt[0] * SCALE) + cv::Point2d( sz/2, sz/4 );
+    cv::Point2d pt1 = (pt[1] * SCALE) + cv::Point2d( sz/2, sz/4 );
+    cv::Point2d pt2 = (pt[2] * SCALE) + cv::Point2d( sz/2, sz/4 );
+    cv::Point2d pt3 = (pt[3] * SCALE) + cv::Point2d( sz/2, sz/4 );
     cv::line( img, pt0, pt1, BLUE );
     cv::line( img, pt1, pt2, BLUE );
     cv::line( img, pt2, pt3, BLUE );

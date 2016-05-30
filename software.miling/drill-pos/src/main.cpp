@@ -54,7 +54,7 @@ int main(int argc, const char ** argv)
 
         positioner.frame( img );
 
-        int res = waitKey( 20 );
+        int res = waitKey( 10 );
         if ( res < 0 )
             continue;
         res &= 0xff;

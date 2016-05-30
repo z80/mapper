@@ -39,48 +39,18 @@ int          perspectiveQty;
 int main(int argc, const char ** argv)
 {
     VideoCapture inputCapture;
-    inputCapture.open( 1 );
+    inputCapture.open( 0 );
     if ( !inputCapture.isOpened() )
     {
         cout << "Failed to open camera!";
         return 1;
     }
 
-    // Locad calibrated camera parameters.
-    FileStorage fs( "./data/out_camera_data.xml", FileStorage::READ ); // Read the settings
-    if (!fs.isOpened())
-    {
-          cout << "Could not open the configuration file" << endl;
-          return -1;
-    }
-
-    cv::Mat cameraMatrix = Mat::eye(3, 3, CV_64F);
-    cv::Mat distCoeffs   = Mat::zeros(5, 1, CV_64F);
-
-    fs[ "camera_matrix" ] >> cameraMatrix;
-    fs[ "distortion_coefficients" ] >> distCoeffs;
-    fs.release();
-
-
-    FileStorage fsP( "./perspective.xml", FileStorage::READ ); // Read the settings
-    if (!fsP.isOpened())
-    {
-          cout << "Could not open the configuration file" << endl;
-          return -1;
-    }
-    cv::Mat perspective;
-    fsP[ "perspective" ] >> perspective;
-    fsP.release();
-
 
     Positioner positioner;
     while ( true )
     {
         inputCapture >> img;
-        Mat undistorted;
-        undistort( img, undistorted, cameraMatrix, distCoeffs );
-        img = undistorted;
-        
 
         positioner.frame( img );
 

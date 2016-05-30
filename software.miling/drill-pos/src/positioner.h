@@ -43,15 +43,15 @@ public:
     void matchSquares( std::vector<std::vector<cv::Point>> & squares );
     void applyPerspective( std::vector<std::vector<cv::Point>> & squares );
     void applyCamera();
-    void matchSquares( int knownInd,
+    bool matchSquares( int knownInd,
                        int foundInd,
                        std::vector<cv::Point2d> & knownPts,
-                       std::vector<cv::Point2d> & foundPts,
-                       std::vector<int> & newRects );
+                       std::vector<cv::Point2d> & foundPts );
 
 // Just for now public.
 public:
     static void Positioner::findSquares( const cv::Mat& image, std::vector<std::vector<cv::Point> >& squares );
+    void dbgDisplay( cv::Point imgSz );
 
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
@@ -73,7 +73,8 @@ public:
     std::vector<std::vector<cv::Point2d>> locatedSquaresImg; // After perspective.
 
     static const double SEARCH_RANGE;
-    static const bool DEBUG;
+    static const bool   DEBUG;
+    static const double ALPHA;
 };
 
 

@@ -33,7 +33,7 @@ void displayA( cv::Mat & img );
 int main(int argc, const char ** argv)
 {
     VideoCapture inputCapture;
-    inputCapture.open( 1 );
+    inputCapture.open( 0 );
     if ( !inputCapture.isOpened() )
     {
         cout << "Failed to open camera!";
@@ -167,9 +167,6 @@ void calcProj( std::vector<cv::Point2f> & pts )
     cv::Mat Y = Mat::eye(2*pts.size(), 1, CV_64F);
     for ( int i=0; i<pts.size(); i++ )
     {
-        cv::Point2f pt = pts.at( i );
-        Y.at<double>( 2*i,     0 ) = pt.x;
-        Y.at<double>( 2*i + 1, 0 ) = pt.y;
         double x1, x2;
         int row = i / sz.width;
         int col = i - (sz.width * row);
@@ -177,22 +174,28 @@ void calcProj( std::vector<cv::Point2f> & pts )
         x1 *= EDGE_SIZE;
         x2 = static_cast<double>( sz.height-1 + row );
         x2 *= EDGE_SIZE;
-        X.at<double>( 2*i, 0 ) = x1;
-        X.at<double>( 2*i, 1 ) = x2;
+
+        cv::Point2f pt = pts.at( i );
+
+        Y.at<double>( 2*i,     0 ) = x1;
+        Y.at<double>( 2*i + 1, 0 ) = x2;
+
+        X.at<double>( 2*i, 0 ) = pt.x;
+        X.at<double>( 2*i, 1 ) = pt.y;
         X.at<double>( 2*i, 2 ) = 1.0;
         X.at<double>( 2*i, 3 ) = 0.0;
         X.at<double>( 2*i, 4 ) = 0.0;
         X.at<double>( 2*i, 5 ) = 0.0;
-        X.at<double>( 2*i, 6 ) = -x1*pt.x;
-        X.at<double>( 2*i, 7 ) = -x2*pt.x;
+        X.at<double>( 2*i, 6 ) = -pt.x*x1;
+        X.at<double>( 2*i, 7 ) = -pt.y*x1;
         X.at<double>( 2*i+1, 0 ) = 0.0;
         X.at<double>( 2*i+1, 1 ) = 0.0;
         X.at<double>( 2*i+1, 2 ) = 0.0;
-        X.at<double>( 2*i+1, 3 ) = x1;
-        X.at<double>( 2*i+1, 4 ) = x2;
+        X.at<double>( 2*i+1, 3 ) = pt.x;
+        X.at<double>( 2*i+1, 4 ) = pt.y;
         X.at<double>( 2*i+1, 5 ) = 1.0;
-        X.at<double>( 2*i+1, 6 ) = -x1*pt.y;
-        X.at<double>( 2*i+1, 7 ) = -x2*pt.y;
+        X.at<double>( 2*i+1, 6 ) = -pt.x*x2;
+        X.at<double>( 2*i+1, 7 ) = -pt.y*x2;
     }
     cv::Mat trX = X.clone();
     trX = trX.t();

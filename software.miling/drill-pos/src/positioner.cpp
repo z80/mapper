@@ -2,7 +2,7 @@
 #include "positioner.h"
 
 const bool Positioner::DEBUG = true;
-const double SEARCH_RANGE    = 1.5; // This is in centimeters.
+const double Positioner::SEARCH_RANGE    = 1.5; // This is in centimeters.
 
 
 static double angle( cv::Point pt1, cv::Point pt2, cv::Point pt0 );
@@ -11,46 +11,52 @@ static void drawSquares( cv::Mat& image, std::vector<std::vector<cv::Point> >& s
 
 Positioner::Positioner()
 {
+    loadSettings();
+    resetImage2Floor();
 }
 
 Positioner::~Positioner()
 {
 }
 
-void Positioner::loadSettings()
+bool Positioner::loadSettings()
 {
     // Locad calibrated camera parameters.
-    FileStorage fs( "./data/out_camera_data.xml", FileStorage::READ ); // Read the settings
+    cv::FileStorage fs( "./data/out_camera_data.xml", cv::FileStorage::READ ); // Read the settings
     if (!fs.isOpened())
     {
-          cout << "Could not open the configuration file" << endl;
-          return -1;
+          std::cout << "Could not open the configuration file" << std::endl;
+          return false;
     }
 
-    cameraMatrix = Mat::eye(3, 3, CV_64F);
-    distCoeffs   = Mat::zeros(5, 1, CV_64F);
+    cameraMatrix = cv::Mat::eye(3, 3, CV_64F);
+    distCoeffs   = cv::Mat::zeros(5, 1, CV_64F);
 
     fs[ "camera_matrix" ] >> cameraMatrix;
     fs[ "distortion_coefficients" ] >> distCoeffs;
     fs.release();
 
 
-    FileStorage fsP( "./perspective.xml", FileStorage::READ ); // Read the settings
+    cv::FileStorage fsP( "./perspective.xml", cv::FileStorage::READ ); // Read the settings
     if (!fsP.isOpened())
     {
-          cout << "Could not open the configuration file" << endl;
-          return -1;
+          std::cout << "Could not open the configuration file" << std::endl;
+          return false;
     }
     fsP[ "perspective" ] >> perspective;
     fsP.release();
+
+    return true;
 }
 
 void Positioner::frame( cv::Mat & img )
 {
     std::vector<std::vector<cv::Point>> squares;
-    //findSquares( img, squares );
+    cv::Mat undistorted;
+    undistort( img, undistorted, cameraMatrix, distCoeffs );
+    findSquares( undistorted, squares );
 
-
+    matchSquares( squares );
 
 
     if ( DEBUG )
@@ -60,8 +66,11 @@ void Positioner::frame( cv::Mat & img )
     }
 }
 
-void Positioner::resetPosition()
+void Positioner::resetImage2Floor()
 {
+    img2Floor = cv::Mat::zeros(2, 3, CV_64F);
+    img2Floor.at<double>( 0, 0 ) = 1.0;
+    img2Floor.at<double>( 1, 1 ) = 1.0;
 }
 
 void Positioner::startDrillPos()
@@ -109,18 +118,18 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
     applyCamera();
 
     std::vector<cv::Point2d> knownPts;
-    std::vector<cv::Point>   foundPts;
+    std::vector<cv::Point2d> foundPts;
     std::vector<int>         newRects;
     // And now match all squares one by one with known ones.
-    int locatedSz = static_cast<int>( locatedSquares.size() );
+    int locatedSz = static_cast<int>( locatedSquaresImg.size() );
     int knownSz   = static_cast<int>( knownSquares.size() );
     for( int i=0; i<locatedSz; i++ )
     {
-        for( j=0; j<knownSz; j++ )
+        for( int j=0; j<knownSz; j++ )
         {
-            matchSquares( j, i,
-                          knownPts,
-                          foundPts,
+            matchSquares( j, i, 
+                          knownPts, 
+                          foundPts, 
                           newRects );
         }
     }
@@ -131,8 +140,8 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
     int xSz = static_cast<int>( knownPts.size() );
     if ( xSz > 3 )
     {
-        cv::Mat X = zeros( xSz, 3, CV_64F );
-        cv::Mat Y = zeros( xSz, 2, CV_64F );
+        cv::Mat X = cv::Mat::zeros( xSz, 3, CV_64F );
+        cv::Mat Y = cv::Mat::zeros( xSz, 2, CV_64F );
         for ( int i=0; i<xSz; i++ )
         {
             X.at<double>( i, 0 ) = static_cast<double>( foundPts[i].x );
@@ -147,22 +156,30 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
         cv::Mat XtY = Xt * Y;
         img2Floor = XtX * XtY;
     }
-    else
-    {
-        img2Floor = Mat::zeros(2, 3, CV_64F);
-        img2Floor.at<double>( 0, 0 ) = 1.0;
-        img2Floor.at<double>( 1, 1 ) = 1.0;
-    }
 
     // Adjust newly discoversd rectangles.
-    for ( int i=0; i< )
+    int newSz = static_cast<int>( newRects.size() );
+    for ( int i=0; i<newSz; i++ )
+    {
+        std::vector<cv::Point2d> & rectImg = locatedSquaresImg[i];
+        std::vector<cv::Point2d> rectFloor;
+        for ( int j=0; j<4; j++ )
+        {
+            cv::Point2d & pt = rectImg[j];
+            cv::Point2d ptF;
+            ptF.x = pt.x * img2Floor.at<double>( 0, 0 ) + pt.y * img2Floor.at<double>( 0, 1 ) + img2Floor.at<double>( 0, 2 );
+            ptF.y = pt.x * img2Floor.at<double>( 1, 0 ) + pt.y * img2Floor.at<double>( 1, 1 ) + img2Floor.at<double>( 1, 2 );
+            rectFloor.push_back( ptF );
+        }
+        knownSquares.push_back( rectFloor );
+    }
 }
 
 void Positioner::applyPerspective( std::vector<std::vector<cv::Point>> & squares )
 {
     locatedSquaresImg.clear();
     double P[8];
-    for ( inti=0; i<8; i++ )
+    for ( int i=0; i<8; i++ )
         P[i] = perspective.at<double>( i, 0 );
 
     for( std::vector<std::vector<cv::Point>>::iterator i=squares.begin();
@@ -170,9 +187,9 @@ void Positioner::applyPerspective( std::vector<std::vector<cv::Point>> & squares
     {
         const std::vector<cv::Point> & rect = *i;
         std::vector<cv::Point2d> rectP;
-        for ( i=0; i<4; i++ )
+        for ( int j=0; j<4; j++ )
         {
-            cv::Point2d pi = rect[i];
+            cv::Point2d pi = rect[j];
             cv::Point2d pd;
             pd.x = ( pi.x * P[0] +
                      pi.y * P[1] +
@@ -188,7 +205,7 @@ void Positioner::applyPerspective( std::vector<std::vector<cv::Point>> & squares
                      1.0 );
             rectP.push_back( pd );
         }
-        locatedSquaresImg.push_back( pd );
+        locatedSquaresImg.push_back( rectP );
     }
 }
 
@@ -205,12 +222,12 @@ void Positioner::applyCamera()
         {
             const cv::Point2d & pt = rect[j];
             cv::Point2d ptA;
-            ptA.x = pt.x * A.at<double>( 0, 0 ) +
-                    pt.y * A.at<double>( 0, 1 ) +
-                           A.at<double>( 0, 2 );
-            ptA.y = pt.x * A.at<double>( 1, 0 ) +
-                    pt.y * A.at<double>( 1, 1 ) +
-                           A.at<double>( 1, 2 );
+            ptA.x = pt.x * img2Floor.at<double>( 0, 0 ) +
+                    pt.y * img2Floor.at<double>( 0, 1 ) +
+                           img2Floor.at<double>( 0, 2 );
+            ptA.y = pt.x * img2Floor.at<double>( 1, 0 ) +
+                    pt.y * img2Floor.at<double>( 1, 1 ) +
+                           img2Floor.at<double>( 1, 2 );
             rectA.push_back( ptA );
         }
         locatedSquaresFloor.push_back( rectA );
@@ -219,22 +236,22 @@ void Positioner::applyCamera()
 
 void Positioner::matchSquares( int knownInd,
                                int foundInd,
-                               std::vector<cv::Point> & knownPts,
-                               std::vector<cv::Point> & foundPts,
+                               std::vector<cv::Point2d> & knownPts,
+                               std::vector<cv::Point2d> & foundPts,
                                std::vector<int> & newRects )
 {
     int inds[4];
     double dists[4];
     const std::vector<cv::Point2d> & knownR = knownSquares[knownInd];
     const std::vector<cv::Point2d> & foundR = locatedSquaresFloor[knownInd];
-    for ( i=0; i<4; i++ )
+    for ( int i=0; i<4; i++ )
     {
         // Default is very first point.
         inds[i] = 0;
         double dx = knownR[i].x - foundR[0].x;
         double dy = knownR[i].y - foundR[0].y;
         dists[i] = sqrt( dx*dx+dy*dy );
-        for ( j=1; j<4; j++ )
+        for ( int j=1; j<4; j++ )
         {
             double dx = knownR[i].x - foundR[j].x;
             double dy = knownR[i].y - foundR[j].y;
@@ -291,12 +308,12 @@ void Positioner::matchSquares( int knownInd,
 
 // returns sequence of squares detected on the image.
 // the sequence is stored in the specified memory storage
-static void findSquares( const cv::Mat& image, std::vector<std::vector<cv::Point> >& squares )
+void Positioner::findSquares( const cv::Mat & image, std::vector<std::vector<cv::Point> >& squares )
 {
     squares.clear();
 
     cv::Mat gray;
-    cv::cvtColor( img, gray, CV_RGB2GRAY );
+    cv::cvtColor( image, gray, CV_RGB2GRAY );
 
     cv::Mat tresh;
     cv::adaptiveThreshold( gray, gray, 255,

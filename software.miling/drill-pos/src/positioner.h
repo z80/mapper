@@ -16,17 +16,17 @@ public:
     Positioner();
     ~Positioner();
 
-    void loadSettings();
+    bool loadSettings();
 
     void frame( cv::Mat & img );
-    void resetPosition();
+    void resetImage2Floor();
 
     // Determining drill shift vector by
     // rotating around stationary drill.
     // For example, drill may ne places into
     // a tight hole.
     void startDrillPos();
-    void appendDrillPos();
+    void appendDrillPos( cv::Point2d r, cv::Point2d n );
     void endDrillPos();
 
     // Calibrating positioner axes.
@@ -45,12 +45,14 @@ public:
     void applyCamera();
     void matchSquares( int knownInd,
                        int foundInd,
-                       std::vector<cv::Point> & knownPts,
-                       std::vector<cv::Point> & foundPts,
+                       std::vector<cv::Point2d> & knownPts,
+                       std::vector<cv::Point2d> & foundPts,
                        std::vector<int> & newRects );
 
 // Just for now public.
 public:
+    static void Positioner::findSquares( const cv::Mat& image, std::vector<std::vector<cv::Point> >& squares );
+
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
     cv::Mat perspective;

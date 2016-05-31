@@ -208,18 +208,25 @@ void Positioner::endSamplePos()
         Rt1.at<double>( 0, 1 ) = sample2As[ind+7];
         Rt1.at<double>( 0, 2 ) = 1.0;
 
-        cv::Mat At( 3, 3, CV_64F );
+        cv::Mat At( 3, 2, CV_64F );
         At.at<double>( 0, 0 ) = sample2As[ind];
         At.at<double>( 1, 0 ) = sample2As[ind+1];
         At.at<double>( 2, 0 ) = sample2As[ind+2];
         At.at<double>( 0, 1 ) = sample2As[ind+3];
         At.at<double>( 1, 1 ) = sample2As[ind+4];
         At.at<double>( 2, 1 ) = sample2As[ind+5];
-        At.at<double>( 0, 2 ) = sample2As[ind+6];
-        At.at<double>( 1, 2 ) = sample2As[ind+7];
-        At.at<double>( 2, 2 ) = sample2As[ind+8];
 
         cv::Mat nn( 3, 7 );
+        double nx = sample2As[ind+8];
+        double ny = sample2As[ind+9];
+        nn.at<double>( 0, 0 ) = nx;
+        nn.at<double>( 0, 1 ) = ny;
+        nn.at<double>( 0, 2 ) = 0.0;
+        nn.at<double>( 0, 3 ) = 0.0;
+        nn.at<double>( 0, 4 ) = 0.0;
+        nn.at<double>( 0, 5 ) = 0.0;
+        nn.at<double>( 0, 6 ) = 0.0;
+
     }
 }
 

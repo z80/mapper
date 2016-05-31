@@ -19,6 +19,7 @@ public:
     bool loadSettings();
 
     void frame( cv::Mat & img );
+    void appendNewShapes();
     void resetImage2Floor();
 
     // Determining drill shift vector by
@@ -26,7 +27,7 @@ public:
     // For example, drill may ne places into
     // a tight hole.
     void startDrillPos();
-    void appendDrillPos( cv::Point2d r, cv::Point2d n );
+    void appendDrillPos();
     void endDrillPos();
 
     // Calibrating positioner axes.
@@ -36,7 +37,7 @@ public:
 
     // Align to sample.
     void startLinePos();
-    void appendLinePos();
+    void appendLinePos( cv::Point2d r, cv::Point2d n );
     void endLinePos();
 
 
@@ -71,7 +72,13 @@ public:
     std::vector<std::vector<cv::Point2d>> knownSquares,      //
                                           locatedSquaresFloor; // After A.
     std::vector<std::vector<cv::Point2d>> locatedSquaresImg; // After perspective.
+    bool appendNew;
 
+
+    // Drill pos alignment.
+    std::vector<double> drillAs;
+
+    // Constants.
     static const double SEARCH_RANGE;
     static const bool   DEBUG;
     static const double ALPHA;

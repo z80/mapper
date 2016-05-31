@@ -13,6 +13,7 @@ static void displayA( cv::Mat & img, cv::Mat & A );
 
 Positioner::Positioner()
 {
+    appendNew = false;
     loadSettings();
     resetImage2Floor();
 }
@@ -71,6 +72,11 @@ void Positioner::frame( cv::Mat & img )
     }
 }
 
+void Positioner::appendNewShapes()
+{
+    appendNew = true;
+}
+
 void Positioner::resetImage2Floor()
 {
     img2Floor = cv::Mat::zeros(2, 3, CV_64F);
@@ -80,14 +86,53 @@ void Positioner::resetImage2Floor()
 
 void Positioner::startDrillPos()
 {
+    drillAs.clear();
 }
 
-void Positioner::appendDrillPos( cv::Point2d r, cv::Point2d n )
+void Positioner::appendDrillPos()
 {
+    drillAs.reserve( drillAs.size() + 6 );
+    drillAs.push_back( img2Floor.at<double>( 0, 0 ) );
+    drillAs.push_back( img2Floor.at<double>( 0, 1 ) );
+    drillAs.push_back( img2Floor.at<double>( 0, 2 ) );
+    drillAs.push_back( img2Floor.at<double>( 1, 0 ) );
+    drillAs.push_back( img2Floor.at<double>( 1, 1 ) );
+    drillAs.push_back( img2Floor.at<double>( 1, 2 ) );
 }
 
 void Positioner::endDrillPos()
 {
+    int sz = static_cast<int>( drillAs.size() );
+    sz = sz / 6;
+    cv::Mat X( 2*sz, 4, CV_64F );
+    cv::Mat Y( 2*sz, 1, CV_64F );
+    for ( int i=0; i<sz; i++ )
+    {
+        int ind = 6*i;
+        X.at<double>( 2*i, 0 ) = drillAs[ ind ];
+        X.at<double>( 2*i, 1 ) = drillAs[ ind+1 ];
+        X.at<double>( 2*i, 2 ) = -1.0;
+        X.at<double>( 2*i, 3 ) = 0.0;
+        X.at<double>( 2*i+1, 0 ) = drillAs[ ind+3 ];
+        X.at<double>( 2*i+1, 1 ) = drillAs[ ind+4 ];
+        X.at<double>( 2*i+1, 2 ) = 0.0;
+        X.at<double>( 2*i+1, 3 ) = -1.0;
+
+        Y.at<double>( 2*i, 0 ) = -drillAs[ ind+2 ];
+        Y.at<double>( 2*i+1, 0 ) = -drillAs[ ind+5 ];
+    }
+    cv::Mat Xt = X.t();
+    cv::Mat XtX = Xt * X;
+    cv::Mat invXtX = XtX.inv();
+    cv::Mat XtY = Xt * Y;
+    cv::Mat rR = invXtX * XtY;
+
+    std::cout << X << std::endl;
+    std::cout << Y << std::endl;
+    std::cout << rR << std::endl;
+
+    R.x = rR.at<double>( 0, 0 );
+    R.y = rR.at<double>( 1, 0 );
 }
 
 void Positioner::startAxesPos()
@@ -109,7 +154,7 @@ void Positioner::startLinePos()
 {
 }
 
-void Positioner::appendLinePos()
+void Positioner::appendLinePos( cv::Point2d r, cv::Point2d n )
 {
 }
 
@@ -203,6 +248,10 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
     }
 
     // Adjust newly discoversd rectangles.
+    if ( !appendNew )
+        return;
+    // If user wants to append new shapes.
+    appendNew = false;
     int newSz = static_cast<int>( newRects.size() );
     for ( int i=0; i<newSz; i++ )
     {

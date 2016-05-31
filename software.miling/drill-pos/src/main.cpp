@@ -60,6 +60,14 @@ int main(int argc, const char ** argv)
         res &= 0xff;
         if ( res == 'q' )
             break;
+        else if ( res == 'r' )
+            positioner.startDrillPos();
+        else if ( res == 't' )
+            positioner.appendDrillPos();
+        else if ( res == 'y' )
+            positioner.endDrillPos();
+        else if ( res == 'a' )
+            positioner.appendNewShapes();
     }
     inputCapture.release();
 

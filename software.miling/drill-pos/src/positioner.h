@@ -66,8 +66,8 @@ public:
     double r;          // Drill radius.
 
     // Probably will determine a few more.
-    cv::Mat cam2Tool;
-    cv::Mat sample2Cam;
+    cv::Mat floor2Rails;
+    cv::Mat floor2Sample;
     // As a result need sample to tool.
     // Which is supposed to be
     // ptOnTool = cam2Tool*A*( R + sample2Cam * ptOnSample ).

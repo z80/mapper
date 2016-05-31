@@ -203,9 +203,12 @@ void Positioner::endSamplePos()
     {
         int ind = i*10;
 
+        double rx = sample2As[ind+6];
+        double ry = sample2As[ind+7];
+
         cv::Mat Rt1( 1, 3, CV_64F );
-        Rt1.at<double>( 0, 0 ) = sample2As[ind+6];
-        Rt1.at<double>( 0, 1 ) = sample2As[ind+7];
+        Rt1.at<double>( 0, 0 ) = rx;
+        Rt1.at<double>( 0, 1 ) = ry;
         Rt1.at<double>( 0, 2 ) = 1.0;
 
         cv::Mat At( 3, 2, CV_64F );
@@ -216,23 +219,140 @@ void Positioner::endSamplePos()
         At.at<double>( 1, 1 ) = sample2As[ind+4];
         At.at<double>( 2, 1 ) = sample2As[ind+5];
 
-        cv::Mat nn( 3, 7 );
+        cv::Mat nn( 3, 7, CV_64F );
         double nx = sample2As[ind+8];
         double ny = sample2As[ind+9];
+        // Ensure normal length is 1.0.
+        double l = sqrt( nx*nx + ny*ny );
+        nx /= l;
+        ny /= l;
+
         nn.at<double>( 0, 0 ) = nx;
         nn.at<double>( 0, 1 ) = ny;
         nn.at<double>( 0, 2 ) = 0.0;
         nn.at<double>( 0, 3 ) = 0.0;
         nn.at<double>( 0, 4 ) = 0.0;
         nn.at<double>( 0, 5 ) = 0.0;
-        nn.at<double>( 0, 6 ) = 0.0;
+        nn.at<double>( 0, 6 ) = -1.0;
 
+        nn.at<double>( 0, 0 ) = 0.0;
+        nn.at<double>( 0, 1 ) = 0.0;
+        nn.at<double>( 0, 2 ) = nx;
+        nn.at<double>( 0, 3 ) = ny;
+        nn.at<double>( 0, 4 ) = 0.0;
+        nn.at<double>( 0, 5 ) = 0.0;
+        nn.at<double>( 0, 6 ) = -1.0;
+
+        nn.at<double>( 0, 0 ) = 0.0;
+        nn.at<double>( 0, 1 ) = 0.0;
+        nn.at<double>( 0, 2 ) = 0.0;
+        nn.at<double>( 0, 3 ) = 0.0;
+        nn.at<double>( 0, 4 ) = nx;
+        nn.at<double>( 0, 5 ) = ny;
+        nn.at<double>( 0, 6 ) = -1.0;
+
+        cv::Mat xx = Rt1 * At * nn;
+
+        for ( int j=0; j<7; j++ )
+            X.at<double>( i, j ) = xx.at<double>( 0, j );
+
+        Y.at<double>( i, 0 ) = rx*nx + ry*ny;
     }
+    cv::Mat Xt = X.t();
+    cv::Mat XtX = Xt * X;
+    XtX = XtX.inv();
+    cv::Mat XtY = Xt * Y;
+    cv::Mat f2s = XtX * XtY;
+
+    floor2Sample = cv::Mat::zeros( 2, 3, CV_64F );
+    floor2Sample.at<double>( 0, 0 ) = f2s.at<double>( 0, 0 );
+    floor2Sample.at<double>( 1, 0 ) = f2s.at<double>( 1, 0 );
+    floor2Sample.at<double>( 0, 1 ) = f2s.at<double>( 2, 0 );
+    floor2Sample.at<double>( 1, 1 ) = f2s.at<double>( 3, 0 );
+    floor2Sample.at<double>( 0, 2 ) = f2s.at<double>( 4, 0 );
+    floor2Sample.at<double>( 1, 2 ) = f2s.at<double>( 5, 0 );
+    r = f2s.at<double>( 6, 0 );
 }
 
 void Positioner::endSamplePos( double d )
 {
     // Only alignment matrix.
+    // Derivation of both alignment matrix and end mill diameter.
+    int sz = static_cast<int>( sample2As.size() );
+    sz /= 10;
+    if ( sz < 2 )
+        return;
+    cv::Mat X( sz, 6, CV_64F );
+    cv::Mat Y( sz, 1, CV_64F );
+    for ( int i=0; i<sz; i++ )
+    {
+        int ind = i*10;
+
+        double rx = sample2As[ind+6];
+        double ry = sample2As[ind+7];
+
+        cv::Mat Rt1( 1, 3, CV_64F );
+        Rt1.at<double>( 0, 0 ) = rx;
+        Rt1.at<double>( 0, 1 ) = ry;
+        Rt1.at<double>( 0, 2 ) = 1.0;
+
+        cv::Mat At( 3, 2, CV_64F );
+        At.at<double>( 0, 0 ) = sample2As[ind];
+        At.at<double>( 1, 0 ) = sample2As[ind+1];
+        At.at<double>( 2, 0 ) = sample2As[ind+2];
+        At.at<double>( 0, 1 ) = sample2As[ind+3];
+        At.at<double>( 1, 1 ) = sample2As[ind+4];
+        At.at<double>( 2, 1 ) = sample2As[ind+5];
+
+        cv::Mat nn( 3, 6, CV_64F );
+        double nx = sample2As[ind+8];
+        double ny = sample2As[ind+9];
+        // Ensure normal length is 1.0.
+        double l = sqrt( nx*nx + ny*ny );
+        nx /= l;
+        ny /= l;
+
+        nn.at<double>( 0, 0 ) = nx;
+        nn.at<double>( 0, 1 ) = ny;
+        nn.at<double>( 0, 2 ) = 0.0;
+        nn.at<double>( 0, 3 ) = 0.0;
+        nn.at<double>( 0, 4 ) = 0.0;
+        nn.at<double>( 0, 5 ) = 0.0;
+
+        nn.at<double>( 0, 0 ) = 0.0;
+        nn.at<double>( 0, 1 ) = 0.0;
+        nn.at<double>( 0, 2 ) = nx;
+        nn.at<double>( 0, 3 ) = ny;
+        nn.at<double>( 0, 4 ) = 0.0;
+        nn.at<double>( 0, 5 ) = 0.0;
+
+        nn.at<double>( 0, 0 ) = 0.0;
+        nn.at<double>( 0, 1 ) = 0.0;
+        nn.at<double>( 0, 2 ) = 0.0;
+        nn.at<double>( 0, 3 ) = 0.0;
+        nn.at<double>( 0, 4 ) = nx;
+        nn.at<double>( 0, 5 ) = ny;
+
+        cv::Mat xx = Rt1 * At * nn;
+
+        for ( int j=0; j<6; j++ )
+            X.at<double>( i, j ) = xx.at<double>( 0, j );
+
+        Y.at<double>( i, 0 ) = rx*nx + ry*ny + r;
+    }
+    cv::Mat Xt = X.t();
+    cv::Mat XtX = Xt * X;
+    XtX = XtX.inv();
+    cv::Mat XtY = Xt * Y;
+    cv::Mat f2s = XtX * XtY;
+
+    floor2Sample = cv::Mat::zeros( 2, 3, CV_64F );
+    floor2Sample.at<double>( 0, 0 ) = f2s.at<double>( 0, 0 );
+    floor2Sample.at<double>( 1, 0 ) = f2s.at<double>( 1, 0 );
+    floor2Sample.at<double>( 0, 1 ) = f2s.at<double>( 2, 0 );
+    floor2Sample.at<double>( 1, 1 ) = f2s.at<double>( 3, 0 );
+    floor2Sample.at<double>( 0, 2 ) = f2s.at<double>( 4, 0 );
+    floor2Sample.at<double>( 1, 2 ) = f2s.at<double>( 5, 0 );
 }
 
 void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )

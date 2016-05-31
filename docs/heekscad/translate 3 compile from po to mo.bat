@@ -1,0 +1,16 @@
+mkdir "%HEEKSCAD1PATH%\de"
+"C:\Users\Dan\Downloads\gettext-0.14.4-bin\bin\msgfmt.exe" -o "%HEEKSCAD1PATH%\de\HeeksCAD.mo" "%HEEKSCAD1PATH%\translations\de\HeeksCAD.po"
+mkdir "%HEEKSCAD1PATH%\it"
+"C:\Users\Dan\Downloads\gettext-0.14.4-bin\bin\msgfmt.exe" -o "%HEEKSCAD1PATH%\it\HeeksCAD.mo" "%HEEKSCAD1PATH%\translations\it\HeeksCAD.po"
+mkdir "%HEEKSCAD1PATH%\fr"
+"C:\Users\Dan\Downloads\gettext-0.14.4-bin\bin\msgfmt.exe" -o "%HEEKSCAD1PATH%\fr\HeeksCAD.mo" "%HEEKSCAD1PATH%\translations\fr\HeeksCAD.po"
+mkdir "%HEEKSCAD1PATH%\sk"
+"C:\Users\Dan\Downloads\gettext-0.14.4-bin\bin\msgfmt.exe" -o "%HEEKSCAD1PATH%\sk\HeeksCAD.mo" "%HEEKSCAD1PATH%\translations\sk\HeeksCAD.po"
+mkdir "%HEEKSCAD1PATH%\ko"
+"C:\Users\Dan\Downloads\gettext-0.14.4-bin\bin\msgfmt.exe" -o "%HEEKSCAD1PATH%\ko\HeeksCAD.mo" "%HEEKSCAD1PATH%\translations\ko\HeeksCAD.po"
+mkdir "%HEEKSCAD1PATH%\es"
+"C:\Users\Dan\Downloads\gettext-0.14.4-bin\bin\msgfmt.exe" -o "%HEEKSCAD1PATH%\es\HeeksCAD.mo" "%HEEKSCAD1PATH%\translations\es\HeeksCAD.po"
+mkdir "%HEEKSCAD1PATH%\zh_hk"
+"C:\Users\Dan\Downloads\gettext-0.14.4-bin\bin\msgfmt.exe" -o "%HEEKSCAD1PATH%\zh_hk\HeeksCAD.mo" "%HEEKSCAD1PATH%\translations\zh_hk\HeeksCAD.po"
+
+pause

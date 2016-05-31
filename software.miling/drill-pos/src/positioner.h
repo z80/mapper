@@ -78,6 +78,9 @@ public:
     // Drill pos alignment.
     std::vector<double> drillAs;
 
+    // Vise axes alignment.
+    std::vector<double> viseSteps2As;
+
     // Constants.
     static const double SEARCH_RANGE;
     static const bool   DEBUG;

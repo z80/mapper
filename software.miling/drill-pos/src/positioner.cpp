@@ -66,7 +66,7 @@ void Positioner::frame( cv::Mat & img )
     {
         drawSquares( img, squares );
         displayA( img, img2Floor );
-        imshow( "squares", img );
+        //imshow( "squares", img );
 
         dbgDisplay( img.size() );
     }
@@ -410,8 +410,8 @@ void Positioner::findSquares( const cv::Mat & image, std::vector<std::vector<cv:
                            cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY_INV,
                            201 | 1, 0.0 );
 
-    if ( DEBUG )
-        imshow( "gray", gray );
+    //if ( DEBUG )
+    //    imshow( "gray", gray );
     // find contours and store them all as a list
     std::vector<std::vector<cv::Point> > contours;
     cv::findContours( gray, contours, cv::RETR_LIST,

@@ -49,6 +49,18 @@ bool Positioner::loadSettings()
     fsP[ "perspective" ] >> perspective;
     fsP.release();
 
+    // End mill position.
+    cv::FileStorage fsR( "./end_mill.xml", cv::FileStorage::READ );
+    if (fs.isOpened())
+    {
+        fs[ "end_mill" ] >> R;
+        fs.release();
+    }
+
+    // Load current camera position.
+    loadImg2Floor();
+
+
     return true;
 }
 
@@ -133,6 +145,15 @@ void Positioner::endDrillPos()
 
     R.x = rR.at<double>( 0, 0 );
     R.y = rR.at<double>( 1, 0 );
+
+    // Save end mill position.
+    cv::FileStorage fs( "./end_mill.xml", cv::FileStorage::WRITE ); // Read the settings
+    if (!fs.isOpened())
+          return;
+
+    fs << "end_mill" << R;
+    fs.release();
+
 }
 
 void Positioner::startAxesPos()
@@ -150,16 +171,61 @@ void Positioner::finishAxesPos()
 
 }
 
-void Positioner::startLinePos()
+void Positioner::startSamplePos()
 {
+    sample2As.clear();
 }
 
-void Positioner::appendLinePos( cv::Point2d r, cv::Point2d n )
+void Positioner::appendSamplePos( cv::Point2d r, cv::Point2d n )
 {
+    sample2As.push_back( img2Floor.at<double>(0, 0) );
+    sample2As.push_back( img2Floor.at<double>(0, 1) );
+    sample2As.push_back( img2Floor.at<double>(0, 2) );
+    sample2As.push_back( img2Floor.at<double>(1, 0) );
+    sample2As.push_back( img2Floor.at<double>(1, 1) );
+    sample2As.push_back( img2Floor.at<double>(1, 2) );
+    sample2As.push_back( r.x );
+    sample2As.push_back( r.y );
+    sample2As.push_back( n.x );
+    sample2As.push_back( n.y );
 }
 
-void Positioner::endLinePos()
+void Positioner::endSamplePos()
 {
+    // Derivation of both alignment matrix and end mill diameter.
+    int sz = static_cast<int>( sample2As.size() );
+    sz /= 10;
+    if ( sz < 2 )
+        return;
+    cv::Mat X( sz, 7, CV_64F );
+    cv::Mat Y( sz, 1, CV_64F );
+    for ( int i=0; i<sz; i++ )
+    {
+        int ind = i*10;
+
+        cv::Mat Rt1( 1, 3, CV_64F );
+        Rt1.at<double>( 0, 0 ) = sample2As[ind+6];
+        Rt1.at<double>( 0, 1 ) = sample2As[ind+7];
+        Rt1.at<double>( 0, 2 ) = 1.0;
+
+        cv::Mat At( 3, 3, CV_64F );
+        At.at<double>( 0, 0 ) = sample2As[ind];
+        At.at<double>( 1, 0 ) = sample2As[ind+1];
+        At.at<double>( 2, 0 ) = sample2As[ind+2];
+        At.at<double>( 0, 1 ) = sample2As[ind+3];
+        At.at<double>( 1, 1 ) = sample2As[ind+4];
+        At.at<double>( 2, 1 ) = sample2As[ind+5];
+        At.at<double>( 0, 2 ) = sample2As[ind+6];
+        At.at<double>( 1, 2 ) = sample2As[ind+7];
+        At.at<double>( 2, 2 ) = sample2As[ind+8];
+
+        cv::Mat nn( 3, 7 );
+    }
+}
+
+void Positioner::endSamplePos( double d )
+{
+    // Only alignment matrix.
 }
 
 void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
@@ -393,6 +459,29 @@ bool Positioner::matchSquares( int knownInd,
     return valid;
 }
 
+bool Positioner::saveImg2Floor()
+{
+    cv::FileStorage fs( "./img_2_floor.xml", cv::FileStorage::WRITE );
+    if (!fs.isOpened())
+          return false;
+
+    fs << "img2Floor" << img2Floor;
+    fs.release();
+
+    return true;
+}
+
+bool Positioner::loadImg2Floor()
+{
+    cv::FileStorage fs( "./img_2_floor.xml", cv::FileStorage::READ );
+    if (!fs.isOpened())
+          return false;
+
+    fs[ "img2Floor" ] >> img2Floor;
+    fs.release();
+
+    return true;
+}
 
 
 

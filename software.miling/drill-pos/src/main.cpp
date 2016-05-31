@@ -59,7 +59,10 @@ int main(int argc, const char ** argv)
             continue;
         res &= 0xff;
         if ( res == 'q' )
+        {
+            positioner.saveImg2Floor();
             break;
+        }
         else if ( res == 'r' )
             positioner.startDrillPos();
         else if ( res == 't' )
@@ -68,6 +71,7 @@ int main(int argc, const char ** argv)
             positioner.endDrillPos();
         else if ( res == 'a' )
             positioner.appendNewShapes();
+        
     }
     inputCapture.release();
 

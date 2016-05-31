@@ -36,9 +36,10 @@ public:
     void finishAxesPos();
 
     // Align to sample.
-    void startLinePos();
-    void appendLinePos( cv::Point2d r, cv::Point2d n );
-    void endLinePos();
+    void startSamplePos();
+    void appendSamplePos( cv::Point2d r, cv::Point2d n );
+    void endSamplePos(); // Determine end mill diameter.
+    void endSamplePos( double d ); // End mill diameter is provided, use it while aligning RF.
 
 
     void matchSquares( std::vector<std::vector<cv::Point>> & squares );
@@ -48,6 +49,8 @@ public:
                        int foundInd,
                        std::vector<cv::Point2d> & knownPts,
                        std::vector<cv::Point2d> & foundPts );
+    bool saveImg2Floor();
+    bool loadImg2Floor();
 
 // Just for now public.
 public:
@@ -79,7 +82,10 @@ public:
     std::vector<double> drillAs;
 
     // Vise axes alignment.
-    std::vector<double> viseSteps2As;
+    std::vector<double> vise2As;
+
+    // Sample alignment.
+    std::vector<double> sample2As;
 
     // Constants.
     static const double SEARCH_RANGE;

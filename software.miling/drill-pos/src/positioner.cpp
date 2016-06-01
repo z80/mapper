@@ -4,6 +4,7 @@
 const bool Positioner::DEBUG = true;
 const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
 const double Positioner::ALPHA = 0.2;
+const int    Positioner::IMAGE_MARGIN = 70;
 
 
 static double angle( cv::Point pt1, cv::Point pt2, cv::Point pt0 );
@@ -635,6 +636,7 @@ void Positioner::findSquares( const cv::Mat & image, std::vector<std::vector<cv:
 
     std::vector<cv::Point> approx;
 
+    cv::Size imgSize = cv::Size( image.cols, image.rows );;
     // test each contour
     for( size_t i = 0; i < contours.size(); i++ )
     {
@@ -652,7 +654,20 @@ void Positioner::findSquares( const cv::Mat & image, std::vector<std::vector<cv:
             fabs(contourArea(cv::Mat(approx))) > 1000 &&
             cv::isContourConvex(cv::Mat(approx)) )
         {
-            squares.push_back(approx);
+            // Accept suqres only within screen margin.
+            bool accept = true;
+            for ( int j=0; j<4; j++ )
+            {
+                cv::Point pt = approx.at( j );
+                if ( ( pt.x < IMAGE_MARGIN ) || ( pt.x > (imgSize.width-IMAGE_MARGIN) ) || 
+                     ( pt.y < IMAGE_MARGIN ) || ( pt.y > (imgSize.height-IMAGE_MARGIN) ) )
+                {
+                    accept = false;
+                    break;
+                }
+            }
+            if ( accept )
+                squares.push_back(approx);
         }
     }
 }

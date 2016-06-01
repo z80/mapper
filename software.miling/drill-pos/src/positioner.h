@@ -91,6 +91,7 @@ public:
     static const double SEARCH_RANGE;
     static const bool   DEBUG;
     static const double ALPHA;
+    static const int    IMAGE_MARGIN;
 };
 
 

@@ -5,6 +5,7 @@ const bool Positioner::DEBUG = true;
 const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
 const double Positioner::ALPHA = 0.2;
 const int    Positioner::IMAGE_MARGIN = 70;
+const double Positioner::MAX_FLOW_SPEED = 1.0;
 
 
 static double angle( cv::Point pt1, cv::Point pt2, cv::Point pt0 );
@@ -68,11 +69,40 @@ bool Positioner::loadSettings()
 void Positioner::frame( cv::Mat & img )
 {
     std::vector<std::vector<cv::Point>> squares;
+    cv::Mat gray;
+    cv::cvtColor( img, gray, CV_RGB2GRAY );
     cv::Mat undistorted;
-    undistort( img, undistorted, cameraMatrix, distCoeffs );
-    findSquares( undistorted, squares );
+    undistort( gray, undistorted, cameraMatrix, distCoeffs );
+
+    if ( applyOpticalFlow( gray ) )
+        findSquares( undistorted, squares );
+    else
+    {
+        int sz = static_cast<int>( squaresPrev.size() );
+        squares.resize( sz );
+        for ( int i=0; i<sz; i++ )
+        {
+            std::vector<cv::Point2d> & rectPrev = squaresPrev[i];
+            std::vector<cv::Point> & rect = squares[i];
+            rect.resize( 4 );
+            for ( int j=0; j<4; j++ )
+                rect[j] = cv::Point( rectPrev[i].x, rectPrev[i].y );
+        }
+    }
 
     matchSquares( squares );
+
+    // Assign
+    int sz = static_cast<int>( squares.size() );
+    squaresPrev.resize( sz );
+    for ( int i=0; i<sz; i++ )
+    {
+        std::vector<cv::Point2d> & rectPrev = squaresPrev[i];
+        std::vector<cv::Point> & rect = squares[i];
+        rect.resize( 4 );
+        for ( int j=0; j<4; j++ )
+            rectPrev[j] = cv::Point2d( rect[i].x, rect[i].y );
+    }
 
 
     if ( DEBUG )
@@ -611,16 +641,57 @@ bool Positioner::loadImg2Floor()
     return true;
 }
 
+bool Positioner::applyOpticalFlow( cv::Mat & gray )
+{
+    cv::TermCriteria termcrit(cv::TermCriteria::COUNT|cv::TermCriteria::EPS,20,0.03);
+    cv::Size subPixWinSize(10,10), winSize(31,31);
+
+    std::vector<uchar> status;
+    std::vector<float> err;
+
+    std::vector<cv::Point2d> pointsNext, pointsPrev;
+    int sz = static_cast<int>( squaresPrev.size() );
+    pointsPrev.reserve( sz*4 );
+    for ( int i=0; i<sz; i++ )
+    {
+        for ( int j=0; j<4; j++ )
+        {
+            pointsPrev.push_back( squaresPrev[i][j] );
+        }
+    }
+
+    if(grayPrev.empty())
+        gray.copyTo(grayPrev);
+    cv::calcOpticalFlowPyrLK( grayPrev, gray, pointsPrev, pointsNext, status, err, winSize,
+                         3, termcrit, 0, 0.001);
+
+    // Define max shift.
+    int ind = 0;
+    double shiftMax = 0.0;
+    for ( int i=0; i<sz; i++ )
+    {
+        for ( int j=0; j<4; j++ )
+        {
+            squaresPrev[i][j] = pointsNext[ind];
+            cv::Point2d dpt = pointsNext[ind] - pointsPrev[ind];
+            double d = sqrt( dpt.dot( dpt ) );
+            if ( shiftMax < d )
+                shiftMax = d;
+            ind++;
+        }
+    }
+    gray.copyTo( grayPrev );
+
+    return (shiftMax < MAX_FLOW_SPEED);
+}
+
 
 
 // returns sequence of squares detected on the image.
 // the sequence is stored in the specified memory storage
-void Positioner::findSquares( const cv::Mat & image, std::vector<std::vector<cv::Point> >& squares )
+void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::Point> >& squares )
 {
     squares.clear();
-
-    cv::Mat gray;
-    cv::cvtColor( image, gray, CV_RGB2GRAY );
 
     cv::Mat tresh;
     cv::adaptiveThreshold( gray, gray, 255,
@@ -636,7 +707,7 @@ void Positioner::findSquares( const cv::Mat & image, std::vector<std::vector<cv:
 
     std::vector<cv::Point> approx;
 
-    cv::Size imgSize = cv::Size( image.cols, image.rows );;
+    cv::Size imgSize = cv::Size( gray.cols, gray.rows );
     // test each contour
     for( size_t i = 0; i < contours.size(); i++ )
     {

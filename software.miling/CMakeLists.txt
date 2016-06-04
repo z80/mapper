@@ -27,7 +27,7 @@ add_subdirectory( "./calibration" )
 add_subdirectory( "./camera" )
 add_subdirectory( "./perspective" )
 add_subdirectory( "./drill-pos" )
-
+add_subdirectory( "./tests" )
 
 
 

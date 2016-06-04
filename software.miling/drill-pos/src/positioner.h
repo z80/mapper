@@ -7,6 +7,8 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/video/tracking.hpp"
+#include "opencv2/videoio/videoio.hpp"
 #include <vector>
 #include <iostream>
 
@@ -52,10 +54,16 @@ public:
     bool saveImg2Floor();
     bool loadImg2Floor();
 
+    bool applyOpticalFlow( cv::Mat & gray );
+
 // Just for now public.
 public:
-    static void Positioner::findSquares( const cv::Mat& image, std::vector<std::vector<cv::Point> >& squares );
+    static void findSquares( const cv::Mat& image, std::vector<std::vector<cv::Point> >& squares );
     void dbgDisplay( cv::Point imgSz );
+
+    // To derive optical flow.
+    cv::Mat grayPrev;
+    std::vector< std::vector<cv::Point2d> > squaresPrev;
 
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
@@ -92,6 +100,7 @@ public:
     static const bool   DEBUG;
     static const double ALPHA;
     static const int    IMAGE_MARGIN;
+    static const double MAX_FLOW_SPEED;
 };
 
 

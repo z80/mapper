@@ -74,7 +74,8 @@ void Positioner::frame( cv::Mat & img )
     cv::Mat undistorted;
     undistort( gray, undistorted, cameraMatrix, distCoeffs );
 
-    if ( applyOpticalFlow( gray ) )
+    bool noFlow = applyOpticalFlow( gray );
+    if ( noFlow )
         findSquares( undistorted, squares );
     else
     {
@@ -471,7 +472,7 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )
         img2Floor = img2Floor*(1.0-ALPHA) + A * ALPHA;
     }
 
-    // Adjust newly discoversd rectangles.
+    // Adjust newly discovered rectangles.
     if ( !appendNew )
         return;
     // If user wants to append new shapes.

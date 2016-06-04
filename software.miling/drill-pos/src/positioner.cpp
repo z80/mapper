@@ -190,16 +190,41 @@ void Positioner::endDrillPos()
 
 void Positioner::startAxesPos()
 {
-
+    vise2As.clear();
 }
 
 void Positioner::appendAxesPos( int stepsX, int stepsY )
 {
-
+    vise2As.push_back( img2Floor.at<double>(0, 2) );
+    vise2As.push_back( img2Floor.at<double>(1, 2) );
+    vise2As.push_back( static_cast<double>( stepsX ) );
+    vise2As.push_back( static_cast<double>( stepsY ) );
 }
 
 void Positioner::finishAxesPos()
 {
+    int sz = static_cast<int>( vise2As.size() );
+    sz /= 4;
+    if ( sz < 2 )
+        return;
+    cv::Mat X( sz, 3, CV_64F );
+    cv::Mat Y( sz, 2, CV_64F );
+    for ( int i=0; i<sz; i++ )
+    {
+        int ind = i*4;
+
+        X.at<double>( i, 0 ) = vise2As[ind];
+        X.at<double>( i, 1 ) = vise2As[ind+1];
+        X.at<double>( i, 2 ) = 1.0;
+
+        Y.at<double>( i, 0 ) = vise2As[ind+2];
+        Y.at<double>( i, 1 ) = vise2As[ind+3];
+    }
+    cv::Mat Xt = X.t();
+    cv::Mat XtX = Xt * X;
+    XtX = XtX.inv();
+    cv::Mat XtY = Xt * Y;
+    floor2CrossVise = XtX * XtY;
 
 }
 
@@ -304,6 +329,8 @@ void Positioner::endSamplePos()
     floor2Sample.at<double>( 0, 2 ) = f2s.at<double>( 4, 0 );
     floor2Sample.at<double>( 1, 2 ) = f2s.at<double>( 5, 0 );
     r = f2s.at<double>( 6, 0 );
+
+    calcSample2Floor();
 }
 
 void Positioner::endSamplePos( double d )
@@ -385,6 +412,33 @@ void Positioner::endSamplePos( double d )
     floor2Sample.at<double>( 1, 1 ) = f2s.at<double>( 3, 0 );
     floor2Sample.at<double>( 0, 2 ) = f2s.at<double>( 4, 0 );
     floor2Sample.at<double>( 1, 2 ) = f2s.at<double>( 5, 0 );
+
+    calcSample2Floor();
+}
+
+void Positioner::calcSample2Floor()
+{
+    cv::Mat a( 3, 3, CV_64F );
+    for ( int i=0; i<2; i++ )
+    {
+        for ( int j=0; j<3; j++ )
+        {
+            a.at<double>( i, j ) = floor2Sample.at<double>( i, j );
+        }
+    }
+    a.at<double>( 2, 0 ) = 0.0;
+    a.at<double>( 2, 1 ) = 0.0;
+    a.at<double>( 2, 2 ) = 1.0;
+    a = a.inv();
+
+    sample2Floor = cv::Mat( 2, 3, CV_64F );
+    for ( int i=0; i<2; i++ )
+    {
+        for ( int j=0; j<3; j++ )
+        {
+            sample2Floor.at<double>( i, j ) = a.at<double>( i, j );
+        }
+    }
 }
 
 void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares )

@@ -42,6 +42,7 @@ public:
     void appendSamplePos( cv::Point2d r, cv::Point2d n );
     void endSamplePos(); // Determine end mill diameter.
     void endSamplePos( double d ); // End mill diameter is provided, use it while aligning RF.
+    void calcSample2Floor();
 
 
     void matchSquares( std::vector<std::vector<cv::Point>> & squares );
@@ -65,17 +66,19 @@ public:
     cv::Mat grayPrev;
     std::vector< std::vector<cv::Point2d> > squaresPrev;
 
+    // Camera transformation matrices which are defined exernally.
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
     cv::Mat perspective;
 
+
+    // Probably will determine a few more.
     cv::Mat img2Floor; // Image position matrix.
     cv::Point2d R;     // Drill position in camera ref frame.
     double r;          // Drill radius.
-
-    // Probably will determine a few more.
-    cv::Mat floor2Rails;
+    cv::Mat floor2CrossVise;
     cv::Mat floor2Sample;
+    cv::Mat sample2Floor;
     // As a result need sample to tool.
     // Which is supposed to be
     // ptOnTool = cam2Tool*A*( R + sample2Cam * ptOnSample ).

@@ -45,7 +45,7 @@ public:
     void calcSample2Floor();
 
 
-    void matchSquares( std::vector<std::vector<cv::Point>> & squares );
+    void matchSquares( std::vector<std::vector<cv::Point>> & squares, bool noFlow = false );
     void applyPerspective( std::vector<std::vector<cv::Point>> & squares );
     void applyCamera();
     bool matchSquares( int knownInd,
@@ -56,6 +56,11 @@ public:
     bool loadImg2Floor();
 
     bool applyOpticalFlow( cv::Mat & gray );
+
+    bool fieldOfView( std::vector<double> corners );
+    bool drillPos( double & x, double & y );
+    bool knownFeatures( std::vector<double> corners );
+    bool visibleFeatures( std::vector<double> corners );
 
 // Just for now public.
 public:
@@ -104,6 +109,8 @@ public:
     static const double ALPHA;
     static const int    IMAGE_MARGIN;
     static const double MAX_FLOW_SPEED;
+    static const double FLOOR_POS_MARGIN;
+    static const double FLOOR_DIR_MARGIN;
 };
 
 

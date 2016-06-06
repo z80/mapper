@@ -14,19 +14,21 @@ include(${VTK_USE_FILE})
 include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ./src
 )
 
 # Set your files and resources here
-set( Srcs main.cxx SimpleView.cxx )
+#set( Srcs main.cxx SimpleView.cxx )
+#set( Hdrs SimpleView.h )
+#set( MOC_Hdrs SimpleView.h )
+#set( UIs SimpleView.ui )
+#set( QRCs Icons/icons.qrc )
 
-set( Hdrs SimpleView.h )
-
-set( MOC_Hdrs SimpleView.h )
-
-set( UIs SimpleView.ui )
-
-set( QRCs Icons/icons.qrc )
-
+file( GLOB Srcs "./src/*.cpp" )
+file( GLOB Hdrs "./src/*.h" )
+set( MOC_Hdrs ${Hdrs} )
+file( GLOB UIs "./src/*.ui" )
+file( GLOB QRCs "./icons/*.qrc" )
 
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)

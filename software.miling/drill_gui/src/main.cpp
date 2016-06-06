@@ -12,7 +12,7 @@
   #include <QCleanlooksStyle>
 #endif
 
-#include "SimpleView.h"
+#include "simple_view.h"
 
 extern int qInitResources_icons();
 

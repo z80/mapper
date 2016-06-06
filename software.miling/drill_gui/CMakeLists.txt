@@ -1,6 +1,9 @@
 
 set( appname "drill_gui" )
 
+find_package(OpenCV REQUIRED)
+
+
 find_package(VTK COMPONENTS
   vtkCommonCore
   vtkFiltersCore
@@ -14,7 +17,9 @@ include(${VTK_USE_FILE})
 include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
   ./src
+  ${ROOT}/drill-pos/src
 )
 
 # Set your files and resources here
@@ -29,6 +34,7 @@ file( GLOB Hdrs "./src/*.h" )
 set( MOC_Hdrs ${Hdrs} )
 file( GLOB UIs "./src/*.ui" )
 file( GLOB QRCs "./icons/*.qrc" )
+set( Srcs ${Srcs} ${ROOT}/drill-pos/src/positioner.cpp )
 
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
@@ -56,7 +62,8 @@ if(VTK_QT_VERSION VERSION_GREATER "4")
   add_executable( ${appname} MACOSX_BUNDLE
     ${Srcs} ${Hdrs} ${UI_Srcs} ${MOC_Hdrs} ${QRC_Srcs})
   qt5_use_modules(${appname} Core Gui Widgets)
-  target_link_libraries(${appname} ${VTK_LIBRARIES})
+  target_link_libraries(${appname} ${VTK_LIBRARIES}
+                                   ${OpenCV_LIBS} )
 else()
   find_package(Qt4 REQUIRED)
   include(${QT_USE_FILE})
@@ -87,6 +94,7 @@ else()
   target_link_libraries(${appname}
     ${QT_LIBRARIES}
     ${VTK_LIBRARIES}
+    ${OpenCV_LIBS}
   )
 endif()
 

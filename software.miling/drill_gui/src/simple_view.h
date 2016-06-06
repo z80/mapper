@@ -17,13 +17,15 @@
 
 #include "vtkSmartPointer.h"    // Required for smart pointer internal ivars.
 #include <QMainWindow>
+#include "positioner.h"
+
 
 // Forward Qt class declarations
 class Ui_SimpleView;
 
 // Forward VTK class declarations
 class vtkQtTableView;
-
+class vtkSTLReader;
 
 class SimpleView : public QMainWindow
 {
@@ -46,7 +48,9 @@ protected slots:
 
 private:
 
-  vtkSmartPointer<vtkQtTableView>         TableView;
+  vtkSmartPointer<vtkQtTableView> TableView;
+  vtkSmartPointer<vtkSTLReader>   stlModel;
+  vtkSmartPointer<vtkSTLReader>   stlSample;
 
   // Designer form
   Ui_SimpleView *ui;

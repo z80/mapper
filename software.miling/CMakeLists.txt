@@ -7,6 +7,7 @@ set( ROOT ${CMAKE_CURRENT_SOURCE_DIR} )
 set( CMAKE_INSTALL_PREFIX ${ROOT}/app )
 set( _3DPARTY ${CMAKE_CURRENT_SOURCE_DIR}/3dparty )
 
+
 if ( WIN32 )
     include( "./settings.win32.cmake" )
     set( MSVC_RUNTIME static )
@@ -18,15 +19,18 @@ elseif ( UNIX )
 endif ( WIN32 )
 
 include(cmake/OpenCVUtils.cmake)
+#include(cmake/UseVTK.cmake)
 
 ocv_clear_vars(OpenCVModules_TARGETS)
 
 #message( STATUS $ENV{PATH} )
 
 add_subdirectory( "./calibration" )
-add_subdirectory( "./camera" )
+#add_subdirectory( "./camera" )
 add_subdirectory( "./perspective" )
 add_subdirectory( "./drill-pos" )
+#add_subdirectory( "./drill-gui" )
+add_subdirectory( "./drill_gui" )
 add_subdirectory( "./tests" )
 
 

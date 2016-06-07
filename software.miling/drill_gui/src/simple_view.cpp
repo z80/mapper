@@ -31,6 +31,12 @@ SimpleView::SimpleView()
   this->ui = new Ui_SimpleView;
   this->ui->setupUi(this);
 
+  timer = new QTimer( this );
+  timer->setInterval( 10 );
+  timer->setSingleShot( true );
+  timer->start();
+  connect( timer, SIGNAL(timeout()), this, SLOT(slotReadFrame()) );
+
   enableEndMillCtrls( false );
 
   // Qt Table View
@@ -61,15 +67,20 @@ SimpleView::SimpleView()
 
   // Add Actor to renderer
   ren->AddActor(actor);
+  ren->SetActiveCamera( camera.cam );
+
+  // Inserting Camera and FieldOfView.
+  ren->AddActor( fov.actor );
+  //camera.
 
   // VTK/Qt wedded
   this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(ren);
 
   // Just a bit of Qt interest: Culling off the
   // point data and handing it to a vtkQtTableView
-  VTK_CREATE(vtkDataObjectToTable, toTable);
-  toTable->SetInputConnection(elevation->GetOutputPort());
-  toTable->SetFieldType(vtkDataObjectToTable::POINT_DATA);
+  //VTK_CREATE(vtkDataObjectToTable, toTable);
+  //toTable->SetInputConnection(elevation->GetOutputPort());
+  //toTable->SetFieldType(vtkDataObjectToTable::POINT_DATA);
 
   // Here we take the end of the VTK pipeline and give it to a Qt View
   //this->TableView->SetRepresentationFromInputConnection(toTable->GetOutputPort());
@@ -83,6 +94,8 @@ SimpleView::SimpleView()
   connect( this->ui->emCalibrate, SIGNAL(clicked()),         this, SLOT(slotEmCalibrate()) );
   connect( this->ui->emAppend,    SIGNAL(clicked()),         this, SLOT(slotEmAppend()) );
   connect( this->ui->emDiameter,  SIGNAL(editingFinished()), this, SLOT(slotEmChanged()) );
+
+  inputCapture.open( 0 );
 };
 
 SimpleView::~SimpleView()
@@ -123,6 +136,20 @@ void SimpleView::enableEndMillCtrls( bool en )
 {
     ui->emAppend->setEnabled( en );
     ui->emDiameter->setEnabled( en );
+}
+
+void SimpleView::slotReadFrame()
+{
+    cv::Mat img;
+    inputCapture >> img;
+
+    positioner.frame( img );
+
+    std::vector<double> xy;
+    positioner.fieldOfView( xy );
+    fov.updateFov( xy );
+
+    timer->start();
 }
 
 

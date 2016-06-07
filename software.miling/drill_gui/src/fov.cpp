@@ -1,5 +1,6 @@
 
 #include "fov.h"
+#include <vtkIdList.h>
 
 Fov::Fov()
 {
@@ -36,10 +37,10 @@ void Fov::updateFov( std::vector<double> & xy )
     {
         int from = i;
         int to = (i+1)%sz;
-        vtkIdList ids[2];
+        vtkIdType ids[2];
         ids[0] = from;
         ids[1] = to;
-        polyData->InsertNextCell( VTK_LINE, ids );
+        polyData->InsertNextCell( VTK_LINE, 2, ids );
     }
     polyData->SetPoints( pts );
     mapper->SetScalarRange( 0, sz-1 );

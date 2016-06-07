@@ -17,7 +17,10 @@
 
 #include "vtkSmartPointer.h"    // Required for smart pointer internal ivars.
 #include <QMainWindow>
+#include <QTimer.h>
 #include "positioner.h"
+#include "camera.h"
+#include "fov.h"
 
 
 // Forward Qt class declarations
@@ -28,6 +31,8 @@ class vtkQtTableView;
 class vtkSTLReader;
 class vtkPoints;
 class vtkPolyData;
+
+
 
 class SimpleView : public QMainWindow
 {
@@ -47,6 +52,7 @@ public slots:
   void slotEmCalibrate();
   void slotEmAppend();
   void slotEmChanged();
+  void slotReadFrame();
 
 protected:
 
@@ -55,17 +61,23 @@ protected slots:
 private:
     void enableEndMillCtrls( bool en );
 
-  //vtkSmartPointer<vtkQtTableView> TableView;
-  vtkSmartPointer<vtkSTLReader>   stlModel;
-  vtkSmartPointer<vtkSTLReader>   stlSample;
-  vtkSmartPointer<vtkPoints>   fovPts;
-  vtkSmartPointer<vtkPolyData>
+    cv::VideoCapture inputCapture;
 
-  // Designer form
-  Ui_SimpleView *ui;
 
-  Positioner positioner;
+    //vtkSmartPointer<vtkQtTableView> TableView;
+    vtkSmartPointer<vtkSTLReader>   stlModel;
+    vtkSmartPointer<vtkSTLReader>   stlSample;
 
+    // Designer form
+    Ui_SimpleView *ui;
+
+    Positioner positioner;
+    Camera camera;
+    Fov    fov;
+
+
+    // Update timer.
+    QTimer * timer;
 
 };
 

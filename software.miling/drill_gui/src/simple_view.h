@@ -26,6 +26,8 @@ class Ui_SimpleView;
 // Forward VTK class declarations
 class vtkQtTableView;
 class vtkSTLReader;
+class vtkPoints;
+class vtkPolyData;
 
 class SimpleView : public QMainWindow
 {
@@ -56,11 +58,15 @@ private:
   //vtkSmartPointer<vtkQtTableView> TableView;
   vtkSmartPointer<vtkSTLReader>   stlModel;
   vtkSmartPointer<vtkSTLReader>   stlSample;
+  vtkSmartPointer<vtkPoints>   fovPts;
+  vtkSmartPointer<vtkPolyData>
 
   // Designer form
   Ui_SimpleView *ui;
 
   Positioner positioner;
+
+
 };
 
 #endif // SimpleView_H

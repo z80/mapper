@@ -31,11 +31,13 @@ SimpleView::SimpleView()
   this->ui = new Ui_SimpleView;
   this->ui->setupUi(this);
 
+  enableEndMillCtrls( false );
+
   // Qt Table View
-  this->TableView = vtkSmartPointer<vtkQtTableView>::New();
+  //this->TableView = vtkSmartPointer<vtkQtTableView>::New();
 
   // Place the table view in the designer form
-  this->ui->tableFrame->layout()->addWidget(this->TableView->GetWidget());
+  //this->ui->tableFrame->layout()->addWidget(this->TableView->GetWidget());
 
   // Geometry
   VTK_CREATE(vtkVectorText, text);
@@ -70,12 +72,17 @@ SimpleView::SimpleView()
   toTable->SetFieldType(vtkDataObjectToTable::POINT_DATA);
 
   // Here we take the end of the VTK pipeline and give it to a Qt View
-  this->TableView->SetRepresentationFromInputConnection(toTable->GetOutputPort());
+  //this->TableView->SetRepresentationFromInputConnection(toTable->GetOutputPort());
 
   // Set up action signals and slots
-  connect(this->ui->actionOpenFile, SIGNAL(triggered()), this, SLOT(slotOpenFile()));
-  connect(this->ui->actionExit, SIGNAL(triggered()), this, SLOT(slotExit()));
+  connect( this->ui->actionOpenFile, SIGNAL(triggered()), this, SLOT(slotOpenFile()) );
+  connect( this->ui->actionExit,     SIGNAL(triggered()), this, SLOT(slotExit()) );
 
+
+
+  connect( this->ui->emCalibrate, SIGNAL(clicked()),         this, SLOT(slotEmCalibrate()) );
+  connect( this->ui->emAppend,    SIGNAL(clicked()),         this, SLOT(slotEmAppend()) );
+  connect( this->ui->emDiameter,  SIGNAL(editingFinished()), this, SLOT(slotEmChanged()) );
 };
 
 SimpleView::~SimpleView()
@@ -93,3 +100,29 @@ void SimpleView::slotOpenFile()
 void SimpleView::slotExit() {
   qApp->exit();
 }
+
+
+void SimpleView::slotEmCalibrate()
+{
+    bool en = ui->emCalibrate->isChecked();
+    enableEndMillCtrls( en );
+    positioner.endDrillPos();
+}
+
+void SimpleView::slotEmAppend()
+{
+    positioner.appendDrillPos();
+}
+
+void SimpleView::slotEmChanged()
+{
+    positioner.r = ui->emDiameter->value() / 2.0;
+}
+
+void SimpleView::enableEndMillCtrls( bool en )
+{
+    ui->emAppend->setEnabled( en );
+    ui->emDiameter->setEnabled( en );
+}
+
+

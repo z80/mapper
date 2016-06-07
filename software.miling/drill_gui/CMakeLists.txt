@@ -98,7 +98,7 @@ else()
   )
 endif()
 
-
+install( TARGETS ${appname} DESTINATION ./ )
 
 
 

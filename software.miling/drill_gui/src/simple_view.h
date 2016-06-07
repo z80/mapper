@@ -42,18 +42,25 @@ public slots:
   virtual void slotOpenFile();
   virtual void slotExit();
 
+  void slotEmCalibrate();
+  void slotEmAppend();
+  void slotEmChanged();
+
 protected:
 
 protected slots:
 
 private:
+    void enableEndMillCtrls( bool en );
 
-  vtkSmartPointer<vtkQtTableView> TableView;
+  //vtkSmartPointer<vtkQtTableView> TableView;
   vtkSmartPointer<vtkSTLReader>   stlModel;
   vtkSmartPointer<vtkSTLReader>   stlSample;
 
   // Designer form
   Ui_SimpleView *ui;
+
+  Positioner positioner;
 };
 
 #endif // SimpleView_H

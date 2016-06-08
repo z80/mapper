@@ -153,6 +153,10 @@ void SimpleView::slotReadFrame()
     positioner.knownFeatures( xy );
     knownRects.update( xy );
 
+    double x, y;
+    positioner.drillPos( x, y );
+    endMill.update( x, y, 0.0 );
+
     timer->start();
 }
 

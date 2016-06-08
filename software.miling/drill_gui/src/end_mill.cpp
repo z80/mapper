@@ -1,5 +1,6 @@
 
 #include "end_mill.h"
+#include <vtkProperty.h>
 
 EndMill::EndMill()
 {
@@ -9,7 +10,7 @@ EndMill::EndMill()
     cylinder->SetHeight( 5.0 );
 
     mapper = vtkPolyDataMapper::New();
-    mapper->SetInputData( cylinder );
+    mapper->SetInputData( cylinder->GetOutput() );
     actor = vtkActor::New();
     actor->SetMapper( mapper );
 

@@ -23,6 +23,7 @@
 #include "fov.h"
 #include "visible_rects.h"
 #include "known_rects.h"
+#include "end_mill.h"
 
 
 // Forward Qt class declarations
@@ -77,6 +78,7 @@ private:
     Camera       camera;
     KnownRects   knownRects;
     VisibleRects visibleRects;
+    EndMill      endMill;
     Fov    fov;
 
 

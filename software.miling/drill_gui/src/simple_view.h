@@ -68,8 +68,9 @@ private:
 
 
     //vtkSmartPointer<vtkQtTableView> TableView;
-    vtkSmartPointer<vtkSTLReader>   stlModel;
-    vtkSmartPointer<vtkSTLReader>   stlSample;
+    vtkSmartPointer<vtkSTLReader>    stlModel;
+    vtkSmartPointer<vtkSTLReader>    stlSample;
+    vtkSmartPointer<vtkRenderer>     renderer;
 
     // Designer form
     Ui_SimpleView *ui;

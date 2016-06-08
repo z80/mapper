@@ -63,21 +63,22 @@ SimpleView::SimpleView()
   actor->SetMapper(mapper);
 
   // VTK Renderer
-  VTK_CREATE(vtkRenderer, ren);
+  //VTK_CREATE(vtkRenderer, ren);
+  renderer = vtkRenderer::New();
 
   // Add Actor to renderer
-  ren->AddActor(actor);
-  ren->SetActiveCamera( camera.cam );
+  renderer->AddActor(actor);
+  renderer->SetActiveCamera( camera.cam );
 
   // Inserting Camera and FieldOfView.
-  ren->AddActor( fov.actor );
+  renderer->AddActor( fov.actor );
   //camera.
-  ren->AddActor( visibleRects.actor );
-  ren->AddActor( knownRects.actor );
-  ren->AddActor( endMill.actor );
+  renderer->AddActor( visibleRects.actor );
+  renderer->AddActor( knownRects.actor );
+  renderer->AddActor( endMill.actor );
 
   // VTK/Qt wedded
-  this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(ren);
+  this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
 
   // Just a bit of Qt interest: Culling off the
   // point data and handing it to a vtkQtTableView
@@ -122,7 +123,10 @@ void SimpleView::slotEmCalibrate()
 {
     bool en = ui->emCalibrate->isChecked();
     enableEndMillCtrls( en );
-    positioner.endDrillPos();
+    if ( en )
+        positioner.startDrillPos();
+    else
+        positioner.endDrillPos();
 }
 
 void SimpleView::slotEmAppend()
@@ -161,6 +165,8 @@ void SimpleView::slotReadFrame()
     endMill.update( x, y, 0.0 );
 
     timer->start();
+
+    this->ui->qvtkWidget->GetRenderWindow()->Render();
 }
 
 

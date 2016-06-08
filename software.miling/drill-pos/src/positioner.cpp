@@ -56,10 +56,10 @@ bool Positioner::loadSettings()
 
     // End mill position.
     cv::FileStorage fsR( "./end_mill.xml", cv::FileStorage::READ );
-    if (fs.isOpened())
+    if (fsR.isOpened())
     {
-        fs[ "end_mill" ] >> R;
-        fs.release();
+        fsR[ "end_mill" ] >> R;
+        fsR.release();
     }
 
     // Load current camera position.

@@ -24,6 +24,7 @@ void VisibleRects::update( std::vector<double> & xy )
 {
     int sz = static_cast<int>( xy.size() );
     sz = sz/8;
+    //sz = ( sz < 2 ) ? sz : 1;
 
     pts->Reset();
     int ind = 0;
@@ -44,22 +45,25 @@ void VisibleRects::update( std::vector<double> & xy )
     {
         for ( int j=0; j<4; j++ )
         {
-            int v0 = i;
-            int v1 = (i+1)%sz;
-            int v2 = (i+2)%sz;
-            int v3 = (i+3)%sz;
+            int v0 = ind;
+            int v1 = ind+1;
+            int v2 = ind+2;
+            int v3 = ind+3;
             vtkIdType ids[5];
             ids[0] = v0;
             ids[1] = v1;
             ids[2] = v2;
             ids[3] = v3;
             ids[4] = v0;
-            polyData->InsertNextCell( VTK_LINE, 5, ids );
+            polyData->InsertNextCell( VTK_LINE, 2, &(ids[0]) );
+            polyData->InsertNextCell( VTK_LINE, 2, &(ids[1]) );
+            polyData->InsertNextCell( VTK_LINE, 2, &(ids[2]) );
+            polyData->InsertNextCell( VTK_LINE, 2, &(ids[3]) );
         }
         ind += 4;
     }
     polyData->SetPoints( pts );
-    mapper->SetScalarRange( 0, sz-1 );
+    //mapper->SetScalarRange( 0, sz-1 );
 }
 
 

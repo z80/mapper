@@ -148,6 +148,10 @@ void SimpleView::slotReadFrame()
     std::vector<double> xy;
     positioner.fieldOfView( xy );
     fov.updateFov( xy );
+    positioner.visibleFeatures( xy );
+    visibleRects.update( xy );
+    positioner.knownFeatures( xy );
+    knownRects.update( xy );
 
     timer->start();
 }

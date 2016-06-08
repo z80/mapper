@@ -17,10 +17,12 @@
 
 #include "vtkSmartPointer.h"    // Required for smart pointer internal ivars.
 #include <QMainWindow>
-#include <QTimer.h>
+#include <QTimer>
 #include "positioner.h"
 #include "camera.h"
 #include "fov.h"
+#include "visible_rects.h"
+#include "known_rects.h"
 
 
 // Forward Qt class declarations
@@ -71,8 +73,10 @@ private:
     // Designer form
     Ui_SimpleView *ui;
 
-    Positioner positioner;
-    Camera camera;
+    Positioner   positioner;
+    Camera       camera;
+    KnownRects   knownRects;
+    VisibleRects visibleRects;
     Fov    fov;
 
 

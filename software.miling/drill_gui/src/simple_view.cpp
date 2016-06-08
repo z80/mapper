@@ -72,6 +72,9 @@ SimpleView::SimpleView()
   // Inserting Camera and FieldOfView.
   ren->AddActor( fov.actor );
   //camera.
+  ren->AddActor( visibleRects.actor );
+  ren->AddActor( knownRects.actor );
+  ren->AddActor( endMill.actor );
 
   // VTK/Qt wedded
   this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(ren);

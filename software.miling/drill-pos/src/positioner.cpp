@@ -870,7 +870,7 @@ bool Positioner::visibleFeatures( std::vector<double> & corners )
 {
     corners.clear();
 
-    int sz = static_cast<int>( knownSquares.size() );
+    int sz = static_cast<int>( locatedSquaresFloor.size() );
     for ( int i=0; i<sz; i++ )
     {
         for ( int j=0; j<4; j++ )

@@ -10,13 +10,15 @@ EndMill::EndMill()
     cylinder->SetHeight( 5.0 );
 
     mapper = vtkPolyDataMapper::New();
-    mapper->SetInputData( cylinder->GetOutput() );
+    mapper->SetInputConnection( cylinder->GetOutputPort() );
     actor = vtkActor::New();
     actor->SetMapper( mapper );
 
     vtkProperty * p = actor->GetProperty();
     p->SetColor( 0.5, 0.6, 0.0 );
 
+    actor->RotateWXYZ( 90.0, 1.0, 0.0, 0.0 );
+    actor->SetPosition( 0.0, 0.0, 2.5 );
 }
 
 EndMill::~EndMill()
@@ -31,7 +33,7 @@ void EndMill::setDiameter( double d )
 
 void EndMill::update( double x, double y, double z )
 {
-    actor->SetPosition( x, y, z );
+    actor->SetPosition( x, y, z+2.5 );
 }
 
 

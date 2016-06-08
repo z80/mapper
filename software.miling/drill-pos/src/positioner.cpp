@@ -787,7 +787,7 @@ bool Positioner::applyOpticalFlow( cv::Mat & gray )
     return (shiftMax < MAX_FLOW_SPEED);
 }
 
-bool Positioner::fieldOfView( std::vector<double> corners )
+bool Positioner::fieldOfView( std::vector<double> & corners )
 {
     corners.clear();
     double P[8];
@@ -850,7 +850,7 @@ bool Positioner::drillPos( double & x, double & y )
     return true;
 }
 
-bool Positioner::knownFeatures( std::vector<double> corners )
+bool Positioner::knownFeatures( std::vector<double> & corners )
 {
     corners.clear();
 
@@ -866,7 +866,7 @@ bool Positioner::knownFeatures( std::vector<double> corners )
     return true;
 }
 
-bool Positioner::visibleFeatures( std::vector<double> corners )
+bool Positioner::visibleFeatures( std::vector<double> & corners )
 {
     corners.clear();
 

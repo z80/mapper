@@ -57,10 +57,10 @@ public:
 
     bool applyOpticalFlow( cv::Mat & gray );
 
-    bool fieldOfView( std::vector<double> corners );
+    bool fieldOfView( std::vector<double> & corners );
     bool drillPos( double & x, double & y );
-    bool knownFeatures( std::vector<double> corners );
-    bool visibleFeatures( std::vector<double> corners );
+    bool knownFeatures( std::vector<double> & corners );
+    bool visibleFeatures( std::vector<double> & corners );
 
 // Just for now public.
 public:

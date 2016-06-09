@@ -25,15 +25,17 @@ Descriptor & Descriptor::operator=( const Descriptor & inst )
 
 bool Descriptor::operator==( const Descriptor & inst )
 {
+
+    return true;
 }
 
 void Descriptor::build( std::vector<std::vector<cv::Point2d>> & rects, int rectInd, int ptInd, double range )
 {
     cv::Point2d pt = rects[rectInd][ptInd];
     int sz = static_cast<int>( rects.size() );
-    for ( i=0; i<sz; i++ )
+    for ( int i=0; i<sz; i++ )
     {
-        for ( j=0; j<4; j++ )
+        for ( int j=0; j<4; j++ )
         {
             if ( ( i != rectInd ) || ( j != ptInd ) )
             {

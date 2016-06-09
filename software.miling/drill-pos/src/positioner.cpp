@@ -75,7 +75,8 @@ void Positioner::frame( cv::Mat & img )
     cv::Mat gray;
     cv::cvtColor( img, gray, CV_RGB2GRAY );
     cv::Mat undistorted;
-    undistort( gray, undistorted, cameraMatrix, distCoeffs );
+    cv::undistort( gray, undistorted, cameraMatrix, distCoeffs );
+    cv::blur( gray, gray, cv::Size( 5, 5 ) );
 
     bool noFlow = applyOpticalFlow( gray );
     if ( noFlow )
@@ -113,8 +114,8 @@ void Positioner::frame( cv::Mat & img )
 
     if ( DEBUG )
     {
-        drawSquares( img, squares );
-        displayA( img, img2Floor );
+        //drawSquares( img, squares );
+        //displayA( img, img2Floor );
         //imshow( "squares", img );
 
         dbgDisplay( img.size() );
@@ -896,8 +897,8 @@ void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::
                            cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY_INV,
                            201 | 1, 0.0 );
 
-    //if ( DEBUG )
-    //    imshow( "gray", gray );
+    if ( DEBUG )
+        imshow( "gray", gray );
     // find contours and store them all as a list
     std::vector<std::vector<cv::Point> > contours;
     cv::findContours( gray, contours, cv::RETR_LIST,
@@ -911,7 +912,7 @@ void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::
     {
         // approximate contour with accuracy proportional
         // to the contour perimeter
-        cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
+        cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.05, true);
 
         // square contours should have 4 vertices after approximation
         // relatively large area (to filter out noisy contours)

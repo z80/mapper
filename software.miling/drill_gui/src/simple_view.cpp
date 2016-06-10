@@ -145,6 +145,20 @@ void SimpleView::enableEndMillCtrls( bool en )
     ui->emDiameter->setEnabled( en );
 }
 
+void SimpleView::enableAxesCtrls( bool en )
+{
+    ui->motoAppend->setEnabled( en );
+}
+
+void SimpleView::enableSampleCtrls( bool en )
+{
+    ui->sampleAppend->setEnabled( en );
+    ui->rx->setEnabled( en );
+    ui->ry->setEnabled( en );
+    ui->nx->setEnabled( en );
+    ui->ny->setEnabled( en );
+}
+
 void SimpleView::slotReadFrame()
 {
     cv::Mat img;
@@ -168,5 +182,31 @@ void SimpleView::slotReadFrame()
 
     this->ui->qvtkWidget->GetRenderWindow()->Render();
 }
+
+void SimpleView::slotMotoCalibrate()
+{
+    bool en = ui->motoCalibrate->isChecked();
+    enableAxesCtrls( en );
+
+    if ( en )
+        positioner.startAxesPos();
+    else
+        positioner.finishAxesPos();
+}
+
+void SimpleView::slotMotoAddPoint()
+{
+    positioner.appendAxesPos( 0, 0 );
+}
+
+void SimpleView::slotSampleCalibrate()
+{
+}
+
+void SimpleView::slotSampleAddPoint()
+{
+}
+
+
 
 

@@ -57,12 +57,20 @@ public slots:
   void slotEmChanged();
   void slotReadFrame();
 
+  void slotMotoCalibrate();
+  void slotMotoAddPoint();
+
+  void slotSampleCalibrate();
+  void slotSampleAddPoint();
+
 protected:
 
 protected slots:
 
 private:
     void enableEndMillCtrls( bool en );
+    void enableAxesCtrls( bool en );
+    void enableSampleCtrls( bool en );
 
     cv::VideoCapture inputCapture;
 

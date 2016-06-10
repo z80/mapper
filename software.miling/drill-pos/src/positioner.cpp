@@ -4,7 +4,7 @@
 const bool Positioner::DEBUG = true;
 const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
 const double Positioner::ALPHA = 0.2;
-const int    Positioner::IMAGE_MARGIN = 70;
+const int    Positioner::IMAGE_MARGIN = 50;
 const double Positioner::MAX_FLOW_SPEED = 0.1;
 const double Positioner::FLOOR_POS_MARGIN = 0.001;
 const double Positioner::FLOOR_DIR_MARGIN = 0.0001;
@@ -907,12 +907,12 @@ void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::
     std::vector<cv::Point> approx;
 
     cv::Size imgSize = cv::Size( gray.cols, gray.rows );
-    // test each contour
-    for( size_t i = 0; i < contours.size(); i++ )
+    // Test each contour.
+    for( size_t i = 0; i<contours.size(); i++ )
     {
         // approximate contour with accuracy proportional
         // to the contour perimeter
-        cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.05, true);
+        cv::approxPolyDP( cv::Mat( contours[i] ), approx, cv::arcLength( cv::Mat( contours[i] ), true )*0.05, true );
 
         // square contours should have 4 vertices after approximation
         // relatively large area (to filter out noisy contours)

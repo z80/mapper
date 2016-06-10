@@ -52,6 +52,7 @@ public:
                        int foundInd,
                        std::vector<cv::Point2d> & knownPts,
                        std::vector<cv::Point2d> & foundPts );
+    bool matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts ); // Experimantal one to search displacement and angle without affecting orthogonality.
     bool saveImg2Floor();
     bool loadImg2Floor();
 
@@ -84,6 +85,9 @@ public:
     cv::Mat floor2CrossVise;
     cv::Mat floor2Sample;
     cv::Mat sample2Floor;
+    // Experimental.
+    double sampleAngle, sampleX, sampleY;
+
     // As a result need sample to tool.
     // Which is supposed to be
     // ptOnTool = cam2Tool*A*( R + sample2Cam * ptOnSample ).

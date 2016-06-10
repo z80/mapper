@@ -19,6 +19,9 @@ static void displayA( cv::Mat & img, cv::Mat & A );
 Positioner::Positioner()
 {
     appendNew = false;
+
+    sampleAngle = sampleX = sampleY = 0.0;
+
     loadSettings();
     resetImage2Floor();
 }
@@ -493,6 +496,7 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
     int xSz = static_cast<int>( knownPts.size() );
     if ( xSz > 3 )
     {
+        /*
         cv::Mat X = cv::Mat::zeros( xSz, 3, CV_64F );
         cv::Mat Y = cv::Mat::zeros( xSz, 2, CV_64F );
         for ( int i=0; i<xSz; i++ )
@@ -510,25 +514,9 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
         XtX = XtX.inv();
         cv::Mat XtY = Xt * Y;
         cv::Mat A = (XtX * XtY).t();
-
-        // Limit transformation to shift and rotation only.
-        /*
-        double a00 = A.at<double>(0, 0);
-        double a01 = A.at<double>(0, 1);
-        double a10 = A.at<double>(1, 0);
-        double a11 = A.at<double>(1, 1);
-
-        double b00 = (a00 + a11)/2.0;
-        double b10 = (a10 - a01)/2.0;
-        double l = sqrt( b00*b00 + b10*b10 );
-        b00 /= l;
-        b10 /= l;
-        
-        A.at<double>(0, 0) = b00;
-        A.at<double>(0, 1) = b10;
-        A.at<double>(1, 0) = -b10;
-        A.at<double>(1, 1) = b00;
         */
+
+        matchPoints( knownPts, foundPts );
 
         double p[6];
         int ind = 0;
@@ -539,7 +527,7 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
                 p[ind++] = img2Floor.at<double>( i, j );
             }
         }
-        img2Floor = img2Floor*(1.0-ALPHA) + A * ALPHA;
+        //img2Floor = img2Floor*(1.0-ALPHA) + A * ALPHA;
         ind = 0;
         for ( int i=0; i<2; i++ )
         {
@@ -717,6 +705,59 @@ bool Positioner::matchSquares( int knownInd,
         }
     }
     return valid;
+}
+
+bool Positioner::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts )
+{
+    cv::Point2d r( 0.0, 0.0 ), 
+                knownC( 0.0, 0.0 ), 
+                foundC( 0.0, 0.0 );
+    int sz = static_cast<int>( knownPts.size() );
+
+    // Displacement.
+    for ( int i=0; i<sz; i++ )
+    {
+        knownC += knownPts[i];
+        foundC += foundPts[i];
+    }
+    knownC /= static_cast<double>( sz );
+    foundC /= static_cast<double>( sz );
+    r = foundC - knownC;
+
+
+    // Rotation.
+    double angle = 0.0;
+    int qty = 0;
+    for ( int i=0; i<sz; i++ )
+    {
+        cv::Point2d knownR( knownPts[i] - knownC );
+        cv::Point2d foundR( foundPts[i] - foundC );
+        if ( ( (knownR.x != 0.0) || (knownR.y != 0.0) ) && 
+             ( (foundR.x != 0.0) || (foundR.y != 0.0) ) )
+        {
+            double la = sqrt( knownR.x * knownR.x + knownR.y * knownR.y );
+            double lb = sqrt( foundR.x * foundR.x + foundR.y * foundR.y );
+            double cross = foundR.x*knownR.y - foundR.y*knownR.x;
+            double a = cross / ( la * lb );
+            angle += a;  // Yes, for now instead of angle just angle sine. For small angles it is the same. But it is supposed to be small for 
+            qty += 1;
+        }
+    }
+    if ( qty > 0 )
+    {
+        angle /= static_cast<double>( qty );
+        sampleAngle -= angle;
+    }
+    sampleX     += r.x;
+    sampleY     += r.y;
+
+    // Compose matrix.
+    double c = cos( angle );
+    double s = sin( angle );
+    img2Floor.at<double>( 0, 0 ) = c; img2Floor.at<double>( 0, 1 ) = -s; img2Floor.at<double>( 0, 2 ) = sampleX;
+    img2Floor.at<double>( 1, 0 ) = s; img2Floor.at<double>( 1, 1 ) =  c; img2Floor.at<double>( 1, 2 ) = sampleY;
+
+    return true;
 }
 
 bool Positioner::saveImg2Floor()

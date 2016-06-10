@@ -45,7 +45,7 @@ public:
     void calcSample2Floor();
 
 
-    void matchSquares( std::vector<std::vector<cv::Point>> & squares, bool noFlow = false );
+    void matchSquares( std::vector<std::vector<cv::Point>> & squares, bool opticalFlow = true );
     void applyPerspective( std::vector<std::vector<cv::Point>> & squares );
     void applyCamera();
     bool matchSquares( int knownInd,
@@ -56,7 +56,7 @@ public:
     bool saveImg2Floor();
     bool loadImg2Floor();
 
-    bool applyOpticalFlow( cv::Mat & gray );
+    bool detectOpticalFlow( cv::Mat & gray );
 
     bool fieldOfView( std::vector<double> & corners );
     bool drillPos( double & x, double & y );
@@ -70,13 +70,12 @@ public:
 
     // To derive optical flow.
     cv::Mat grayPrev;
-    std::vector< std::vector<cv::Point2d> > squaresPrev;
+    std::vector<cv::Point2f> pointsNext, pointsPrev;
 
     // Camera transformation matrices which are defined exernally.
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
     cv::Mat perspective;
-
 
     // Probably will determine a few more.
     cv::Mat img2Floor; // Image position matrix.
@@ -87,6 +86,8 @@ public:
     cv::Mat sample2Floor;
     // Experimental.
     double sampleAngle, sampleX, sampleY;
+    cv::Mat img2FloorSmooth;
+    int     noOpticalFlowCounter;
 
     // As a result need sample to tool.
     // Which is supposed to be
@@ -111,6 +112,7 @@ public:
     static const double SEARCH_RANGE;
     static const bool   DEBUG;
     static const double ALPHA;
+    static const int    MIN_NO_FLOW_FRAMES;
     static const int    IMAGE_MARGIN;
     static const double MAX_FLOW_SPEED;
     static const double FLOOR_POS_MARGIN;

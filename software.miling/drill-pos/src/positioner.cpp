@@ -3,9 +3,10 @@
 
 const bool Positioner::DEBUG = true;
 const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
-const double Positioner::ALPHA = 0.2;
+const double Positioner::ALPHA = 0.1;
+const int    Positioner::MIN_NO_FLOW_FRAMES = 100;
 const int    Positioner::IMAGE_MARGIN = 50;
-const double Positioner::MAX_FLOW_SPEED = 0.1;
+const double Positioner::MAX_FLOW_SPEED = 1.0;
 const double Positioner::FLOOR_POS_MARGIN = 0.001;
 const double Positioner::FLOOR_DIR_MARGIN = 0.0001;
 
@@ -21,6 +22,10 @@ Positioner::Positioner()
     appendNew = false;
 
     sampleAngle = sampleX = sampleY = 0.0;
+    img2FloorSmooth = cv::Mat::zeros(2, 3, CV_64F );
+    img2FloorSmooth.at<double>( 0, 0 ) = 1.0;
+    img2FloorSmooth.at<double>( 1, 1 ) = 1.0;
+    noOpticalFlowCounter = 0;
 
     loadSettings();
     resetImage2Floor();
@@ -81,37 +86,23 @@ void Positioner::frame( cv::Mat & img )
     cv::undistort( gray, undistorted, cameraMatrix, distCoeffs );
     cv::blur( gray, gray, cv::Size( 5, 5 ) );
 
-    bool noFlow = applyOpticalFlow( gray );
-    if ( noFlow )
-        findSquares( undistorted, squares );
+    bool flowPresents = detectOpticalFlow( gray );
+    if ( flowPresents )
+        noOpticalFlowCounter = 0;
     else
-    {
-        /*
-        int sz = static_cast<int>( squaresPrev.size() );
-        squares.resize( sz );
-        for ( int i=0; i<sz; i++ )
-        {
-            std::vector<cv::Point2d> & rectPrev = squaresPrev[i];
-            std::vector<cv::Point> & rect = squares[i];
-            rect.resize( 4 );
-            for ( int j=0; j<4; j++ )
-                rect[j] = cv::Point( rectPrev[j].x, rectPrev[j].y );
-        }
-        */
-    }
-
-    matchSquares( squares, noFlow );
+        noOpticalFlowCounter += 1;
+    findSquares( undistorted, squares );
+    matchSquares( squares, (noOpticalFlowCounter <= MIN_NO_FLOW_FRAMES) );
 
     // Assign
     int sz = static_cast<int>( squares.size() );
-    squaresPrev.resize( sz );
+    pointsPrev.clear();
+    pointsPrev.reserve( sz * 4 );
     for ( int i=0; i<sz; i++ )
     {
-        std::vector<cv::Point2d> & rectPrev = squaresPrev[i];
         std::vector<cv::Point> & rect = squares[i];
-        rectPrev.resize( 4 );
         for ( int j=0; j<4; j++ )
-            rectPrev[j] = cv::Point2d( rect[j].x, rect[j].y );
+            pointsPrev.push_back( cv::Point2f( rect[j].x, rect[j].y ) );
     }
 
 
@@ -450,7 +441,7 @@ void Positioner::calcSample2Floor()
     }
 }
 
-void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bool noFlow )
+void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bool opticalFlow )
 {
     applyPerspective( squares );
     applyCamera();
@@ -492,7 +483,6 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
     // if at least one square is found adjust camera position matrix.
     // X - image coordinates.
     // Y - floor coordinates.
-    bool drift = true;
     int xSz = static_cast<int>( knownPts.size() );
     if ( xSz > 3 )
     {
@@ -517,52 +507,17 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
         */
 
         matchPoints( knownPts, foundPts );
-
-        double p[6];
-        int ind = 0;
-        for ( int i=0; i<2; i++ )
-        {
-            for ( int j=0; j<3; j++ )
-            {
-                p[ind++] = img2Floor.at<double>( i, j );
-            }
-        }
-        //img2Floor = img2Floor*(1.0-ALPHA) + A * ALPHA;
-        ind = 0;
-        for ( int i=0; i<2; i++ )
-        {
-            for ( int j=0; j<3; j++ )
-            {
-                p[ind] = img2Floor.at<double>( i, j ) - p[ind];
-                p[ind] = (p[ind] >= 0.0) ? p[ind] : (-p[ind]);
-                ind++;
-            }
-        }
-        double maxPosDrift = (p[2] > p[5]) ? p[2] : p[5];
-        if ( maxPosDrift >= FLOOR_POS_MARGIN )
-            drift = true;
-        else
-        {
-            double maxDirDrift = p[0];
-            if ( maxDirDrift < p[1] )
-                maxDirDrift = p[1];
-            if ( maxDirDrift < p[3] )
-                maxDirDrift = p[3];
-            if ( maxDirDrift < p[4] )
-                maxDirDrift = p[4];
-            if ( maxDirDrift >= FLOOR_DIR_MARGIN )
-                drift = true;
-            else drift = false;
-        }
+        // Smoothing matrix to determine end mill position.
+        img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
     }
     // If no known points there is no way to estimate drift.
-    else if ( xSz < 1 )
-        drift = false;
+    else if ( knownSz < 1 )
+        appendNew = true;
 
     // Analyze img2Floor change;
 
     // Adjust newly discovered rectangles.
-    if ( ( !appendNew ) && ( (!noFlow) || drift ) )
+    if ( ( !appendNew ) && ( opticalFlow ) )
         return;
     // If user wants to append new shapes.
     appendNew = false;
@@ -576,8 +531,8 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
         {
             cv::Point2d & pt = rectImg[j];
             cv::Point2d ptF;
-            ptF.x = pt.x * img2Floor.at<double>( 0, 0 ) + pt.y * img2Floor.at<double>( 0, 1 ) + img2Floor.at<double>( 0, 2 );
-            ptF.y = pt.x * img2Floor.at<double>( 1, 0 ) + pt.y * img2Floor.at<double>( 1, 1 ) + img2Floor.at<double>( 1, 2 );
+            ptF.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) + pt.y * img2FloorSmooth.at<double>( 0, 1 ) + img2FloorSmooth.at<double>( 0, 2 );
+            ptF.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) + pt.y * img2FloorSmooth.at<double>( 1, 1 ) + img2FloorSmooth.at<double>( 1, 2 );
             rectFloor.push_back( ptF );
         }
         knownSquares.push_back( rectFloor );
@@ -722,7 +677,6 @@ bool Positioner::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<c
     }
     knownC /= static_cast<double>( sz );
     foundC /= static_cast<double>( sz );
-    r = foundC - knownC;
 
 
     // Rotation.
@@ -746,14 +700,15 @@ bool Positioner::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<c
     if ( qty > 0 )
     {
         angle /= static_cast<double>( qty );
-        sampleAngle -= angle;
+        //angle *= ALPHA;
+        sampleAngle += angle;
     }
-    sampleX     += r.x;
-    sampleY     += r.y;
 
     // Compose matrix.
     double c = cos( angle );
     double s = sin( angle );
+    sampleX     = knownC.x - c*foundC.x + s*foundC.y;
+    sampleY     = knownC.y - s*foundC.x - c*foundC.y;
     img2Floor.at<double>( 0, 0 ) = c; img2Floor.at<double>( 0, 1 ) = -s; img2Floor.at<double>( 0, 2 ) = sampleX;
     img2Floor.at<double>( 1, 0 ) = s; img2Floor.at<double>( 1, 1 ) =  c; img2Floor.at<double>( 1, 2 ) = sampleY;
 
@@ -784,24 +739,13 @@ bool Positioner::loadImg2Floor()
     return true;
 }
 
-bool Positioner::applyOpticalFlow( cv::Mat & gray )
+bool Positioner::detectOpticalFlow( cv::Mat & gray )
 {
     cv::TermCriteria termcrit(cv::TermCriteria::COUNT|cv::TermCriteria::EPS,20,0.03);
     cv::Size subPixWinSize(10,10), winSize(31,31);
 
     std::vector<uchar> status;
     std::vector<float> err;
-
-    std::vector<cv::Point2f> pointsNext, pointsPrev;
-    int sz = static_cast<int>( squaresPrev.size() );
-    pointsPrev.reserve( sz*4 );
-    for ( int i=0; i<sz; i++ )
-    {
-        for ( int j=0; j<4; j++ )
-        {
-            pointsPrev.push_back( squaresPrev[i][j] );
-        }
-    }
 
     if(grayPrev.empty())
         gray.copyTo(grayPrev);
@@ -812,21 +756,20 @@ bool Positioner::applyOpticalFlow( cv::Mat & gray )
     // Define max shift.
     int ind = 0;
     double shiftMax = 0.0;
+    int sz = static_cast<int>( pointsPrev.size() );
+    if ( sz < 3 ) // If too few points force believe that there was an optical flow.
+        return true;
     for ( int i=0; i<sz; i++ )
     {
-        for ( int j=0; j<4; j++ )
-        {
-            squaresPrev[i][j] = pointsNext[ind];
-            cv::Point2d dpt = pointsNext[ind] - pointsPrev[ind];
-            double d = sqrt( dpt.dot( dpt ) );
-            if ( shiftMax < d )
-                shiftMax = d;
-            ind++;
-        }
+        cv::Point2d dpt = pointsNext[ind] - pointsPrev[ind];
+        double d = sqrt( dpt.dot( dpt ) );
+        if ( shiftMax < d )
+            shiftMax = d;
+        ind++;
     }
     gray.copyTo( grayPrev );
 
-    return (shiftMax < MAX_FLOW_SPEED);
+    return (shiftMax >= MAX_FLOW_SPEED);
 }
 
 bool Positioner::fieldOfView( std::vector<double> & corners )
@@ -887,8 +830,8 @@ bool Positioner::fieldOfView( std::vector<double> & corners )
 
 bool Positioner::drillPos( double & x, double & y )
 {
-    x = img2Floor.at<double>(0, 0) * R.x + img2Floor.at<double>(0, 1) * R.y + img2Floor.at<double>(0, 2);
-    y = img2Floor.at<double>(1, 0) * R.x + img2Floor.at<double>(1, 1) * R.y + img2Floor.at<double>(1, 2);
+    x = img2FloorSmooth.at<double>(0, 0) * R.x + img2FloorSmooth.at<double>(0, 1) * R.y + img2FloorSmooth.at<double>(0, 2);
+    y = img2FloorSmooth.at<double>(1, 0) * R.x + img2FloorSmooth.at<double>(1, 1) * R.y + img2FloorSmooth.at<double>(1, 2);
     return true;
 }
 
@@ -953,7 +896,7 @@ void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::
     {
         // approximate contour with accuracy proportional
         // to the contour perimeter
-        cv::approxPolyDP( cv::Mat( contours[i] ), approx, cv::arcLength( cv::Mat( contours[i] ), true )*0.05, true );
+        cv::approxPolyDP( cv::Mat( contours[i] ), approx, cv::arcLength( cv::Mat( contours[i] ), true )*0.1, true );
 
         // square contours should have 4 vertices after approximation
         // relatively large area (to filter out noisy contours)
@@ -961,9 +904,9 @@ void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::
         // Note: absolute value of an area is used because
         // area may be positive or negative - in accordance with the
         // contour orientation
-        if( approx.size() == 4 &&
-            fabs(contourArea(cv::Mat(approx))) > 1000 &&
-            cv::isContourConvex(cv::Mat(approx)) )
+        if( ( approx.size() == 4 ) &&
+            ( fabs(contourArea(cv::Mat(approx))) > 1000 ) &&
+            ( cv::isContourConvex( cv::Mat(approx) ) ) )
         {
             // Accept suqres only within screen margin.
             bool accept = true;

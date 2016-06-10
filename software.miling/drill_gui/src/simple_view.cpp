@@ -201,10 +201,25 @@ void SimpleView::slotMotoAddPoint()
 
 void SimpleView::slotSampleCalibrate()
 {
+    bool en = ui->sampleAlign->isChecked();
+    enableSampleCtrls( en );
+
+    if ( en )
+        positioner.startSamplePos();
+    else
+        positioner.endSamplePos();
+
+
 }
 
 void SimpleView::slotSampleAddPoint()
 {
+    double rx = ui->rx->value();
+    double ry = ui->ry->value();
+    double nx = ui->nx->value();
+    double ny = ui->ny->value();
+
+    positioner.appendSamplePos( cv::Point2d( rx, ry ), cv::Point2d( nx, ny ) );
 }
 
 

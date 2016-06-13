@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>1085</width>
-    <height>727</height>
+    <height>744</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>SimpleView</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
+   <iconset resource="../icons/icons.qrc">
     <normaloff>:/Icons/help.png</normaloff>:/Icons/help.png</iconset>
   </property>
   <property name="iconSize">
@@ -49,21 +49,35 @@
      <x>0</x>
      <y>0</y>
      <width>1085</width>
-     <height>21</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpenFile"/>
+    <addaction name="actionOpenModelFile"/>
+    <addaction name="actionOpenSampleFile"/>
     <addaction name="actionSave"/>
     <addaction name="separator"/>
     <addaction name="actionPrint"/>
     <addaction name="actionHelp"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuDevice">
+    <property name="title">
+     <string>Device</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuSetup">
+    <property name="title">
+     <string>Setup</string>
+    </property>
+    <addaction name="actionDrive_movement"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuDevice"/>
+   <addaction name="menuSetup"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -82,7 +96,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionOpenFile"/>
+   <addaction name="actionOpenModelFile"/>
+   <addaction name="actionOpenSampleFile"/>
    <addaction name="actionSave"/>
    <addaction name="separator"/>
    <addaction name="actionPrint"/>
@@ -467,16 +482,16 @@
     </layout>
    </widget>
   </widget>
-  <action name="actionOpenFile">
+  <action name="actionOpenModelFile">
    <property name="enabled">
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
+    <iconset resource="../icons/icons.qrc">
      <normaloff>:/Icons/fileopen.png</normaloff>:/Icons/fileopen.png</iconset>
    </property>
    <property name="text">
-    <string>Open File...</string>
+    <string>Open model file</string>
    </property>
   </action>
   <action name="actionExit">
@@ -486,7 +501,7 @@
   </action>
   <action name="actionPrint">
    <property name="icon">
-    <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
+    <iconset resource="../icons/icons.qrc">
      <normaloff>:/Icons/print.png</normaloff>:/Icons/print.png</iconset>
    </property>
    <property name="text">
@@ -495,7 +510,7 @@
   </action>
   <action name="actionHelp">
    <property name="icon">
-    <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
+    <iconset resource="../icons/icons.qrc">
      <normaloff>:/Icons/help.png</normaloff>:/Icons/help.png</iconset>
    </property>
    <property name="text">
@@ -504,50 +519,28 @@
   </action>
   <action name="actionSave">
    <property name="icon">
-    <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
+    <iconset resource="../icons/icons.qrc">
      <normaloff>:/Icons/filesave.png</normaloff>:/Icons/filesave.png</iconset>
    </property>
    <property name="text">
     <string>Save</string>
    </property>
   </action>
-  <action name="actionMill_position">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
+  <action name="actionOpenSampleFile">
    <property name="icon">
-    <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
-     <normaloff>:/Icons/filesave.png</normaloff>:/Icons/filesave.png</iconset>
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/Icons/fileopen.png</normaloff>:/Icons/fileopen.png</iconset>
    </property>
    <property name="text">
-    <string>Mill position</string>
+    <string>Open sample file</string>
    </property>
    <property name="toolTip">
-    <string>Mill position detection</string>
+    <string>Open sample file</string>
    </property>
   </action>
-  <action name="actionSet_mill_diameter">
-   <property name="icon">
-    <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
-     <normaloff>:/Icons/help.png</normaloff>:/Icons/help.png</iconset>
-   </property>
+  <action name="actionDrive_movement">
    <property name="text">
-    <string>Set mill diameter</string>
-   </property>
-   <property name="toolTip">
-    <string>Define currently installed end mill diameter</string>
-   </property>
-  </action>
-  <action name="actionAdd_end_mill_mosition">
-   <property name="icon">
-    <iconset resource="../../tests/vtk/SimpleView/Icons/icons.qrc">
-     <normaloff>:/Icons/help.png</normaloff>:/Icons/help.png</iconset>
-   </property>
-   <property name="text">
-    <string>Add end mill mosition</string>
-   </property>
-   <property name="toolTip">
-    <string>Add end mill position</string>
+    <string>Drive movement</string>
    </property>
   </action>
  </widget>
@@ -559,7 +552,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../../tests/vtk/SimpleView/Icons/icons.qrc"/>
+  <include location="../icons/icons.qrc"/>
  </resources>
  <connections/>
 </ui>

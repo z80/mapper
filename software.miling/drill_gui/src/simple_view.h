@@ -52,6 +52,8 @@ public slots:
   virtual void slotOpenFile();
   virtual void slotExit();
 
+  void slotDrivesCtrl();
+
   void slotEmCalibrate();
   void slotEmAppend();
   void slotEmChanged();

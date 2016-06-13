@@ -10,6 +10,7 @@
 
 #include "ui_simple_view.h"
 #include "simple_view.h"
+#include "drives_ctrl.h"
 
 #include <vtkDataObjectToTable.h>
 #include <vtkElevationFilter.h>
@@ -19,8 +20,8 @@
 #include <vtkRenderWindow.h>
 #include <vtkVectorText.h>
 #include <vtkSTLReader.h>
+#include <vtkSmartPointer.h>
 
-#include "vtkSmartPointer.h"
 
 #define VTK_CREATE(type, name) \
   vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
@@ -90,8 +91,11 @@ SimpleView::SimpleView()
   //this->TableView->SetRepresentationFromInputConnection(toTable->GetOutputPort());
 
   // Set up action signals and slots
-  connect( this->ui->actionOpenFile, SIGNAL(triggered()), this, SLOT(slotOpenFile()) );
-  connect( this->ui->actionExit,     SIGNAL(triggered()), this, SLOT(slotExit()) );
+  connect( this->ui->actionOpenModelFile,  SIGNAL(triggered()), this, SLOT(slotOpenFile()) );
+  connect( this->ui->actionOpenSampleFile, SIGNAL(triggered()), this, SLOT(slotOpenFile()) );
+  connect( this->ui->actionExit,           SIGNAL(triggered()), this, SLOT(slotExit()) );
+
+  connect( this->ui->actionDrive_movement, SIGNAL(triggered()), this, SLOT(slotDrivesCtrl()) );
 
 
 
@@ -116,6 +120,12 @@ void SimpleView::slotOpenFile()
 
 void SimpleView::slotExit() {
   qApp->exit();
+}
+
+void SimpleView::slotDrivesCtrl()
+{
+    DrivesCtrl dc( this );
+    dc.exec();
 }
 
 

@@ -2,7 +2,9 @@
 set( appname "camlib" )
 
 find_package(Boost REQUIRED)
-find_package( OpenMP REQUIRED )
+if ( UNIX )
+  find_package( OpenMP REQUIRED )
+endif ( UNIX )
 
 # Use the include path and library for Qt that is used by VTK.
 include_directories(

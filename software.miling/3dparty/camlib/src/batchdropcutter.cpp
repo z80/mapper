@@ -136,7 +136,11 @@ void BatchDropCutter::dropCutter4() {
     int calls=0;
     long int ntris = 0;
     std::list<Triangle>* tris;
-    unsigned int n;
+    #ifdef WIN32
+        int n;
+    #else
+        unsigned int n;
+    #endif
     unsigned int Nmax = clpoints->size();
     std::vector<CLPoint>& clref = *clpoints; 
     int nloop=0;
@@ -194,7 +198,11 @@ void BatchDropCutter::dropCutter5() {
     int calls=0;
     long int ntris = 0;
     std::list<Triangle>* tris;
-    unsigned int n;
+    #ifdef WIN32
+        int n;
+    #else
+        unsigned int n;
+    #endif
     unsigned int Nmax = clpoints->size();
     std::vector<CLPoint>& clref = *clpoints; 
     int nloop=0;

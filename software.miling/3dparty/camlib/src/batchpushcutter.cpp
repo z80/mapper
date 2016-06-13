@@ -151,7 +151,11 @@ void BatchPushCutter::pushCutter3() {
     Interval* i;
     std::list<Triangle>* tris;
     std::vector<Fiber>& fiberr = *fibers;
-    unsigned int n; // loop variable
+    #ifdef WIN32
+        int n;
+    #else
+        unsigned int n;
+    #endif
     unsigned int calls=0;
     
     #pragma omp parallel for schedule(dynamic) shared(calls, fiberr) private(n,i,tris,it,it_end)

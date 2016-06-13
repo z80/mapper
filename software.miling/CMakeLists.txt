@@ -32,6 +32,6 @@ add_subdirectory( "./drill-pos" )
 #add_subdirectory( "./drill-gui" )
 add_subdirectory( "./drill_gui" )
 add_subdirectory( "./tests" )
-
+add_subdirectory( "./3dparty/camlib" )
 
 

@@ -22,7 +22,7 @@ endif()
 
 file( GLOB src "./src/*.cpp" )
 
-add_library( ${appname} SHARED ${src} )
+add_library( ${appname} STATIC ${src} )
 target_link_libraries(${appname} ${Boost_LIBS} )
 
 install( TARGETS ${appname} DESTINATION ./ )

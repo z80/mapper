@@ -66,6 +66,7 @@ SimpleView::SimpleView()
   // VTK Renderer
   //VTK_CREATE(vtkRenderer, ren);
   renderer = vtkRenderer::New();
+  renderer->SetBackground( 0.1, 0.2, 0.4 );
 
   // Add Actor to renderer
   renderer->AddActor(actor);
@@ -97,11 +98,20 @@ SimpleView::SimpleView()
 
   connect( this->ui->actionDrive_movement, SIGNAL(triggered()), this, SLOT(slotDrivesCtrl()) );
 
-
-
   connect( this->ui->emCalibrate, SIGNAL(clicked()),         this, SLOT(slotEmCalibrate()) );
   connect( this->ui->emAppend,    SIGNAL(clicked()),         this, SLOT(slotEmAppend()) );
   connect( this->ui->emDiameter,  SIGNAL(editingFinished()), this, SLOT(slotEmChanged()) );
+
+  // Sample and model alingment.
+  connect( this->ui->faceOnSample,   SIGNAL(clicked()), this, SLOT(slotFaceOnSample()) );
+  connect( this->ui->faceOnModel,    SIGNAL(clicked()), this, SLOT(slotFaceOnModel()) );
+  connect( this->ui->edgeOnSample,   SIGNAL(clicked()), this, SLOT(slotEdgeOnSample()) );
+  connect( this->ui->edgeOnModel,    SIGNAL(clicked()), this, SLOT(slotEdgeOnModel()) );
+  connect( this->ui->dropOnFace,     SIGNAL(clicked()), this, SLOT(slotDropOnFace()) );
+  connect( this->ui->addEdgeContact, SIGNAL(clicked()), this, SLOT(slotAddEdgeContact()) );
+  connect( this->ui->ommitLastEdge,  SIGNAL(clicked()), this, SLOT(slotOmmitLastEdge()) );
+  connect( this->ui->alignByEdges,   SIGNAL(clicked()), this, SLOT(slotAlignByEdges()) );
+
 
   inputCapture.open( 0 );
 };
@@ -126,6 +136,10 @@ void SimpleView::slotDrivesCtrl()
 {
     DrivesCtrl dc( this );
     dc.exec();
+}
+
+void SimpleView::slotVideoAlign()
+{
 }
 
 
@@ -162,15 +176,13 @@ void SimpleView::enableAxesCtrls( bool en )
 
 void SimpleView::enableSampleCtrls( bool en )
 {
-    ui->sampleAppend->setEnabled( en );
-    ui->rx->setEnabled( en );
-    ui->ry->setEnabled( en );
-    ui->nx->setEnabled( en );
-    ui->ny->setEnabled( en );
 }
 
 void SimpleView::slotReadFrame()
 {
+    if ( !ui->actionVideoAlign->isChecked() )
+        return;
+
     cv::Mat img;
     inputCapture >> img;
 
@@ -209,28 +221,38 @@ void SimpleView::slotMotoAddPoint()
     positioner.appendAxesPos( 0, 0 );
 }
 
-void SimpleView::slotSampleCalibrate()
+void SimpleView::slotFaceOnSample()
 {
-    bool en = ui->sampleAlign->isChecked();
-    enableSampleCtrls( en );
-
-    if ( en )
-        positioner.startSamplePos();
-    else
-        positioner.endSamplePos();
-
-
 }
 
-void SimpleView::slotSampleAddPoint()
+void SimpleView::slotFaceOnModel()
 {
-    double rx = ui->rx->value();
-    double ry = ui->ry->value();
-    double nx = ui->nx->value();
-    double ny = ui->ny->value();
-
-    positioner.appendSamplePos( cv::Point2d( rx, ry ), cv::Point2d( nx, ny ) );
 }
+
+void SimpleView::slotEdgeOnSample()
+{
+}
+
+void SimpleView::slotEdgeOnModel()
+{
+}
+
+void SimpleView::slotDropOnFace()
+{
+}
+
+void SimpleView::slotAddEdgeContact()
+{
+}
+
+void SimpleView::slotOmmitLastEdge()
+{
+}
+
+void SimpleView::slotAlignByEdges()
+{
+}
+
 
 
 

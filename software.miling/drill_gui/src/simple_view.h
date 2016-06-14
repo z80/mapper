@@ -52,6 +52,8 @@ public slots:
   virtual void slotOpenFile();
   virtual void slotExit();
 
+  void slotVideoAlign();
+
   void slotDrivesCtrl();
 
   void slotEmCalibrate();
@@ -62,8 +64,14 @@ public slots:
   void slotMotoCalibrate();
   void slotMotoAddPoint();
 
-  void slotSampleCalibrate();
-  void slotSampleAddPoint();
+  void slotFaceOnSample();
+  void slotFaceOnModel();
+  void slotEdgeOnSample();
+  void slotEdgeOnModel();
+  void slotDropOnFace();
+  void slotAddEdgeContact();
+  void slotOmmitLastEdge();
+  void slotAlignByEdges();
 
 protected:
 

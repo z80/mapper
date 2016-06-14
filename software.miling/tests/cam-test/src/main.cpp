@@ -10,17 +10,144 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkInteractorStyleMultiTouchCamera.h"
 
+
+#include <vtkVersion.h>
+#include <vtkSmartPointer.h>
+#include <vtkRendererCollection.h>
+#include <vtkDataSetMapper.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkIdTypeArray.h>
+#include <vtkTriangleFilter.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkCommand.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkPolyData.h>
+#include <vtkPoints.h>
+#include <vtkCellArray.h>
+#include <vtkPlaneSource.h>
+#include <vtkCellPicker.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkProperty.h>
+#include <vtkSelectionNode.h>
+#include <vtkSelection.h>
+#include <vtkExtractSelection.h>
+#include <vtkObjectFactory.h>
+
+
+
 #include <string>
 #include <stlsurf.hpp>
 #include <stlreader.hpp>
 #include <triangle.hpp>
 #include <climits>
 
+// Catch mouse events
+class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
+{
+  public:
+  static MouseInteractorStyle* New();
+
+  MouseInteractorStyle()
+  {
+    selectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    selectedActor = vtkSmartPointer<vtkActor>::New();
+  }
+
+    virtual void OnLeftButtonDown()
+    {
+      // Get the location of the click (in window coordinates)
+      int* pos = this->GetInteractor()->GetEventPosition();
+
+      vtkSmartPointer<vtkCellPicker> picker =
+        vtkSmartPointer<vtkCellPicker>::New();
+      picker->SetTolerance(0.0005);
+
+      // Pick from this location.
+      picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
+
+      double* worldPosition = picker->GetPickPosition();
+      std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
+
+      if(picker->GetCellId() != -1)
+        {
+
+        std::cout << "Pick position is: " << worldPosition[0] << " " << worldPosition[1]
+                  << " " << worldPosition[2] << endl;
+
+        vtkSmartPointer<vtkIdTypeArray> ids =
+          vtkSmartPointer<vtkIdTypeArray>::New();
+        ids->SetNumberOfComponents(1);
+        ids->InsertNextValue(picker->GetCellId());
+
+        vtkSmartPointer<vtkSelectionNode> selectionNode =
+          vtkSmartPointer<vtkSelectionNode>::New();
+        selectionNode->SetFieldType(vtkSelectionNode::CELL);
+        selectionNode->SetContentType(vtkSelectionNode::INDICES);
+        selectionNode->SetSelectionList(ids);
+
+        vtkSmartPointer<vtkSelection> selection =
+          vtkSmartPointer<vtkSelection>::New();
+        selection->AddNode(selectionNode);
+
+        vtkSmartPointer<vtkExtractSelection> extractSelection =
+          vtkSmartPointer<vtkExtractSelection>::New();
+#if VTK_MAJOR_VERSION <= 5
+        extractSelection->SetInput(0, this->Data);
+        extractSelection->SetInput(1, selection);
+#else
+        extractSelection->SetInputData(0, this->Data);
+        extractSelection->SetInputData(1, selection);
+#endif
+        extractSelection->Update();
+
+        // In selection
+        vtkSmartPointer<vtkUnstructuredGrid> selected =
+          vtkSmartPointer<vtkUnstructuredGrid>::New();
+        selected->ShallowCopy(extractSelection->GetOutput());
+
+        std::cout << "There are " << selected->GetNumberOfPoints()
+                  << " points in the selection." << std::endl;
+        std::cout << "There are " << selected->GetNumberOfCells()
+                  << " cells in the selection." << std::endl;
+
+
+#if VTK_MAJOR_VERSION <= 5
+        selectedMapper->SetInputConnection(
+          selected->GetProducerPort());
+#else
+        selectedMapper->SetInputData(selected);
+#endif
+
+        selectedActor->SetMapper(selectedMapper);
+        selectedActor->GetProperty()->EdgeVisibilityOn();
+        selectedActor->GetProperty()->SetEdgeColor(1,0,0);
+        selectedActor->GetProperty()->SetLineWidth(3);
+
+        this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
+
+        }
+      // Forward events
+      vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+    }
+
+    vtkSmartPointer<vtkPolyData> Data;
+    vtkSmartPointer<vtkDataSetMapper> selectedMapper;
+    vtkSmartPointer<vtkActor> selectedActor;
+
+};
+
+vtkStandardNewMacro(MouseInteractorStyle);
+
+
 int main()
 {
     vtkRenderer *ren1= vtkRenderer::New();
     ren1->SetBackground( 0.1, 0.2, 0.4 );
 
+    /*
     ocl::STLSurf surf;
     ocl::STLReader reader( L"./test.stl", surf );
 
@@ -54,7 +181,7 @@ int main()
         mapper->SetScalarRange( 0, sz-1 );
 
         ren1->AddActor( actor );
-    }
+    }*/
 
 
     ocl::STLSurf surf2;
@@ -93,18 +220,19 @@ int main()
     A[2][0] = -nx*s; A[2][1] = -ny*s; A[2][2] = c;   A[2][3] = -c*z-s*(-ny*y-nx*x);
     A[3][0] = 0.0;   A[3][1] = 0.0;   A[3][2] = 0.0; A[3][3] = 1.0;
 
-    sz = static_cast<int>( surf2.tris.size() );
+    vtkSmartPointer<vtkPoints>   pts      = vtkPoints::New();
+    vtkSmartPointer<vtkPolyData> polyData = vtkPolyData::New();
+    polyData->Allocate();
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkPolyDataMapper::New();
+    mapper->SetInputData( polyData );
+    vtkSmartPointer<vtkActor> actor = vtkActor::New();
+    actor->SetMapper( mapper );
+    actor->GetProperty()->SetColor( 0.0, 0.75, 0.0 );
+    int sz = static_cast<int>( surf2.tris.size() );
+    int ind = 0;
     for ( std::list<ocl::Triangle>::iterator i=surf2.tris.begin(); i!=surf2.tris.end(); i++ )
     {
         ocl::Triangle & t = *i;
-        vtkSmartPointer<vtkPoints>   pts      = vtkPoints::New();
-        vtkSmartPointer<vtkPolyData> polyData = vtkPolyData::New();
-        polyData->Allocate();
-        vtkSmartPointer<vtkPolyDataMapper> mapper = vtkPolyDataMapper::New();
-        mapper->SetInputData( polyData );
-        vtkSmartPointer<vtkActor> actor = vtkActor::New();
-        actor->SetMapper( mapper );
-        actor->GetProperty()->SetColor( 0.0, 0.75, 0.0 );
 
         for ( int j=0; j<3; j++ )
         {
@@ -116,22 +244,17 @@ int main()
             double y3 = A[2][0]*x1 + A[2][1]*x2 + A[2][2]*x3 + A[2][3];
             pts->InsertNextPoint( y1, y2, y3 );
         }
-        vtkIdType ids[2];
-        ids[0] = 0;
-        ids[1] = 1;
-        polyData->InsertNextCell( VTK_LINE, 2, ids );
-        ids[0] = 1;
-        ids[1] = 2;
-        polyData->InsertNextCell( VTK_LINE, 2, ids );
-        ids[0] = 2;
-        ids[1] = 0;
-        polyData->InsertNextCell( VTK_LINE, 2, ids );
-
-        polyData->SetPoints( pts );
-        mapper->SetScalarRange( 0, sz-1 );
-
-        ren1->AddActor( actor );
+        vtkIdType ids[3];
+        ids[0] = ind;
+        ids[1] = ind+1;
+        ids[2] = ind+2;
+        ind += 3;
+        polyData->InsertNextCell( VTK_TRIANGLE, 3, ids );
     }
+    polyData->SetPoints( pts );
+    mapper->SetScalarRange( 0, sz-1 );
+
+    ren1->AddActor( actor );
 
 
 
@@ -150,9 +273,12 @@ int main()
 
     vtkRenderWindowInteractor *iren = vtkRenderWindowInteractor::New();
     iren->SetRenderWindow(renWin);
-    vtkInteractorStyleMultiTouchCamera *style =
-    vtkInteractorStyleMultiTouchCamera::New();
+    //vtkInteractorStyleMultiTouchCamera *style = vtkInteractorStyleMultiTouchCamera::New();
+    vtkSmartPointer<MouseInteractorStyle> style = vtkSmartPointer<MouseInteractorStyle>::New();
     iren->SetInteractorStyle(style);
+
+    style->SetDefaultRenderer( ren1 );
+    style->Data = polyData;
 
     //Start the event loop
     iren->Initialize();

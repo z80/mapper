@@ -61,75 +61,37 @@ int main()
     ocl::STLReader reader2( L"./test.stl", surf2 );
     // Rotate using arbitrary face. For example, the very first one.
     ocl::Triangle t = *surf2.tris.begin();
-
-    double A[4][4];
-    for ( int i=0; i<4; i++ )
-    {
-        for ( int j=0; j<4; j++ )
-            A[i][j] = 0.0;
-        A[i][i] = 1.0;
-    }
-
     ocl::Point n = t.n;
+    double nx, ny;
     // XY projection.
     if ( ( abs( n.x ) > std::numeric_limits<double>::epsilon() ) &&
          ( abs( n.y ) > std::numeric_limits<double>::epsilon() ) )
     {
         // Normalize projection and rotate to match it with Ox.
         double l = sqrt( n.x * n.x + n.y*n.y );
-        double nx = n.x / l;
-        double ny = n.y / l;
-        // It is necessary to "unrotate". To do that it is neccessary
-        // to invert rotation that caused current position.
-        // For rotation inverted is equal to transposed.
-        A[0][0] = nx;  A[0][1] = ny;  A[0][2] = 0.0;
-        A[0][0] = -ny; A[0][1] = nx;  A[0][2] = 0.0;
-        A[0][0] = 0.0; A[0][1] = 0.0; A[0][2] = 1.0;
+        nx = n.x / l;
+        ny = n.y / l;
     }
     else
     {
         // Just unit matrix.
-        A[0][0] = 1.0; A[0][1] = 0.0;  A[0][2] = 0.0;
-        A[0][0] = 0.0; A[0][1] = 1.0;  A[0][2] = 0.0;
-        A[0][0] = 0.0; A[0][1] = 0.0;  A[0][2] = 1.0;
-
+        nx = 1.0;
+        ny = 0.0;
     }
     // And now rotate around Oy on minus cosine between n and (0, 0, -1).
     // Again inverted is equal to transposed.
     double c = -n.z;
     double s = sqrt( 1.0-c*c );
-    double B[4][4];
-    for ( int i=0; i<4; i++ )
-    {
-        for ( int j=0; j<4; j++ )
-            B[i][j] = 0.0;
-        B[i][i] = 1.0;
-    }
-    B[0][0] = c;   B[0][1] = 0.0;  B[0][2] = s;
-    B[0][0] = 0.0; B[0][1] = 1.0;  B[0][2] = 0.0;
-    B[0][0] = -s;  B[0][1] = 0.0;  B[0][2] = c;
 
-    // Translation to point (0, 0, 0) prior to rotations.
-    double T[4][4];
-    for ( int i=0; i<4; i++ )
-    {
-        for ( int j=0; j<4; j++ )
-            T[i][j] = 0.0;
-        T[i][i] = 1.0;
-    }
-    T[0][3] = -t.p[0].x;
-    T[1][3] = -t.p[0].y;
-    T[2][3] = -t.p[0].z;
     // And resultant transformation is B*A*T.
     double x = t.p[0].x;
     double y = t.p[0].y;
     double z = t.p[0].z;
-    A[0][0] = c*nx;  A[0][1] = c*ny;  A[0][2] = s;   A[0][3] = c*(−ny*y−nx*x)−s*z;
-    A[1][0] = -ny;   A[1][1] = nx;    A[1][2] = 0.0; A[1][3] = ny*x−nx*y;
-    A[2][0] = -nx*s; A[2][1] = -ny*s; A[2][2] = c;   A[2][3] = −c*z−s*(−ny*y−nx*x);
+    double A[4][4];
+    A[0][0] = c*nx;  A[0][1] = c*ny;  A[0][2] = s;   A[0][3] = c*(-ny*y-nx*x)-s*z;
+    A[1][0] = -ny;   A[1][1] = nx;    A[1][2] = 0.0; A[1][3] = ny*x-nx*y;
+    A[2][0] = -nx*s; A[2][1] = -ny*s; A[2][2] = c;   A[2][3] = -c*z-s*(-ny*y-nx*x);
     A[3][0] = 0.0;   A[3][1] = 0.0;   A[3][2] = 0.0; A[3][3] = 1.0;
-
-
 
     sz = static_cast<int>( surf2.tris.size() );
     for ( std::list<ocl::Triangle>::iterator i=surf2.tris.begin(); i!=surf2.tris.end(); i++ )
@@ -145,7 +107,15 @@ int main()
         actor->GetProperty()->SetColor( 0.0, 0.75, 0.0 );
 
         for ( int j=0; j<3; j++ )
-            pts->InsertNextPoint( t.p[j].x, t.p[j].y, t.p[j].z );
+        {
+            double x1 = t.p[j].x;
+            double x2 = t.p[j].y;
+            double x3 = t.p[j].z;
+            double y1 = A[0][0]*x1 + A[0][1]*x2 + A[0][2]*x3 + A[0][3];
+            double y2 = A[1][0]*x1 + A[1][1]*x2 + A[1][2]*x3 + A[1][3];
+            double y3 = A[2][0]*x1 + A[2][1]*x2 + A[2][2]*x3 + A[2][3];
+            pts->InsertNextPoint( y1, y2, y3 );
+        }
         vtkIdType ids[2];
         ids[0] = 0;
         ids[1] = 1;
@@ -172,7 +142,7 @@ int main()
 
     vtkSmartPointer<vtkCamera> cam = vtkCamera::New();
     cam->SetFocalPoint( 0.0, 0.0, 0.0 );
-    cam->SetPosition( 0.0, 50.0, 50.0 );
+    cam->SetPosition( 150.0, 150.0, 0.0 );
 
     ren1->SetActiveCamera( cam );
 

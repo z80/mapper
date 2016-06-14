@@ -62,7 +62,14 @@ int main()
     // Rotate using arbitrary face. For example, the very first one.
     ocl::Triangle t = *surf2.tris.begin();
 
-    double A[3][3];
+    double A[4][4];
+    for ( int i=0; i<4; i++ )
+    {
+        for ( int j=0; j<4; j++ )
+            A[i][j] = 0.0;
+        A[i][i] = 1.0;
+    }
+
     ocl::Point n = t.n;
     // XY projection.
     if ( ( abs( n.x ) > std::numeric_limits<double>::epsilon() ) &&
@@ -91,11 +98,36 @@ int main()
     // Again inverted is equal to transposed.
     double c = -n.z;
     double s = sqrt( 1.0-c*c );
-    double B[3][3];
-    A[0][0] = c;   A[0][1] = 0.0;  A[0][2] = s;
-    A[0][0] = 0.0; A[0][1] = 1.0;  A[0][2] = 0.0;
-    A[0][0] = -s;  A[0][1] = 0.0;  A[0][2] = c;
-    // And resultant preansformation is B*A.
+    double B[4][4];
+    for ( int i=0; i<4; i++ )
+    {
+        for ( int j=0; j<4; j++ )
+            B[i][j] = 0.0;
+        B[i][i] = 1.0;
+    }
+    B[0][0] = c;   B[0][1] = 0.0;  B[0][2] = s;
+    B[0][0] = 0.0; B[0][1] = 1.0;  B[0][2] = 0.0;
+    B[0][0] = -s;  B[0][1] = 0.0;  B[0][2] = c;
+
+    // Translation to point (0, 0, 0) prior to rotations.
+    double T[4][4];
+    for ( int i=0; i<4; i++ )
+    {
+        for ( int j=0; j<4; j++ )
+            T[i][j] = 0.0;
+        T[i][i] = 1.0;
+    }
+    T[0][3] = -t.p[0].x;
+    T[1][3] = -t.p[0].y;
+    T[2][3] = -t.p[0].z;
+    // And resultant transformation is B*A*T.
+    double x = t.p[0].x;
+    double y = t.p[0].y;
+    double z = t.p[0].z;
+    A[0][0] = c*nx;  A[0][1] = c*ny;  A[0][2] = s;   A[0][3] = c*(−ny*y−nx*x)−s*z;
+    A[1][0] = -ny;   A[1][1] = nx;    A[1][2] = 0.0; A[1][3] = ny*x−nx*y;
+    A[2][0] = -nx*s; A[2][1] = -ny*s; A[2][2] = c;   A[2][3] = −c*z−s*(−ny*y−nx*x);
+    A[3][0] = 0.0;   A[3][1] = 0.0;   A[3][2] = 0.0; A[3][3] = 1.0;
 
 
 

@@ -228,6 +228,7 @@ int main()
     vtkSmartPointer<vtkActor> actor = vtkActor::New();
     actor->SetMapper( mapper );
     actor->GetProperty()->SetColor( 0.0, 0.75, 0.0 );
+    actor->GetProperty()->SetOpacity( 0.5 );
     int sz = static_cast<int>( surf2.tris.size() );
     int ind = 0;
     for ( std::list<ocl::Triangle>::iterator i=surf2.tris.begin(); i!=surf2.tris.end(); i++ )

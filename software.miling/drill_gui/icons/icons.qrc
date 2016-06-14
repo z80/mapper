@@ -8,5 +8,6 @@
 
     <!-- Help -->
     <file>help.png</file>
+    <file>video-align.png</file>
   </qresource>
 </RCC>

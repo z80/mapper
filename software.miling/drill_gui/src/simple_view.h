@@ -24,6 +24,7 @@
 #include "visible_rects.h"
 #include "known_rects.h"
 #include "end_mill.h"
+#include "model.h"
 
 
 // Forward Qt class declarations
@@ -49,7 +50,8 @@ public:
 
 public slots:
 
-  virtual void slotOpenFile();
+  virtual void slotOpenFileM();
+  virtual void slotOpenFileS();
   virtual void slotExit();
 
   void slotVideoAlign();
@@ -98,7 +100,8 @@ private:
     KnownRects   knownRects;
     VisibleRects visibleRects;
     EndMill      endMill;
-    Fov    fov;
+    Fov          fov;
+    Model        * model;
 
 
     // Update timer.

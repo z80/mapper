@@ -78,6 +78,9 @@ SimpleView::SimpleView()
   renderer->AddActor( visibleRects.actor );
   renderer->AddActor( knownRects.actor );
   renderer->AddActor( endMill.actor );
+  model = new Model( renderer, this->ui->qvtkWidget->GetInteractor() );
+  renderer->AddActor( model->actorM ); 
+  renderer->AddActor( model->actorS );
 
   // VTK/Qt wedded
   this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
@@ -92,8 +95,8 @@ SimpleView::SimpleView()
   //this->TableView->SetRepresentationFromInputConnection(toTable->GetOutputPort());
 
   // Set up action signals and slots
-  connect( this->ui->actionOpenModelFile,  SIGNAL(triggered()), this, SLOT(slotOpenFile()) );
-  connect( this->ui->actionOpenSampleFile, SIGNAL(triggered()), this, SLOT(slotOpenFile()) );
+  connect( this->ui->actionOpenModelFile,  SIGNAL(triggered()), this, SLOT(slotOpenFileM()) );
+  connect( this->ui->actionOpenSampleFile, SIGNAL(triggered()), this, SLOT(slotOpenFileS()) );
   connect( this->ui->actionExit,           SIGNAL(triggered()), this, SLOT(slotExit()) );
 
   connect( this->ui->actionDrive_movement, SIGNAL(triggered()), this, SLOT(slotDrivesCtrl()) );
@@ -119,11 +122,16 @@ SimpleView::SimpleView()
 SimpleView::~SimpleView()
 {
   // The smart pointers should clean up for up
-
+  delete model;
 }
 
 // Action to be taken upon file open
-void SimpleView::slotOpenFile()
+void SimpleView::slotOpenFileM()
+{
+    //QOpenFileDialog::exec
+}
+
+void SimpleView::slotOpenFileS()
 {
 
 }

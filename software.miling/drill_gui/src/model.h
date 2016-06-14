@@ -45,11 +45,14 @@
 #include <climits>
 
 
+class FaceSelectorStyle;
+class EdgeSelectorStyle;
+
 
 class Model
 {
 public:
-    Model();
+    Model( vtkRenderer * ren , vtkRenderWindowInteractor * iren );
     ~Model();
 
     void loadModel( const std::string & fname );
@@ -71,6 +74,10 @@ public:
     // Orienting and positioning matrix.
     double B[3][4];
 
+    // Needed pointers.
+    vtkSmartPointer<vtkRenderer>               renderer;
+    vtkSmartPointer<vtkRenderWindowInteractor> iren;
+
     // Visualization data.
     vtkSmartPointer<vtkPoints>         ptsM;
     vtkSmartPointer<vtkPolyData>       polyDataM;
@@ -81,6 +88,10 @@ public:
     vtkSmartPointer<vtkPolyData>       polyDataS;
     vtkSmartPointer<vtkPolyDataMapper> mapperS;
     vtkSmartPointer<vtkActor>          actorS;
+
+    // Selectors.
+    vtkSmartPointer<FaceSelectorStyle> faceSelector;
+    vtkSmartPointer<EdgeSelectorStyle> edgeSelector;
 };
 
 

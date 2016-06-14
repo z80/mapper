@@ -20,6 +20,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ./src
   ${ROOT}/drill-pos/src
+  ${ROOT}/3dparty/camlib/src
 )
 
 # Set your files and resources here
@@ -63,7 +64,8 @@ if(VTK_QT_VERSION VERSION_GREATER "4")
     ${Srcs} ${Hdrs} ${UI_Srcs} ${MOC_Hdrs} ${QRC_Srcs})
   qt5_use_modules(${appname} Core Gui Widgets)
   target_link_libraries(${appname} ${VTK_LIBRARIES}
-                                   ${OpenCV_LIBS} )
+                                   ${OpenCV_LIBS}
+                                   camlib )
 else()
   find_package(Qt4 REQUIRED)
   include(${QT_USE_FILE})
@@ -95,6 +97,7 @@ else()
     ${QT_LIBRARIES}
     ${VTK_LIBRARIES}
     ${OpenCV_LIBS}
+    camlib
   )
 endif()
 

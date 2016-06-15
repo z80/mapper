@@ -22,6 +22,8 @@
 #include <vtkSTLReader.h>
 #include <vtkSmartPointer.h>
 
+#include <QFileDialog>
+
 
 #define VTK_CREATE(type, name) \
   vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
@@ -79,8 +81,6 @@ SimpleView::SimpleView()
   renderer->AddActor( knownRects.actor );
   renderer->AddActor( endMill.actor );
   model = new Model( renderer, this->ui->qvtkWidget->GetInteractor() );
-  renderer->AddActor( model->actorM ); 
-  renderer->AddActor( model->actorS );
 
   // VTK/Qt wedded
   this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
@@ -129,11 +129,22 @@ SimpleView::~SimpleView()
 void SimpleView::slotOpenFileM()
 {
     //QOpenFileDialog::exec
+    QString fname = QFileDialog::getOpenFileName( this, "Select STL model file", "", "Model (*.stl)" );
+    if ( fname.size() > 0 )
+    {
+        std::string stri = fname.toStdString();
+        model->loadModel( stri );
+    }
 }
 
 void SimpleView::slotOpenFileS()
 {
-
+    QString fname = QFileDialog::getOpenFileName( this, "Select STL sample file", "", "Sample (*.stl)" );
+    if ( fname.size() > 0 )
+    {
+        std::string stri = fname.toStdString();
+        model->loadSample( stri );
+    }
 }
 
 void SimpleView::slotExit() {
@@ -231,18 +242,22 @@ void SimpleView::slotMotoAddPoint()
 
 void SimpleView::slotFaceOnSample()
 {
+    model->setModeSampleFace();
 }
 
 void SimpleView::slotFaceOnModel()
 {
+    model->setModeModelFace();
 }
 
 void SimpleView::slotEdgeOnSample()
 {
+    model->setModeSampleEdge();
 }
 
 void SimpleView::slotEdgeOnModel()
 {
+    model->setModeModelEdge();
 }
 
 void SimpleView::slotDropOnFace()

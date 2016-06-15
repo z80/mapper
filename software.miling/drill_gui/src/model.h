@@ -52,6 +52,8 @@ class EdgeSelectorStyle;
 class Model
 {
 public:
+    enum TSelectionMode { IDLE_MODE, FACE_SAMPLE, FACE_MODEL, EDGE_SAMPLE, EDGE_MODEL };
+
     Model( vtkRenderer * ren , vtkRenderWindowInteractor * iren );
     ~Model();
 
@@ -65,6 +67,16 @@ public:
 
     void dropOnFace();
     void alignToEdge();
+
+    // Helper functions for initializing visualization data.
+    void resetMatrices();
+    void convertPoint( double x1, double x2, double x3, double & y1, double & y2, double & y3 );
+    void convertPoint( double * x, double * y );
+    void prepareFaces( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts, vtkSmartPointer<vtkPolyData> & polyData, vtkSmartPointer<vtkPolyDataMapper> & mapper );
+    void prepareEdges( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts, vtkSmartPointer<vtkPolyData> & polyData, vtkSmartPointer<vtkPolyDataMapper> & mapper );
+    // Callbacks.
+    void faceSelectedCallback( vtkIdType * inds );
+    void edgeSelectedCallback( vtkIdType * inds );
 
     ocl::STLSurf modelOrig,  modelFlipped,  model;
     ocl::STLSurf sampleOrig, sampleFlipped, sample;
@@ -89,9 +101,17 @@ public:
     vtkSmartPointer<vtkPolyDataMapper> mapperS;
     vtkSmartPointer<vtkActor>          actorS;
 
+    // Selected element visualization.
+    vtkSmartPointer<vtkPoints>         ptsSel;
+    vtkSmartPointer<vtkPolyData>       polyDataSel;
+    vtkSmartPointer<vtkPolyDataMapper> mapperSel;
+    vtkSmartPointer<vtkActor>          actorSel;
+
     // Selectors.
     vtkSmartPointer<FaceSelectorStyle> faceSelector;
     vtkSmartPointer<EdgeSelectorStyle> edgeSelector;
+
+    TSelectionMode selectionMode;
 };
 
 

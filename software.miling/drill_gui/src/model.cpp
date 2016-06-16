@@ -312,6 +312,7 @@ void Model::setModeModelFace()
 
     faceSelector->SetDefaultRenderer( renderer );
     faceSelector->Data = polyDataM;
+    faceSelector->model = this;
 }
 
 void Model::setModeModelEdge()
@@ -327,7 +328,8 @@ void Model::setModeModelEdge()
     iren->SetInteractorStyle( edgeSelector );
 
     edgeSelector->SetDefaultRenderer( renderer );
-    edgeSelector->Data = polyDataS;
+    edgeSelector->Data = polyDataM;
+    edgeSelector->model = this;
 }
 
 void Model::dropOnFace()
@@ -511,10 +513,150 @@ void Model::faceSelectedCallback( vtkIdType * inds )
 
 void Model::edgeSelectedCallback( vtkIdType * inds )
 {
+    const double MARGIN = 0.001;
+    // There should be at least two triangles.
+    ocl::Triangle ta, tb;
+    ocl::Point    pa, pb; // Points on the edge.
+    ocl::Point    na, nb; // Normals for faces containing this edge.
+    bool bFound = false;
+    ocl::STLSurf & s = ( selectionMode == EDGE_SAMPLE ) ? sampleOrig : modelOrig;
 
+    int ind = 0;
+
+    // First triangle is searched by index.
+    for ( std::list<ocl::Triangle>::iterator i=s.tris.begin(); i!=s.tris.end(); i++ )
+    {
+        ocl::Triangle & t = *i;
+
+        for ( int j=0; j<3; j++ )
+        {
+            int indA = ind + j;
+            if ( indA == inds[0] )
+            {
+                int indB = ind + ((j + 1) % 3);
+                pa = t.p[indA];
+                pb = t.p[indB];
+                na = t.n;
+                ta = t;
+                //i++; // Increase pointer by one.
+                // Second triangle is seearched by value because indices are different.
+                for ( std::list<ocl::Triangle>::iterator k=s.tris.begin(); k!=s.tris.end(); k++ )
+                {
+                    // Don't analyze the same triangle.
+                    if ( k == i )
+                        continue;
+                    ocl::Triangle & t = *k;
+                    for ( int s=0; s<3; s++ )
+                    {
+                        int i1 = s;
+                        ocl::Point & p1 = t.p[i1];
+                        double d1 = (p1-pa).norm();
+                        // Point is considered to be the same if distance is not greater then MARGIN.
+                        if ( d1 <= MARGIN )
+                        {
+                            // Other two points are candidates.
+                            int i2 = (i1+1)%3;
+                            ocl::Point & p2 = t.p[i2];
+                            double d2 = (p2-pb).norm();
+                            if ( d2 <= MARGIN )
+                            {
+                                bFound = true;
+                                nb = t.n;
+                                tb = t;
+                                break;
+                            }
+                            // Check the last point of triangle.
+                            i2 = (i2+1)%3;
+                            ocl::Point & p3 = t.p[i2];
+                            d2 = (p2-pb).norm();
+                            if ( d2 <= MARGIN )
+                            {
+                                bFound = true;
+                                nb = t.n;
+                                tb = t;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+
+        }
+
+        // Render both triangles and resultant normal.
+        if ( bFound )
+        {
+            if ( ptsSel )
+                ptsSel->Delete();
+            ptsSel = vtkPoints::New();
+
+            for ( int j=0; j<3; j++ )
+            {
+                ocl::Point & p = ta.p[j];
+                double y[3];
+                convertPoint( p.x, p.y, p.z, y[0], y[1], y[2] );
+                ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            }
+            for ( int j=0; j<3; j++ )
+            {
+                ocl::Point & p = tb.p[j];
+                double y[3];
+                convertPoint( p.x, p.y, p.z, y[0], y[1], y[2] );
+                ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            }
+            double y[3];
+            convertPoint( pa.x, pa.y, pa.z, y[0], y[1], y[2] );
+            //ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            convertPoint( pb.x, pb.y, pb.z, y[0], y[1], y[2] );
+            //ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            ocl::Point n0 = (pa + pb)*0.5;
+            convertPoint( n0.x, n0.y, n0.z, y[0], y[1], y[2] );
+            ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            ocl::Point n1 = (na + nb);
+            n1.normalize();
+            n1 = n0 + n1;
+            convertPoint( n1.x, n1.y, n1.z, y[0], y[1], y[2] );
+            ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+
+            if ( polyDataSel )
+                polyDataSel->Delete();
+            polyDataSel = vtkPolyData::New();
+            polyDataSel->Allocate();
+
+            vtkIdType ids[2];
+            ids[0] = 0;
+            ids[1] = 1;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+            ids[0] = 1;
+            ids[1] = 2;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+            ids[0] = 2;
+            ids[1] = 0;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+
+            ids[0] = 3;
+            ids[1] = 4;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+            ids[0] = 4;
+            ids[1] = 5;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+            ids[0] = 5;
+            ids[1] = 3;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+
+            ids[0] = 6;
+            ids[1] = 7;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+
+            polyDataSel->SetPoints( ptsSel );
+            mapperSel->SetInputData( polyDataSel );
+            renderer->GetRenderWindow()->Render();
+        }
+
+        ind += 3;
+    }
 }
-
-
 
 
 

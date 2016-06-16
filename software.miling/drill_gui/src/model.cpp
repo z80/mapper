@@ -482,8 +482,9 @@ void Model::faceSelectedCallback( vtkIdType * inds )
             ids[2] = 2;
             polyDataSel->InsertNextCell( VTK_TRIANGLE, 3, ids );
             polyDataSel->SetPoints( ptsSel );
+            break;
         }
-        inds += 3;
+        ind += 3;
     }
 }
 

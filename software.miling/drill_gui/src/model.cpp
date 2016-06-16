@@ -17,8 +17,10 @@ public:
 
     ~FaceSelectorStyle()
     {
-        selectedMapper->Delete();
-        selectedActor->Delete();
+        if ( selectedMapper )
+            selectedMapper->Delete();
+        if ( selectedActor )
+            selectedActor->Delete();
     }
 
     virtual void OnLeftButtonDown()
@@ -32,15 +34,17 @@ public:
       // Pick from this location.
       picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
 
-      double * worldPosition = picker->GetPickPosition();
-      std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
+      //double * worldPosition = picker->GetPickPosition();
+      //std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
 
       if ( picker->GetCellId() != -1 )
       {
         vtkIdType cnt, * inds;
         Data->GetCellPoints( picker->GetCellId(), cnt, inds );
         model->faceSelectedCallback( inds );
+        return;
 
+        /*
         std::cout << "Pick position is: " << worldPosition[0] << " " << worldPosition[1]
                   << " " << worldPosition[2] << endl;
 
@@ -80,8 +84,8 @@ public:
         selectedActor->GetProperty()->SetLineWidth( 3 );
 
         this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
-
-        }
+        */
+      }
       // Forward events
       vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
     }
@@ -112,6 +116,14 @@ public:
         selectedActor = vtkSmartPointer<vtkActor>::New();
     }
 
+    ~EdgeSelectorStyle()
+    {
+        if ( selectedMapper )
+            selectedMapper->Delete();
+        if ( selectedActor )
+            selectedActor->Delete();
+    }
+
     virtual void OnLeftButtonDown()
     {
       // Get the location of the click (in window coordinates)
@@ -123,15 +135,17 @@ public:
       // Pick from this location.
       picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
 
-      double* worldPosition = picker->GetPickPosition();
-      std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
+      //double* worldPosition = picker->GetPickPosition();
+      //std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
 
       if ( picker->GetCellId() != -1 )
       {
         vtkIdType cnt, * inds;
         Data->GetCellPoints( picker->GetCellId(), cnt, inds );
         model->edgeSelectedCallback( inds );
+        return;
 
+        /*
         std::cout << "Pick position is: " << worldPosition[0] << " " << worldPosition[1]
                   << " " << worldPosition[2] << endl;
 
@@ -169,8 +183,8 @@ public:
         selectedActor->GetProperty()->SetLineWidth( 3 );
 
         this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
-
-        }
+        */
+      }
       // Forward events
       vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
     }
@@ -476,12 +490,19 @@ void Model::faceSelectedCallback( vtkIdType * inds )
                 polyDataSel->Delete();
             polyDataSel = vtkPolyData::New();
             polyDataSel->Allocate();
-            vtkIdType ids[3];
+            vtkIdType ids[2];
             ids[0] = 0;
             ids[1] = 1;
-            ids[2] = 2;
-            polyDataSel->InsertNextCell( VTK_TRIANGLE, 3, ids );
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+            ids[0] = 1;
+            ids[1] = 2;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
+            ids[0] = 2;
+            ids[1] = 0;
+            polyDataSel->InsertNextCell( VTK_LINE, 2, ids );
             polyDataSel->SetPoints( ptsSel );
+            mapperSel->SetInputData( polyDataSel );
+            renderer->GetRenderWindow()->Render();
             break;
         }
         ind += 3;

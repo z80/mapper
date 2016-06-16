@@ -202,6 +202,7 @@ Model::Model( vtkRenderer * ren , vtkRenderWindowInteractor * iren )
 {
     this->renderer = ren;
     this->iren     = iren;
+    selectionMode = IDLE_MODE;
 
     resetMatrices();
 
@@ -220,6 +221,13 @@ Model::Model( vtkRenderer * ren , vtkRenderWindowInteractor * iren )
     actorS->GetProperty()->SetOpacity( 0.5 );
     actorS->GetProperty()->SetLineWidth( 5 );
     renderer->AddActor( actorS );
+
+    mapperSel = vtkPolyDataMapper::New();
+    actorSel = vtkActor::New();
+    actorSel->SetMapper( mapperSel );
+    actorSel->GetProperty()->SetColor( 0.85, 0.0, 0.0 );
+    actorSel->GetProperty()->SetLineWidth( 9 );
+    renderer->AddActor( actorSel );
 }
 
 Model::~Model()
@@ -244,6 +252,8 @@ void Model::loadSample( const std::string & fname )
 
 void Model::setModeSampleFace()
 {
+    selectionMode = FACE_SAMPLE;
+
     if ( faceSelector )
         faceSelector->Delete();
 
@@ -259,6 +269,8 @@ void Model::setModeSampleFace()
 
 void Model::setModeSampleEdge()
 {
+    selectionMode = EDGE_SAMPLE;
+
     if ( edgeSelector )
         edgeSelector->Delete();
 
@@ -274,6 +286,8 @@ void Model::setModeSampleEdge()
 
 void Model::setModeModelFace()
 {
+    selectionMode = FACE_MODEL;
+
     if ( faceSelector )
         faceSelector->Delete();
 
@@ -288,6 +302,8 @@ void Model::setModeModelFace()
 
 void Model::setModeModelEdge()
 {
+    selectionMode = EDGE_MODEL;
+
     if ( edgeSelector )
         edgeSelector->Delete();
 
@@ -436,7 +452,39 @@ void Model::prepareEdges( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts,
 
 void Model::faceSelectedCallback( vtkIdType * inds )
 {
-    
+    ocl::STLSurf & s = ( selectionMode == FACE_SAMPLE ) ? sampleOrig : modelOrig;
+    int ind = 0;
+    for ( std::list<ocl::Triangle>::iterator i=s.tris.begin(); i!=s.tris.end(); i++ )
+    {
+        ocl::Triangle & t = *i;
+
+        // Indices go in sequential order.
+        if ( ind == inds[0] )
+        {
+            if ( ptsSel )
+                ptsSel->Delete();
+            ptsSel = vtkPoints::New();
+            for ( int j=0; j<3; j++ )
+            {
+                ocl::Point & p = t.p[j];
+                double y[3];
+                convertPoint( p.x, p.y, p.z, y[0], y[1], y[2] );
+                ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            }
+
+            if ( polyDataSel )
+                polyDataSel->Delete();
+            polyDataSel = vtkPolyData::New();
+            polyDataSel->Allocate();
+            vtkIdType ids[3];
+            ids[0] = 0;
+            ids[1] = 1;
+            ids[2] = 2;
+            polyDataSel->InsertNextCell( VTK_TRIANGLE, 3, ids );
+            polyDataSel->SetPoints( ptsSel );
+        }
+        inds += 3;
+    }
 }
 
 void Model::edgeSelectedCallback( vtkIdType * inds )

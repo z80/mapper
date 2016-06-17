@@ -2,6 +2,7 @@
 set( appname "drill_gui" )
 
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED)
 
 
 find_package(VTK COMPONENTS
@@ -17,7 +18,8 @@ include(${VTK_USE_FILE})
 include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${OpenCV_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS} 
+  ${Boost_INCLUDE_DIRS} 
   ./src
   ${ROOT}/drill-pos/src
   ${ROOT}/3dparty/camlib/src

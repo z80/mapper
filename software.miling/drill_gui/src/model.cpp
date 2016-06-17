@@ -1,6 +1,6 @@
 
 #include "model.h"
-
+#include <boost/foreach.hpp>
 
 
 // Catch mouse events
@@ -332,8 +332,38 @@ void Model::setModeModelEdge()
     edgeSelector->model = this;
 }
 
-void Model::dropOnFace()
+void Model::dropOnFace( const ocl::Triangle & t )
 {
+    ocl::Point n = t.n;
+    double nx, ny;
+    // XY projection.
+    if ( ( abs( n.x ) > std::numeric_limits<double>::epsilon() ) &&
+         ( abs( n.y ) > std::numeric_limits<double>::epsilon() ) )
+    {
+        // Normalize projection and rotate to match it with Ox.
+        double l = sqrt( n.x * n.x + n.y*n.y );
+        nx = n.x / l;
+        ny = n.y / l;
+    }
+    else
+    {
+        // Just unit matrix.
+        nx = 1.0;
+        ny = 0.0;
+    }
+    // And now rotate around Oy on minus cosine between n and (0, 0, -1).
+    // Again inverted is equal to transposed.
+    double c = -n.z;
+    double s = sqrt( 1.0-c*c );
+
+    // And resultant transformation is B*A*T.
+    double x = t.p[0].x;
+    double y = t.p[0].y;
+    double z = t.p[0].z;
+    double A[4][4];
+    A[0][0] = c*nx;  A[0][1] = c*ny;  A[0][2] = s;   A[0][3] = c*(-ny*y-nx*x)-s*z;
+    A[1][0] = -ny;   A[1][1] = nx;    A[1][2] = 0.0; A[1][3] = ny*x-nx*y;
+    A[2][0] = -nx*s; A[2][1] = -ny*s; A[2][2] = c;   A[2][3] = -c*z-s*(-ny*y-nx*x);
 }
 
 void Model::alignToEdge()
@@ -464,6 +494,15 @@ void Model::prepareEdges( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts,
     polyData->BuildLinks();
 
     renderer->GetRenderWindow()->Render();
+}
+
+void Model::convertSurf( const ocl::STLSurf & from, ocl::STLSurf & to )
+{
+    to.tris = from.tris;
+    BOOST_FOREACH( ocl::Triangle & t, to.tris )
+    {
+        to.bb.addTriangle( t );
+    }
 }
 
 void Model::faceSelectedCallback( vtkIdType * inds )

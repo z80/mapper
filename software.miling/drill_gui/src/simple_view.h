@@ -48,6 +48,9 @@ public:
   SimpleView();
   ~SimpleView();
 
+  // Callbacks for geometry information obtaining.
+  void onEdgeSelect( const ocl::Point & edgePt, const ocl::Point & edgeNorm );
+
 public slots:
 
   virtual void slotOpenFileM();
@@ -103,6 +106,8 @@ private:
     Fov          fov;
     Model        * model;
 
+    // Current edge point and normal to this edge.
+    ocl::Point edgePt, edgeNorm;
 
     // Update timer.
     QTimer * timer;

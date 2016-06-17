@@ -125,6 +125,11 @@ SimpleView::~SimpleView()
   delete model;
 }
 
+void SimpleView::onEdgeSelect( const ocl::Point & edgePt, const ocl::Point & edgeNorm )
+{
+
+}
+
 // Action to be taken upon file open
 void SimpleView::slotOpenFileM()
 {

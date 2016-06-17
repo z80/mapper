@@ -130,7 +130,7 @@ public:
       int * pos = this->GetInteractor()->GetEventPosition();
 
       vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
-      picker->SetTolerance(0.05);
+      picker->SetTolerance(0.005);
 
       // Pick from this location.
       picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
@@ -533,8 +533,8 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
             int indA = ind + j;
             if ( indA == inds[0] )
             {
-                int indB = ind + ((j + 1) % 3);
-                pa = t.p[indA];
+                int indB = (j + 1) % 3;
+                pa = t.p[j];
                 pb = t.p[indB];
                 na = t.n;
                 ta = t;
@@ -568,7 +568,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                             // Check the last point of triangle.
                             i2 = (i2+1)%3;
                             ocl::Point & p3 = t.p[i2];
-                            d2 = (p2-pb).norm();
+                            d2 = (p3-pb).norm();
                             if ( d2 <= MARGIN )
                             {
                                 bFound = true;
@@ -578,6 +578,8 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                             }
                         }
                     }
+                    if ( bFound )
+                        break;
                 }
                 break;
             }
@@ -652,6 +654,8 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
             polyDataSel->SetPoints( ptsSel );
             mapperSel->SetInputData( polyDataSel );
             renderer->GetRenderWindow()->Render();
+
+            return;
         }
 
         ind += 3;

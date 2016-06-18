@@ -11,16 +11,12 @@ public:
 
     FaceSelectorStyle()
     {
-        selectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
-        selectedActor  = vtkSmartPointer<vtkActor>::New();
     }
 
     ~FaceSelectorStyle()
     {
-        if ( selectedMapper )
-            selectedMapper->Delete();
-        if ( selectedActor )
-            selectedActor->Delete();
+        if ( picker )
+            picker->Delete();
     }
 
     virtual void OnLeftButtonDown()
@@ -28,7 +24,8 @@ public:
       // Get the location of the click (in window coordinates)
       int * pos = this->GetInteractor()->GetEventPosition();
 
-      vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
+      if ( !picker )
+        picker = vtkSmartPointer<vtkCellPicker>::New();
       picker->SetTolerance(0.0005);
 
       // Pick from this location.
@@ -42,12 +39,10 @@ public:
       }
       // Forward events
       vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
-      picker->Delete();
     }
 
-    vtkSmartPointer<vtkPolyData>      Data;
-    vtkSmartPointer<vtkDataSetMapper> selectedMapper;
-    vtkSmartPointer<vtkActor>         selectedActor;
+    vtkSmartPointer<vtkCellPicker> picker;
+    vtkSmartPointer<vtkPolyData>   Data;
     Model * model;
 };
 
@@ -71,6 +66,8 @@ public:
 
     ~EdgeSelectorStyle()
     {
+        if ( picker )
+            picker->Delete();
     }
 
     virtual void OnLeftButtonDown()
@@ -78,7 +75,8 @@ public:
       // Get the location of the click (in window coordinates)
       int * pos = this->GetInteractor()->GetEventPosition();
 
-      vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
+      if ( !picker )
+          picker = vtkSmartPointer<vtkCellPicker>::New();
       picker->SetTolerance(0.005);
 
       // Pick from this location.
@@ -92,10 +90,10 @@ public:
       }
       // Forward events
       vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
-      picker->Delete();
     }
 
-    vtkSmartPointer<vtkPolyData>      Data;
+    vtkSmartPointer<vtkCellPicker> picker;
+    vtkSmartPointer<vtkPolyData>   Data;
     Model * model;
 };
 

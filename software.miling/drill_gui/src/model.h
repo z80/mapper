@@ -65,7 +65,7 @@ public:
     void setModeModelFace();
     void setModeModelEdge();
 
-    void dropOnFace( const ocl::Triangle & t );
+    void dropOnFace();
     void alignToEdge();
 
     // Helper functions for initializing visualization data.
@@ -74,6 +74,7 @@ public:
     void convertPoint( double * x, double * y );
     void prepareFaces( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts, vtkSmartPointer<vtkPolyData> & polyData, vtkSmartPointer<vtkPolyDataMapper> & mapper );
     void prepareEdges( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts, vtkSmartPointer<vtkPolyData> & polyData, vtkSmartPointer<vtkPolyDataMapper> & mapper );
+    void convertSurfs();
     void convertSurf( const ocl::STLSurf & from, ocl::STLSurf & to );
     // Callbacks.
     void faceSelectedCallback( vtkIdType * inds );

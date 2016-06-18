@@ -12,6 +12,9 @@
 #include "simple_view.h"
 #include "drives_ctrl.h"
 
+#include "opencv2/core/core.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+
 #include <vtkDataObjectToTable.h>
 #include <vtkElevationFilter.h>
 #include <vtkPolyDataMapper.h>
@@ -262,18 +265,33 @@ void SimpleView::slotEdgeOnModel()
 
 void SimpleView::slotDropOnFace()
 {
+    model->dropOnFace();
 }
 
 void SimpleView::slotAddEdgeContact()
 {
+    ocl::Point & pa = model->edgeA;
+    ocl::Point & pb = model->edgeB;
+    ocl::Point n = model->edgeN;
+    ocl::Point a = pb - pa;
+    a.z = 0.0;
+    n.z = 0.0;
+    n = n.cross( a );
+    n = a.cross( n );
+
+    cv::Point2d da( a.x, a.y );
+    cv::Point2d dn( n.x, n.y );
+    positioner.appendSamplePos( da, dn );
 }
 
 void SimpleView::slotOmmitLastEdge()
 {
+    positioner.startSamplePos();
 }
 
 void SimpleView::slotAlignByEdges()
 {
+    positioner.endSamplePos();
 }
 
 

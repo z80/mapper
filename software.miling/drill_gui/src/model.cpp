@@ -155,7 +155,8 @@ void Model::loadModel( const std::string & fname )
     std::wstring   wfname( fname.begin(), fname.end() );
     ocl::STLReader reader( wfname, modelOrig );
 
-    prepareFaces( modelOrig, ptsM, polyDataM, mapperM );
+    convertSurf(  modelOrig, model );
+    prepareFaces( model, ptsM, polyDataM, mapperM );
 }
 
 void Model::loadSample( const std::string & fname )
@@ -163,7 +164,8 @@ void Model::loadSample( const std::string & fname )
     std::wstring wfname( fname.begin(), fname.end() );
     ocl::STLReader reader( wfname, sampleOrig );
 
-    prepareFaces( sampleOrig, ptsS, polyDataS, mapperS );
+    convertSurf(  sampleOrig, sample );
+    prepareFaces( sample, ptsS, polyDataS, mapperS );
 }
 
 void Model::setModeSampleFace()
@@ -173,7 +175,7 @@ void Model::setModeSampleFace()
     if ( faceSelector )
         faceSelector->Delete();
 
-    prepareFaces( sampleOrig, ptsS, polyDataS, mapperS );
+    prepareFaces( sample, ptsS, polyDataS, mapperS );
 
     faceSelector = FaceSelectorStyle::New();
     iren->SetInteractorStyle( faceSelector );
@@ -190,7 +192,7 @@ void Model::setModeSampleEdge()
     if ( edgeSelector )
         edgeSelector->Delete();
 
-    prepareEdges( sampleOrig, ptsS, polyDataS, mapperS );
+    prepareEdges( sample, ptsS, polyDataS, mapperS );
 
     edgeSelector = EdgeSelectorStyle::New();
     iren->SetInteractorStyle( edgeSelector );
@@ -207,7 +209,7 @@ void Model::setModeModelFace()
     if ( faceSelector )
         faceSelector->Delete();
 
-    prepareFaces( modelOrig, ptsM, polyDataM, mapperM );
+    prepareFaces( model, ptsM, polyDataM, mapperM );
 
     faceSelector = FaceSelectorStyle::New();
     iren->SetInteractorStyle( faceSelector );
@@ -224,7 +226,7 @@ void Model::setModeModelEdge()
     if ( edgeSelector )
         edgeSelector->Delete();
 
-    prepareEdges( sampleOrig, ptsM, polyDataM, mapperM );
+    prepareEdges( model, ptsM, polyDataM, mapperM );
 
     edgeSelector = EdgeSelectorStyle::New();
     iren->SetInteractorStyle( edgeSelector );
@@ -234,8 +236,12 @@ void Model::setModeModelEdge()
     edgeSelector->model = this;
 }
 
-void Model::dropOnFace( const ocl::Triangle & t )
+void Model::dropOnFace()
 {
+    // Use selected face.
+    ocl::Triangle t = selectedFace;
+
+    // Normal to face.
     ocl::Point n = t.n;
     double nx, ny;
     // XY projection.
@@ -266,6 +272,29 @@ void Model::dropOnFace( const ocl::Triangle & t )
     A[0][0] = c*nx;  A[0][1] = c*ny;  A[0][2] = s;   A[0][3] = c*(-ny*y-nx*x)-s*z;
     A[1][0] = -ny;   A[1][1] = nx;    A[1][2] = 0.0; A[1][3] = ny*x-nx*y;
     A[2][0] = -nx*s; A[2][1] = -ny*s; A[2][2] = c;   A[2][3] = -c*z-s*(-ny*y-nx*x);
+
+    // Modify data.
+    convertSurf( sampleOrig, sample );
+    convertSurf( modelOrig,  model );
+
+    // Plot data.
+    switch ( selectionMode )
+    {
+    case FACE_SAMPLE:
+        setModeSampleFace();
+        break;
+    case FACE_MODEL:
+        setModeModelFace();
+        break;
+    case EDGE_SAMPLE:
+        setModeSampleEdge();
+        break;
+    case EDGE_MODEL:
+        setModeModelEdge();
+        break;
+    }
+
+    renderer->GetRenderWindow()->Render();
 }
 
 void Model::alignToEdge()
@@ -323,13 +352,7 @@ void Model::prepareFaces( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts,
             double x1 = t.p[j].x;
             double x2 = t.p[j].y;
             double x3 = t.p[j].z;
-            double y1 = A[0][0]*x1 + A[0][1]*x2 + A[0][2]*x3 + A[0][3];
-            double y2 = A[1][0]*x1 + A[1][1]*x2 + A[1][2]*x3 + A[1][3];
-            double y3 = A[2][0]*x1 + A[2][1]*x2 + A[2][2]*x3 + A[2][3];
-            double z1 = B[0][0]*y1 + B[0][1]*y2 + B[0][2]*y3 + B[0][3];
-            double z2 = B[1][0]*y1 + B[1][1]*y2 + B[1][2]*y3 + B[1][3];
-            double z3 = B[2][0]*y1 + B[2][1]*y2 + B[2][2]*y3 + B[2][3];
-            pts->InsertNextPoint( z1, z2, z3 );
+            pts->InsertNextPoint( x1, x2, x3 );
         }
         vtkIdType ids[3];
         ids[0] = ind;
@@ -341,9 +364,10 @@ void Model::prepareFaces( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts,
     polyData->SetPoints( pts );
     polyData->BuildCells();
     polyData->BuildLinks();
+
     //mapper->SetScalarRange( 0, sz-1 );
-    vtkIdType cnt, * inds;
-    polyData->GetCellPoints( 2, cnt, inds );
+    //vtkIdType cnt, * inds;
+    //polyData->GetCellPoints( 2, cnt, inds );
 
 
     renderer->GetRenderWindow()->Render();
@@ -371,13 +395,7 @@ void Model::prepareEdges( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts,
             double x1 = t.p[j].x;
             double x2 = t.p[j].y;
             double x3 = t.p[j].z;
-            double y1 = A[0][0]*x1 + A[0][1]*x2 + A[0][2]*x3 + A[0][3];
-            double y2 = A[1][0]*x1 + A[1][1]*x2 + A[1][2]*x3 + A[1][3];
-            double y3 = A[2][0]*x1 + A[2][1]*x2 + A[2][2]*x3 + A[2][3];
-            double z1 = B[0][0]*y1 + B[0][1]*y2 + B[0][2]*y3 + B[0][3];
-            double z2 = B[1][0]*y1 + B[1][1]*y2 + B[1][2]*y3 + B[1][3];
-            double z3 = B[2][0]*y1 + B[2][1]*y2 + B[2][2]*y3 + B[2][3];
-            pts->InsertNextPoint( z1, z2, z3 );
+            pts->InsertNextPoint( x1, x2, x3 );
         }
         vtkIdType ids[2];
         ids[0] = ind;
@@ -398,6 +416,12 @@ void Model::prepareEdges( ocl::STLSurf & surf, vtkSmartPointer<vtkPoints> & pts,
     renderer->GetRenderWindow()->Render();
 }
 
+void Model::convertSurfs()
+{
+    convertSurf( sampleOrig, sample );
+    convertSurf( modelOrig,  model );
+}
+
 void Model::convertSurf( const ocl::STLSurf & from, ocl::STLSurf & to )
 {
     to.tris = from.tris;
@@ -409,7 +433,7 @@ void Model::convertSurf( const ocl::STLSurf & from, ocl::STLSurf & to )
 
 void Model::faceSelectedCallback( vtkIdType * inds )
 {
-    ocl::STLSurf & s = ( selectionMode == FACE_SAMPLE ) ? sampleOrig : modelOrig;
+    ocl::STLSurf & s = ( selectionMode == FACE_SAMPLE ) ? sample : model;
     int ind = 0;
     for ( std::list<ocl::Triangle>::iterator i=s.tris.begin(); i!=s.tris.end(); i++ )
     {
@@ -464,7 +488,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
     ocl::Point    pa, pb; // Points on the edge.
     ocl::Point    na, nb; // Normals for faces containing this edge.
     bool bFound = false;
-    ocl::STLSurf & s = ( selectionMode == EDGE_SAMPLE ) ? sampleOrig : modelOrig;
+    ocl::STLSurf & s = ( selectionMode == EDGE_SAMPLE ) ? sample : model;
 
     int ind = 0;
 

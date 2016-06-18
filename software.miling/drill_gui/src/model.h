@@ -87,6 +87,11 @@ public:
     // Orienting and positioning matrix.
     double B[3][4];
 
+    // Selected face.
+    ocl::Triangle selectedFace;
+    // Selected edge.
+    ocl::Point edgeA, edgeB, edgeN;
+
     // Needed pointers.
     vtkSmartPointer<vtkRenderer>               renderer;
     vtkSmartPointer<vtkRenderWindowInteractor> iren;

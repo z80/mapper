@@ -48,9 +48,6 @@ public:
   SimpleView();
   ~SimpleView();
 
-  // Callbacks for geometry information obtaining.
-  void onEdgeSelect( const ocl::Point & edgePt, const ocl::Point & edgeNorm );
-
 public slots:
 
   virtual void slotOpenFileM();

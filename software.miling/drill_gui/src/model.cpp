@@ -418,6 +418,10 @@ void Model::faceSelectedCallback( vtkIdType * inds )
         // Indices go in sequential order.
         if ( ind == inds[0] )
         {
+            // Assign selected face.
+            selectedFace = t;
+
+            // Visualize it.
             if ( ptsSel )
                 ptsSel->Delete();
             ptsSel = vtkPoints::New();
@@ -479,6 +483,10 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                 pb = t.p[indB];
                 na = t.n;
                 ta = t;
+
+                // Assign edge points.
+                edgeA = pa;
+                edgeB = pb;
                 //i++; // Increase pointer by one.
                 // Second triangle is seearched by value because indices are different.
                 for ( std::list<ocl::Triangle>::iterator k=s.tris.begin(); k!=s.tris.end(); k++ )
@@ -554,6 +562,10 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
             convertPoint( pb.x, pb.y, pb.z, y[0], y[1], y[2] );
             //ptsSel->InsertNextPoint( y[0], y[1], y[2] );
             ocl::Point n0 = (pa + pb)*0.5;
+
+            // Assign edge normal.
+            edgeN = n0;
+
             convertPoint( n0.x, n0.y, n0.z, y[0], y[1], y[2] );
             ptsSel->InsertNextPoint( y[0], y[1], y[2] );
             ocl::Point n1 = (na + nb);

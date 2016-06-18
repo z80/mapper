@@ -34,60 +34,15 @@ public:
       // Pick from this location.
       picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
 
-      //double * worldPosition = picker->GetPickPosition();
-      //std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
-
       if ( picker->GetCellId() != -1 )
       {
-        vtkIdType cnt, * inds;
-        Data->GetCellPoints( picker->GetCellId(), cnt, inds );
-        model->faceSelectedCallback( inds );
-        return;
-
-        /*
-        std::cout << "Pick position is: " << worldPosition[0] << " " << worldPosition[1]
-                  << " " << worldPosition[2] << endl;
-
-        vtkSmartPointer<vtkIdTypeArray> ids = vtkSmartPointer<vtkIdTypeArray>::New();
-        ids->SetNumberOfComponents(1);
-        ids->InsertNextValue(picker->GetCellId());
-
-        vtkSmartPointer<vtkSelectionNode> selectionNode = vtkSmartPointer<vtkSelectionNode>::New();
-        selectionNode->SetFieldType(vtkSelectionNode::CELL);
-        selectionNode->SetContentType(vtkSelectionNode::INDICES);
-        selectionNode->SetSelectionList(ids);
-
-        vtkSmartPointer<vtkSelection> selection = vtkSmartPointer<vtkSelection>::New();
-        selection->AddNode(selectionNode);
-
-        vtkSmartPointer<vtkExtractSelection> extractSelection = vtkSmartPointer<vtkExtractSelection>::New();
-
-        extractSelection->SetInputData(0, this->Data);
-        extractSelection->SetInputData(1, selection);
-
-        extractSelection->Update();
-
-        // In selection
-        vtkSmartPointer<vtkUnstructuredGrid> selected = vtkSmartPointer<vtkUnstructuredGrid>::New();
-        selected->ShallowCopy(extractSelection->GetOutput());
-
-        std::cout << "There are " << selected->GetNumberOfPoints()
-                  << " points in the selection." << std::endl;
-        std::cout << "There are " << selected->GetNumberOfCells()
-                  << " cells in the selection." << std::endl;
-
-        selectedMapper->SetInputData(selected);
-
-        selectedActor->SetMapper(selectedMapper);
-        selectedActor->GetProperty()->EdgeVisibilityOn();
-        selectedActor->GetProperty()->SetEdgeColor( 1, 0, 0 );
-        selectedActor->GetProperty()->SetLineWidth( 3 );
-
-        this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
-        */
+          vtkIdType cnt, * inds;
+          Data->GetCellPoints( picker->GetCellId(), cnt, inds );
+          model->faceSelectedCallback( inds );
       }
       // Forward events
       vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+      picker->Delete();
     }
 
     vtkSmartPointer<vtkPolyData>      Data;
@@ -112,16 +67,10 @@ public:
 
     EdgeSelectorStyle()
     {
-        selectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
-        selectedActor = vtkSmartPointer<vtkActor>::New();
     }
 
     ~EdgeSelectorStyle()
     {
-        if ( selectedMapper )
-            selectedMapper->Delete();
-        if ( selectedActor )
-            selectedActor->Delete();
     }
 
     virtual void OnLeftButtonDown()
@@ -135,63 +84,18 @@ public:
       // Pick from this location.
       picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
 
-      //double* worldPosition = picker->GetPickPosition();
-      //std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
-
       if ( picker->GetCellId() != -1 )
       {
-        vtkIdType cnt, * inds;
-        Data->GetCellPoints( picker->GetCellId(), cnt, inds );
-        model->edgeSelectedCallback( inds );
-        return;
-
-        /*
-        std::cout << "Pick position is: " << worldPosition[0] << " " << worldPosition[1]
-                  << " " << worldPosition[2] << endl;
-
-        vtkSmartPointer<vtkIdTypeArray> ids = vtkSmartPointer<vtkIdTypeArray>::New();
-        ids->SetNumberOfComponents(1);
-        ids->InsertNextValue(picker->GetCellId());
-
-        vtkSmartPointer<vtkSelectionNode> selectionNode = vtkSmartPointer<vtkSelectionNode>::New();
-        selectionNode->SetFieldType( vtkSelectionNode::EDGE );
-        selectionNode->SetContentType( vtkSelectionNode::INDICES );
-        selectionNode->SetSelectionList(ids);
-
-        vtkSmartPointer<vtkSelection> selection = vtkSmartPointer<vtkSelection>::New();
-        selection->AddNode(selectionNode);
-
-        vtkSmartPointer<vtkExtractSelection> extractSelection = vtkSmartPointer<vtkExtractSelection>::New();
-
-        extractSelection->SetInputData(0, this->Data);
-        extractSelection->SetInputData(1, selection);
-
-        extractSelection->Update();
-
-        // In selection
-        vtkSmartPointer<vtkUnstructuredGrid> selected = vtkSmartPointer<vtkUnstructuredGrid>::New();
-        selected->ShallowCopy(extractSelection->GetOutput());
-
-        std::cout << "There are " << selected->GetNumberOfElements( vtkSelectionNode::EDGE )
-                  << " edges in the selection." << std::endl;
-
-        selectedMapper->SetInputData(selected);
-
-        selectedActor->SetMapper(selectedMapper);
-        selectedActor->GetProperty()->EdgeVisibilityOn();
-        selectedActor->GetProperty()->SetEdgeColor( 1, 0, 0 );
-        selectedActor->GetProperty()->SetLineWidth( 3 );
-
-        this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
-        */
+          vtkIdType cnt, * inds;
+          Data->GetCellPoints( picker->GetCellId(), cnt, inds );
+          model->edgeSelectedCallback( inds );
       }
       // Forward events
       vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+      picker->Delete();
     }
 
     vtkSmartPointer<vtkPolyData>      Data;
-    vtkSmartPointer<vtkDataSetMapper> selectedMapper;
-    vtkSmartPointer<vtkActor>         selectedActor;
     Model * model;
 };
 

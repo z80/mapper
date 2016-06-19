@@ -31,10 +31,12 @@ public:
       // Pick from this location.
       picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
 
-      if ( picker->GetCellId() != -1 )
+      vtkIdType cellId = picker->GetCellId();
+
+      if ( cellId != -1 )
       {
           vtkIdType cnt, * inds;
-          Data->GetCellPoints( picker->GetCellId(), cnt, inds );
+          Data->GetCellPoints( cellId, cnt, inds );
           model->faceSelectedCallback( inds );
       }
       // Forward events
@@ -176,9 +178,10 @@ void Model::dropOnFace()
     // Normal to face.
     ocl::Point n = t.n;
     double nx, ny;
+    double e = std::numeric_limits<double>::epsilon();
     // XY projection.
-    if ( ( abs( n.x ) > std::numeric_limits<double>::epsilon() ) &&
-         ( abs( n.y ) > std::numeric_limits<double>::epsilon() ) )
+    if ( ( fabs( n.x ) > e ) ||
+         ( fabs( n.y ) > e ) )
     {
         // Normalize projection and rotate to match it with Ox.
         double l = sqrt( n.x * n.x + n.y*n.y );

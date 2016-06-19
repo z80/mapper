@@ -116,7 +116,6 @@ public:
 
     // Selectors.
     vtkSmartPointer<FaceSelectorStyle> faceSelector;
-    vtkSmartPointer<EdgeSelectorStyle> edgeSelector;
 
     TSelectionMode selectionMode;
 };

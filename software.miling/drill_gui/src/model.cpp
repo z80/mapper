@@ -46,63 +46,7 @@ public:
     Model * model;
 };
 
-
-
-
-
-
-
-
-
-
-class EdgeSelectorStyle : public vtkInteractorStyleTrackballCamera
-{
-public:
-    static EdgeSelectorStyle* New();
-
-    EdgeSelectorStyle()
-    {
-    }
-
-    ~EdgeSelectorStyle()
-    {
-        if ( picker )
-            picker->Delete();
-    }
-
-    virtual void OnLeftButtonDown()
-    {
-      // Get the location of the click (in window coordinates)
-      int * pos = this->GetInteractor()->GetEventPosition();
-
-      if ( !picker )
-          picker = vtkSmartPointer<vtkCellPicker>::New();
-      picker->SetTolerance(0.005);
-
-      // Pick from this location.
-      picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
-
-      if ( picker->GetCellId() != -1 )
-      {
-          vtkIdType cnt, * inds;
-          Data->GetCellPoints( picker->GetCellId(), cnt, inds );
-          model->edgeSelectedCallback( inds );
-      }
-      // Forward events
-      vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
-    }
-
-    vtkSmartPointer<vtkCellPicker> picker;
-    vtkSmartPointer<vtkPolyData>   Data;
-    Model * model;
-};
-
-
-
-
-
 vtkStandardNewMacro(FaceSelectorStyle);
-vtkStandardNewMacro(EdgeSelectorStyle);
 
 
 
@@ -144,10 +88,14 @@ Model::Model( vtkRenderer * ren , vtkRenderWindowInteractor * iren )
     actorSel->GetProperty()->SetColor( 0.85, 0.0, 0.0 );
     actorSel->GetProperty()->SetLineWidth( 9 );
     renderer->AddActor( actorSel );
+
+    faceSelector = FaceSelectorStyle::New();
 }
 
 Model::~Model()
 {
+    if ( faceSelector )
+        faceSelector->Delete();
 }
 
 void Model::loadModel( const std::string & fname )
@@ -172,12 +120,8 @@ void Model::setModeSampleFace()
 {
     selectionMode = FACE_SAMPLE;
 
-    if ( faceSelector )
-        faceSelector->Delete();
-
     prepareFaces( sample, ptsS, polyDataS, mapperS );
 
-    faceSelector = FaceSelectorStyle::New();
     iren->SetInteractorStyle( faceSelector );
 
     faceSelector->SetDefaultRenderer( renderer );
@@ -189,29 +133,21 @@ void Model::setModeSampleEdge()
 {
     selectionMode = EDGE_SAMPLE;
 
-    if ( edgeSelector )
-        edgeSelector->Delete();
-
     prepareEdges( sample, ptsS, polyDataS, mapperS );
 
-    edgeSelector = EdgeSelectorStyle::New();
-    iren->SetInteractorStyle( edgeSelector );
+    iren->SetInteractorStyle( faceSelector );
 
-    edgeSelector->SetDefaultRenderer( renderer );
-    edgeSelector->Data = polyDataS;
-    edgeSelector->model = this;
+    faceSelector->SetDefaultRenderer( renderer );
+    faceSelector->Data = polyDataS;
+    faceSelector->model = this;
 }
 
 void Model::setModeModelFace()
 {
     selectionMode = FACE_MODEL;
 
-    if ( faceSelector )
-        faceSelector->Delete();
-
     prepareFaces( model, ptsM, polyDataM, mapperM );
 
-    faceSelector = FaceSelectorStyle::New();
     iren->SetInteractorStyle( faceSelector );
 
     faceSelector->SetDefaultRenderer( renderer );
@@ -223,17 +159,13 @@ void Model::setModeModelEdge()
 {
     selectionMode = EDGE_MODEL;
 
-    if ( edgeSelector )
-        edgeSelector->Delete();
-
     prepareEdges( model, ptsM, polyDataM, mapperM );
 
-    edgeSelector = EdgeSelectorStyle::New();
-    iren->SetInteractorStyle( edgeSelector );
+    iren->SetInteractorStyle( faceSelector );
 
-    edgeSelector->SetDefaultRenderer( renderer );
-    edgeSelector->Data = polyDataM;
-    edgeSelector->model = this;
+    faceSelector->SetDefaultRenderer( renderer );
+    faceSelector->Data = polyDataM;
+    faceSelector->model = this;
 }
 
 void Model::dropOnFace()

@@ -37,7 +37,12 @@ public:
       {
           vtkIdType cnt, * inds;
           Data->GetCellPoints( cellId, cnt, inds );
-          model->faceSelectedCallback( inds );
+          if ( ( model->selectionMode == Model::FACE_SAMPLE ) ||
+               ( model->selectionMode == Model::FACE_MODEL ) )
+              model->faceSelectedCallback( inds );
+          else if ( ( model->selectionMode == Model::EDGE_SAMPLE ) ||
+                    ( model->selectionMode == Model::EDGE_MODEL ) )
+              model->edgeSelectedCallback( inds );
       }
       // Forward events
       vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
@@ -439,11 +444,14 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
     ocl::Point    pa, pb; // Points on the edge.
     ocl::Point    na, nb; // Normals for faces containing this edge.
     bool bFound = false;
-    ocl::STLSurf & s = ( selectionMode == EDGE_SAMPLE ) ? sample : model;
+    ocl::STLSurf & s     = ( selectionMode == EDGE_SAMPLE ) ? sample     : model;
+    ocl::STLSurf & sOrig = ( selectionMode == EDGE_SAMPLE ) ? sampleOrig : modelOrig;
 
     int ind = 0;
 
     // First triangle is searched by index.
+    auto iOrig = sOrig.tris.begin();
+    auto kOrig = sOrig.begin();
     for ( std::list<ocl::Triangle>::iterator i=s.tris.begin(); i!=s.tris.end(); i++ )
     {
         ocl::Triangle & t = *i;
@@ -460,14 +468,17 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                 ta = t;
 
                 // Assign edge points.
-                edgeA = pa;
-                edgeB = pb;
+                edgeA = (*iOrig)[j];
+                edgeB = (*iOrig)[indB];
                 // Second triangle is searched by value because indices are different.
                 for ( std::list<ocl::Triangle>::iterator k=s.tris.begin(); k!=s.tris.end(); k++ )
                 {
                     // Don't analyze the same triangle.
                     if ( k == i )
+                    {
+                        kOrig++;
                         continue;
+                    }
                     ocl::Triangle & t = *k;
                     for ( int s=0; s<3; s++ )
                     {
@@ -503,6 +514,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                     }
                     if ( bFound )
                         break;
+                    kOrig++;
                 }
                 break;
             }
@@ -575,6 +587,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
         }
 
         ind += 3;
+        iOrig++;
     }
 }
 

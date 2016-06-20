@@ -53,7 +53,7 @@ SimpleView::SimpleView()
 
   // Geometry
   VTK_CREATE(vtkVectorText, text);
-  text->SetText("VTK and Qt!");
+  text->SetText("End mill");
   VTK_CREATE(vtkElevationFilter, elevation);
   elevation->SetInputConnection(text->GetOutputPort());
   elevation->SetLowPoint(0,0,0);

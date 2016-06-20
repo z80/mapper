@@ -12,6 +12,9 @@
 #include <vector>
 #include <iostream>
 
+#include "newton_cam.h"
+
+
 class Positioner
 {
 public:

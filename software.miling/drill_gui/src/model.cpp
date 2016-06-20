@@ -102,6 +102,9 @@ Model::~Model()
 
 void Model::loadModel( const std::string & fname )
 {
+    modelOrig.bb.clear();
+    modelOrig.tris.clear();
+
     std::wstring   wfname( fname.begin(), fname.end() );
     ocl::STLReader reader( wfname, modelOrig );
 
@@ -111,6 +114,9 @@ void Model::loadModel( const std::string & fname )
 
 void Model::loadSample( const std::string & fname )
 {
+    sampleOrig.bb.clear();
+    sampleOrig.tris.clear();
+
     std::wstring wfname( fname.begin(), fname.end() );
     ocl::STLReader reader( wfname, sampleOrig );
 
@@ -203,7 +209,7 @@ void Model::dropOnFace()
     double x = t.p[0].x;
     double y = t.p[0].y;
     double z = t.p[0].z;
-    double A[4][4];
+    //double A[4][4];
     A[0][0] = c*nx;  A[0][1] = c*ny;  A[0][2] = s;   A[0][3] = c*(-ny*y-nx*x)-s*z;
     A[1][0] = -ny;   A[1][1] = nx;    A[1][2] = 0.0; A[1][3] = ny*x-nx*y;
     A[2][0] = -nx*s; A[2][1] = -ny*s; A[2][2] = c;   A[2][3] = -c*z-s*(-ny*y-nx*x);
@@ -359,18 +365,29 @@ void Model::convertSurfs()
 
 void Model::convertSurf( const ocl::STLSurf & from, ocl::STLSurf & to )
 {
-    to.tris = from.tris;
-    BOOST_FOREACH( ocl::Triangle & t, to.tris )
+    to.tris.clear();
+    to.bb.clear();
+    BOOST_FOREACH( const ocl::Triangle & tfrom, from.tris )
     {
+        ocl::Triangle t = tfrom;
+        for ( int i=0; i<3; i++ )
+        {
+            ocl::Point p = t.p[i];
+            convertPoint( p.x, p.y, p.z, p.x, p.y, p.z );
+            t.p[i] = p;
+        }
+        to.tris.push_back( t );
         to.bb.addTriangle( t );
     }
 }
 
 void Model::faceSelectedCallback( vtkIdType * inds )
 {
-    ocl::STLSurf & s = ( selectionMode == FACE_SAMPLE ) ? sample : model;
+    ocl::STLSurf & s     = ( selectionMode == FACE_SAMPLE ) ? sample     : model;
+    ocl::STLSurf & sOrig = ( selectionMode == FACE_SAMPLE ) ? sampleOrig : modelOrig;
     int ind = 0;
-    for ( std::list<ocl::Triangle>::iterator i=s.tris.begin(); i!=s.tris.end(); i++ )
+    auto j = sOrig.tris.begin();
+    for ( auto i=s.tris.begin(); i!=s.tris.end(); i++ )
     {
         ocl::Triangle & t = *i;
 
@@ -378,7 +395,7 @@ void Model::faceSelectedCallback( vtkIdType * inds )
         if ( ind == inds[0] )
         {
             // Assign selected face.
-            selectedFace = t;
+            selectedFace = *j;
 
             // Visualize it.
             if ( ptsSel )
@@ -387,9 +404,7 @@ void Model::faceSelectedCallback( vtkIdType * inds )
             for ( int j=0; j<3; j++ )
             {
                 ocl::Point & p = t.p[j];
-                double y[3];
-                convertPoint( p.x, p.y, p.z, y[0], y[1], y[2] );
-                ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+                ptsSel->InsertNextPoint( p.x, p.y, p.z );
             }
 
             if ( polyDataSel )
@@ -412,6 +427,7 @@ void Model::faceSelectedCallback( vtkIdType * inds )
             break;
         }
         ind += 3;
+        j++;
     }
 }
 
@@ -446,8 +462,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                 // Assign edge points.
                 edgeA = pa;
                 edgeB = pb;
-                //i++; // Increase pointer by one.
-                // Second triangle is seearched by value because indices are different.
+                // Second triangle is searched by value because indices are different.
                 for ( std::list<ocl::Triangle>::iterator k=s.tris.begin(); k!=s.tris.end(); k++ )
                 {
                     // Don't analyze the same triangle.
@@ -504,34 +519,23 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
             for ( int j=0; j<3; j++ )
             {
                 ocl::Point & p = ta.p[j];
-                double y[3];
-                convertPoint( p.x, p.y, p.z, y[0], y[1], y[2] );
-                ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+                ptsSel->InsertNextPoint( p.x, p.y, p.z );
             }
             for ( int j=0; j<3; j++ )
             {
                 ocl::Point & p = tb.p[j];
-                double y[3];
-                convertPoint( p.x, p.y, p.z, y[0], y[1], y[2] );
-                ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+                ptsSel->InsertNextPoint( p.x, p.y, p.z );
             }
-            double y[3];
-            convertPoint( pa.x, pa.y, pa.z, y[0], y[1], y[2] );
-            //ptsSel->InsertNextPoint( y[0], y[1], y[2] );
-            convertPoint( pb.x, pb.y, pb.z, y[0], y[1], y[2] );
-            //ptsSel->InsertNextPoint( y[0], y[1], y[2] );
             ocl::Point n0 = (pa + pb)*0.5;
 
             // Assign edge normal.
             edgeN = n0;
 
-            convertPoint( n0.x, n0.y, n0.z, y[0], y[1], y[2] );
-            ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            ptsSel->InsertNextPoint( n0.x, n0.y, n0.z );
             ocl::Point n1 = (na + nb);
             n1.normalize();
             n1 = n0 + n1;
-            convertPoint( n1.x, n1.y, n1.z, y[0], y[1], y[2] );
-            ptsSel->InsertNextPoint( y[0], y[1], y[2] );
+            ptsSel->InsertNextPoint( n1.x, n1.y, n1.z );
 
             if ( polyDataSel )
                 polyDataSel->Delete();

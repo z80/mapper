@@ -28,7 +28,7 @@ Positioner::Positioner()
     noOpticalFlowCounter = 0;
 
     loadSettings();
-    //resetImage2Floor();
+    resetImage2Floor();
 }
 
 Positioner::~Positioner()

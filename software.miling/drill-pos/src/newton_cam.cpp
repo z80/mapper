@@ -42,6 +42,9 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     cv::Mat XtY = Xt * Y;
     cv::Mat A = (XtX * XtY).t();
 
+    //cam2Floor = A;
+    //return true;
+
 
 
     // Construct matrices for calculating minimizing function.

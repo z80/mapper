@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "newton_cam.h"
+#include "newton_sam.h"
 
 
 class Positioner
@@ -113,6 +114,7 @@ public:
     std::vector<double> sample2As;
 
     NewtonCam newtonCam;
+    NewtonSam newtonSam;
 
     // Constants.
     static const double SEARCH_RANGE;

@@ -544,9 +544,6 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
             }
             ocl::Point n0 = (pa + pb)*0.5;
 
-            // Assign edge normal.
-            edgeN = n0;
-
             ptsSel->InsertNextPoint( n0.x, n0.y, n0.z );
             ocl::Point n1 = (na + nb);
             n1.normalize();

@@ -129,6 +129,7 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     this->XtX = x.t() * x;
     this->XtY = x.t() * y;
 
+    /*
     std::cout << "XtX: " << std::endl;
     for ( auto i=0; i<6; i++ )
     {
@@ -144,6 +145,7 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     {
         std::cout << this->XtY.at<double>( i, 0 ) << std::endl;
     }
+    */
 
 
     // Copy A to a.

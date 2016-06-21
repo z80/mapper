@@ -275,7 +275,7 @@ void SimpleView::slotSampleAlign()
     if ( ui->sampleAlign->isChecked() )
         positioner.startSamplePos();
     else
-        positioner.endSamplePos();
+        positioner.endSamplePos( ui->emDiameter->value() );
 }
 
 void SimpleView::slotAddEdgeContact()

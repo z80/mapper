@@ -18,7 +18,7 @@ public:
     NewtonCam();
     ~NewtonCam();
 
-    bool matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts );
+    bool matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts, cv::Mat & cam2Floor );
     double fi( double * a );
     void  gradFi( double * a, double * dfi );
 
@@ -32,6 +32,7 @@ public:
     static const double ALPHA;
     static const double MIN_STEP;
     static const double EPS;
+    static const int ITER_MAX;
 };
 
 

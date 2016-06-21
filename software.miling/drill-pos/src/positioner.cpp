@@ -28,7 +28,7 @@ Positioner::Positioner()
     noOpticalFlowCounter = 0;
 
     loadSettings();
-    resetImage2Floor();
+    //resetImage2Floor();
 }
 
 Positioner::~Positioner()
@@ -506,7 +506,10 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
         cv::Mat A = (XtX * XtY).t();
         */
 
-        matchPoints( knownPts, foundPts );
+        //matchPoints( knownPts, foundPts );
+
+        newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+
         // Smoothing matrix to determine end mill position.
         img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
     }

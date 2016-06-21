@@ -2,9 +2,10 @@
 
 #include "newton_cam.h"
 
-const double NewtonCam::ALPHA    = 0.5;
-const double NewtonCam::MIN_STEP = 1.0e-6;
-const double NewtonCam::EPS      = 1.0e-6;
+const double NewtonCam::ALPHA        = 0.2;
+const double NewtonCam::MIN_STEP     = 1.0e-6;
+const double NewtonCam::EPS          = 1.0e-6;
+const int    NewtonCam::ITER_MAX     = 32;
 
 
 NewtonCam::NewtonCam()
@@ -15,12 +16,13 @@ NewtonCam::~NewtonCam()
 {
 }
 
-bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts )
+bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts, cv::Mat & cam2Floor )
 {
     this->knownPts = knownPts;
     this->foundPts = foundPts;
 
     auto xSz = knownPts.size();
+
     // First approach is just pseudoinverse matrix.
     cv::Mat X = cv::Mat::zeros( xSz, 3, CV_64F );
     cv::Mat Y = cv::Mat::zeros( xSz, 2, CV_64F );
@@ -39,6 +41,8 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     XtX = XtX.inv();
     cv::Mat XtY = Xt * Y;
     cv::Mat A = (XtX * XtY).t();
+
+
 
     // Construct matrices for calculating minimizing function.
     cv::Mat x = cv::Mat::zeros( 2*xSz, 6, CV_64F );
@@ -63,19 +67,37 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
         x.at<double>( j, 5 ) = 1.0;
 
         y.at<double>( i, 0 ) = knownPt.x;
-        y.at<double>( i, 1 ) = knownPt.y;
+        y.at<double>( j, 0 ) = knownPt.y;
     }
 
     // Initialize matrices needed for iterative calculations.
     this->XtX = x.t() * x;
     this->XtY = x.t() * y;
+
+    std::cout << "XtX: " << std::endl;
+    for ( auto i=0; i<6; i++ )
+    {
+        for ( auto j=0; j<6; j++ )
+        {
+            std::cout << this->XtX.at<double>( i, j ) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "XtY: " << std::endl;
+    for ( auto i=0; i<6; i++ )
+    {
+        std::cout << this->XtY.at<double>( i, 0 ) << std::endl;
+    }
+
+
     // Copy A to a.
     int ind = 0;
     for ( int i=0; i<2; i++ )
     {
         for ( int j=0; j<3; j++ )
         {
-            a[ ind++ ] = A.at<double>( i, j );
+            this->a[ ind++ ] = A.at<double>( i, j );
         }
     }
     lambda[0] = lambda[1] = lambda[2] = 0.0;
@@ -85,6 +107,8 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
         a[i] = this->a[i];
     for ( int i=0; i<3; i++ )
         a[i+6] = this->lambda[i];
+
+    int outerTriesLeft = ITER_MAX;
     while ( true )
     {
         double f = fi( a );
@@ -92,12 +116,19 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
         double alpha = 1.0;
         gradFi( a, g );
         double newF;
-        do {
+        int innerTriesLeft = ITER_MAX;
+        while ( true )
+        {
             double newA[9];
             for ( int i=0; i<9; i++ )
-                newA[i] = a[i] - alpha*f/g[i];
+            {
+                if ( fabs( g[i] ) > std::numeric_limits<double>::epsilon() )
+                    newA[i] = a[i] - alpha*f/g[i];
+                else
+                    newA[i] = a[i];
+            }
             newF = fi( newA );
-            if ( newF < f )
+            if ( fabs( f - newF ) < EPS )
             {
                 // If it has become better assign newA to a and exit from step decreasing loop.
                 for ( int i=0; i<9; i++ )
@@ -105,9 +136,32 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
                 break;
             }
             alpha *= ALPHA;
-        } while (alpha >= MIN_STEP);
+            innerTriesLeft--;
+            if ( innerTriesLeft <= 0 )
+            {
+                // Can't improve this iteration anymore.
+                for ( int i=0; i<9; i++ )
+                    a[i] = newA[i];
+                break;
+            }
+        }
         if ( fabs( f - newF ) < EPS )
             break;
+        outerTriesLeft--;
+        if ( outerTriesLeft <= 0 )
+        {
+            // Can't improve this matrix anymore.
+            break;
+        }
+    }
+    cam2Floor = cv::Mat::zeros( 2, 3, CV_64F );
+    ind = 0;
+    for ( int i=0; i<2; i++ )
+    {
+        for ( int j=0; j<3; j++ )
+        {
+            cam2Floor.at<double>( i, j ) = a[ind++];
+        }
     }
     return true;
 }
@@ -138,9 +192,13 @@ double NewtonCam::fi( double * a )
 
 void  NewtonCam::gradFi( double * a, double * dfi )
 {
-    cv::Mat A( 6, 1, CV_64F, a );
-    cv::Mat grad( 1, 6, CV_64F, dfi );
+    cv::Mat A( 6, 1, CV_64F );
+    cv::Mat grad( 6, 1, CV_64F );
+    for ( auto i=0; i<6; i++ )
+        A.at<double>( i, 0 ) = a[i];
     grad = (XtX * A - XtY) * 2.0;
+    for ( auto i=0; i<6; i++ )
+        dfi[i] = grad.at<double>( i, 0 );
     dfi[0] += 2.0*a[6]*a[0] + a[8]*a[1];
     dfi[1] += 2.0*a[7]*a[1] + a[8]*a[0];
     dfi[3] += 2.0*a[6]*a[3] + a[8]*a[4];

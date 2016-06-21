@@ -37,7 +37,6 @@ file( GLOB Hdrs "./src/*.h" )
 set( MOC_Hdrs ${Hdrs} )
 file( GLOB UIs "./src/*.ui" )
 file( GLOB QRCs "./icons/*.qrc" )
-set( Srcs ${Srcs} ${ROOT}/drill-pos/src/positioner.cpp )
 
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)

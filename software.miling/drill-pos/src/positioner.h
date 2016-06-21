@@ -111,6 +111,8 @@ public:
     // Sample alignment.
     std::vector<double> sample2As;
 
+    NewtonCam newtonCam;
+
     // Constants.
     static const double SEARCH_RANGE;
     static const bool   DEBUG;

@@ -114,9 +114,8 @@ SimpleView::SimpleView()
   connect( this->ui->edgeOnSample,   SIGNAL(clicked()), this, SLOT(slotEdgeOnSample()) );
   connect( this->ui->edgeOnModel,    SIGNAL(clicked()), this, SLOT(slotEdgeOnModel()) );
   connect( this->ui->dropOnFace,     SIGNAL(clicked()), this, SLOT(slotDropOnFace()) );
+  connect( this->ui->sampleAlign,    SIGNAL(clicked()), this, SLOT(slotSampleAlign()) );
   connect( this->ui->addEdgeContact, SIGNAL(clicked()), this, SLOT(slotAddEdgeContact()) );
-  connect( this->ui->ommitLastEdge,  SIGNAL(clicked()), this, SLOT(slotOmmitLastEdge()) );
-  connect( this->ui->alignByEdges,   SIGNAL(clicked()), this, SLOT(slotAlignByEdges()) );
 
 
   inputCapture.open( 0 );
@@ -203,7 +202,10 @@ void SimpleView::enableSampleCtrls( bool en )
 void SimpleView::slotReadFrame()
 {
     if ( !ui->actionVideoAlign->isChecked() )
+    {
+        timer->start();
         return;
+    }
 
     cv::Mat img;
     inputCapture >> img;
@@ -268,6 +270,14 @@ void SimpleView::slotDropOnFace()
     model->dropOnFace();
 }
 
+void SimpleView::slotSampleAlign()
+{
+    if ( ui->sampleAlign->isChecked() )
+        positioner.startSamplePos();
+    else
+        positioner.endSamplePos();
+}
+
 void SimpleView::slotAddEdgeContact()
 {
     ocl::Point & pa = model->edgeA;
@@ -282,16 +292,6 @@ void SimpleView::slotAddEdgeContact()
     cv::Point2d da( a.x, a.y );
     cv::Point2d dn( n.x, n.y );
     positioner.appendSamplePos( da, dn );
-}
-
-void SimpleView::slotOmmitLastEdge()
-{
-    positioner.startSamplePos();
-}
-
-void SimpleView::slotAlignByEdges()
-{
-    positioner.endSamplePos();
 }
 
 

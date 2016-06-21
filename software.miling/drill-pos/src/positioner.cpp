@@ -243,12 +243,18 @@ void Positioner::startSamplePos()
 
 void Positioner::appendSamplePos( cv::Point2d r, cv::Point2d n )
 {
+    /*
     sample2As.push_back( img2Floor.at<double>(0, 0) );
     sample2As.push_back( img2Floor.at<double>(0, 1) );
     sample2As.push_back( img2Floor.at<double>(0, 2) );
     sample2As.push_back( img2Floor.at<double>(1, 0) );
     sample2As.push_back( img2Floor.at<double>(1, 1) );
     sample2As.push_back( img2Floor.at<double>(1, 2) );
+    */
+    double x, y;
+    drillPos( x, y, true );
+    sample2As.push_back( x );
+    sample2As.push_back( y );
     sample2As.push_back( r.x );
     sample2As.push_back( r.y );
     sample2As.push_back( n.x );
@@ -839,10 +845,18 @@ bool Positioner::fieldOfView( std::vector<double> & corners )
     return true;
 }
 
-bool Positioner::drillPos( double & x, double & y )
+bool Positioner::drillPos( double & x, double & y, bool ignoreSample )
 {
-    x = img2FloorSmooth.at<double>(0, 0) * R.x + img2FloorSmooth.at<double>(0, 1) * R.y + img2FloorSmooth.at<double>(0, 2);
-    y = img2FloorSmooth.at<double>(1, 0) * R.x + img2FloorSmooth.at<double>(1, 1) * R.y + img2FloorSmooth.at<double>(1, 2);
+    double xf = img2FloorSmooth.at<double>(0, 0) * R.x + img2FloorSmooth.at<double>(0, 1) * R.y + img2FloorSmooth.at<double>(0, 2);
+    double yf = img2FloorSmooth.at<double>(1, 0) * R.x + img2FloorSmooth.at<double>(1, 1) * R.y + img2FloorSmooth.at<double>(1, 2);
+    if ( ignoreSample )
+    {
+        x = xf;
+        y = yf;
+        return true;
+    }
+    x = floor2Sample.at<double>(0, 0) * xf + floor2Sample.at<double>(0, 1) * yf + floor2Sample.at<double>(0, 2);
+    y = floor2Sample.at<double>(1, 0) * xf + floor2Sample.at<double>(1, 1) * yf + floor2Sample.at<double>(1, 2);
     return true;
 }
 

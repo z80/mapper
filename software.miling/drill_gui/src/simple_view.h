@@ -70,10 +70,11 @@ public slots:
   void slotFaceOnModel();
   void slotEdgeOnSample();
   void slotEdgeOnModel();
+
   void slotDropOnFace();
+
+  void slotSampleAlign();
   void slotAddEdgeContact();
-  void slotOmmitLastEdge();
-  void slotAlignByEdges();
 
 protected:
 

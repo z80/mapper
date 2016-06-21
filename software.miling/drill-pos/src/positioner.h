@@ -63,7 +63,7 @@ public:
     bool detectOpticalFlow( cv::Mat & gray );
 
     bool fieldOfView( std::vector<double> & corners );
-    bool drillPos( double & x, double & y );
+    bool drillPos( double & x, double & y, bool ignoreSample = false );
     bool knownFeatures( std::vector<double> & corners );
     bool visibleFeatures( std::vector<double> & corners );
 

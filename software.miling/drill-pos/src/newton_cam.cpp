@@ -42,6 +42,58 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     cv::Mat XtY = Xt * Y;
     cv::Mat A = (XtX * XtY).t();
 
+    /*
+    cv::Mat R( 2, 2, CV_64F );
+    for ( int i=0; i<2; i++ )
+    {
+        for ( int j=0; j<2; j++ )
+        {
+            R.at<double>(i, j) = A.at<double>(i, j);
+        }
+    }
+
+    cv::Mat W, U, Vt;
+    cv::SVD::compute( R, W, U, Vt );
+    R = U * Vt;
+    for ( int i=0; i<2; i++ )
+    {
+        for ( int j=0; j<2; j++ )
+        {
+            A.at<double>(i, j) = R.at<double>(i, j);
+        }
+    }
+
+
+    std::cout << "W: " << std::endl;
+    for ( auto i=0; i<W.rows; i++ )
+    {
+        for ( auto j=0; j<W.cols; j++ )
+        {
+            std::cout << W.at<double>( i, j ) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "U: " << std::endl;
+    for ( auto i=0; i<U.rows; i++ )
+    {
+        for ( auto j=0; j<U.cols; j++ )
+        {
+            std::cout << U.at<double>( i, j ) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "Vt: " << std::endl;
+    for ( auto i=0; i<Vt.rows; i++ )
+    {
+        for ( auto j=0; j<Vt.cols; j++ )
+        {
+            std::cout << Vt.at<double>( i, j ) << " ";
+        }
+        std::cout << std::endl;
+    }
+    */
     //cam2Floor = A;
     //return true;
 

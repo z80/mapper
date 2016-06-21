@@ -26,6 +26,7 @@ public:
     void frame( cv::Mat & img );
     void appendNewShapes();
     void resetImage2Floor();
+    void resetFloor2Sample();
 
     // Determining drill shift vector by
     // rotating around stationary drill.

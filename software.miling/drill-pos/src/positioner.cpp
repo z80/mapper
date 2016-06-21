@@ -29,6 +29,7 @@ Positioner::Positioner()
 
     loadSettings();
     resetImage2Floor();
+    resetFloor2Sample();
 }
 
 Positioner::~Positioner()
@@ -126,6 +127,13 @@ void Positioner::resetImage2Floor()
     img2Floor = cv::Mat::zeros(2, 3, CV_64F);
     img2Floor.at<double>( 0, 0 ) = 1.0;
     img2Floor.at<double>( 1, 1 ) = 1.0;
+}
+
+void Positioner::resetFloor2Sample()
+{
+    floor2Sample = cv::Mat::zeros(2, 3, CV_64F);
+    floor2Sample.at<double>( 0, 0 ) = 1.0;
+    floor2Sample.at<double>( 1, 1 ) = 1.0;
 }
 
 void Positioner::startDrillPos()

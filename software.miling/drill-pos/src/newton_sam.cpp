@@ -19,6 +19,7 @@ NewtonSam::~NewtonSam()
 bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floor2Sample )
 {
     auto sz = pts.size() / 6;
+    this->pts.clear();
     cv::Mat   X( sz, 6, CV_64F );
     cv::Mat   Y( sz, 1, CV_64F );
 
@@ -33,6 +34,17 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
         double nx = pts[ ind+4 ];
         double ny = pts[ ind+5 ];
 
+        double l = sqrt( nx*nx + ny*ny );
+        nx /= l;
+        ny /= l;
+
+        this->pts.push_back( x );
+        this->pts.push_back( y );
+        this->pts.push_back( rx );
+        this->pts.push_back( ry );
+        this->pts.push_back( nx );
+        this->pts.push_back( ny );
+
         X.at<double>( i, 0 ) = x*nx;
         X.at<double>( i, 1 ) = y*nx;
         X.at<double>( i, 2 ) = nx;
@@ -41,11 +53,15 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
         X.at<double>( i, 5 ) = ny;
 
         Y.at<double>( i, 0 ) = rx*nx + ry*ny + d/2.0;
+
+        ind += 6;
     }
     cv::Mat Xt = X.t();
     cv::Mat XtX = Xt * X;
+    this->XtX = XtX;
     XtX = XtX.inv();
     cv::Mat XtY = Xt * Y;
+    this->XtY = XtY;
     cv::Mat S = XtX * XtY; // Initial guess.
 
     std::cout << "X: " << std::endl;
@@ -75,9 +91,6 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
     // Construct matrices for calculating minimizing function.
 
 
-    // Initialize matrices needed for iterative calculations.
-    this->XtX = XtX;
-    this->XtY = XtY;
 
     std::cout << "XtX: " << std::endl;
     for ( auto i=0; i<6; i++ )

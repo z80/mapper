@@ -445,13 +445,10 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
     ocl::Point    na, nb; // Normals for faces containing this edge.
     bool bFound = false;
     ocl::STLSurf & s     = ( selectionMode == EDGE_SAMPLE ) ? sample     : model;
-    ocl::STLSurf & sOrig = ( selectionMode == EDGE_SAMPLE ) ? sampleOrig : modelOrig;
 
     int ind = 0;
 
     // First triangle is searched by index.
-    auto iOrig = sOrig.tris.begin();
-    auto kOrig = sOrig.tris.begin();
     for ( std::list<ocl::Triangle>::iterator i=s.tris.begin(); i!=s.tris.end(); i++ )
     {
         ocl::Triangle & t = *i;
@@ -468,20 +465,16 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                 ta = t;
 
                 // Assign edge points.
-                edgeA = (*iOrig).p[j];
-                edgeB = (*iOrig).p[indB];
-                edgeN = (*iOrig).n;
+                edgeA = pa;
+                edgeB = pb;
+                edgeN = t.n;
 
                 // Second triangle is searched by value because indices are different.
-                auto kOrig = sOrig.tris.begin();
                 for ( std::list<ocl::Triangle>::iterator k=s.tris.begin(); k!=s.tris.end(); k++ )
                 {
                     // Don't analyze the same triangle.
                     if ( k == i )
-                    {
-                        kOrig++;
                         continue;
-                    }
                     ocl::Triangle & t = *k;
                     for ( int s=0; s<3; s++ )
                     {
@@ -500,7 +493,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                                 bFound = true;
                                 nb = t.n;
                                 tb = t;
-                                edgeN += (*kOrig).n;
+                                edgeN += t.n;
                                 break;
                             }
                             // Check the last point of triangle.
@@ -512,14 +505,13 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                                 bFound = true;
                                 nb = t.n;
                                 tb = t;
-                                edgeN += (*kOrig).n;
+                                edgeN += t.n;
                                 break;
                             }
                         }
                     }
                     if ( bFound )
                         break;
-                    kOrig++;
                 }
                 break;
             }
@@ -529,6 +521,11 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
         // Render both triangles and resultant normal.
         if ( bFound )
         {
+            // Debugging output.
+            std::cout << "selected edge: ";
+            std::cout << std::setw( 10 ) << std::setprecision( 3 ) << edgeA.x << ", " << edgeA.y << ", " << edgeA.z << std::endl;
+            std::cout << std::setw( 10 ) << std::setprecision( 3 ) << edgeN.x << ", " << edgeN.y << ", " << edgeN.z << std::endl;
+
             if ( ptsSel )
                 ptsSel->Delete();
             ptsSel = vtkPoints::New();
@@ -589,7 +586,6 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
         }
 
         ind += 3;
-        iOrig++;
     }
 }
 

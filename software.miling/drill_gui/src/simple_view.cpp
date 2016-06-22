@@ -275,7 +275,7 @@ void SimpleView::slotSampleAlign()
     if ( ui->sampleAlign->isChecked() )
         positioner.startSamplePos();
     else
-        positioner.endSamplePos( ui->emDiameter->value() );
+        positioner.endSamplePos( ui->emDiameter->value()/10.0 ); // Divide by 10 to convert into mm.
 }
 
 void SimpleView::slotAddEdgeContact()

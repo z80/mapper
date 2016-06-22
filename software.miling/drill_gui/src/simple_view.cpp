@@ -289,7 +289,7 @@ void SimpleView::slotAddEdgeContact()
     n = n.cross( a );
     n = a.cross( n );
 
-    cv::Point2d da( a.x, a.y );
+    cv::Point2d da( pa.x, pa.y );
     cv::Point2d dn( n.x, n.y );
     positioner.appendSamplePos( da, dn );
 }

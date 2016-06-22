@@ -473,6 +473,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                 edgeN = (*iOrig).n;
 
                 // Second triangle is searched by value because indices are different.
+                auto kOrig = sOrig.tris.begin();
                 for ( std::list<ocl::Triangle>::iterator k=s.tris.begin(); k!=s.tris.end(); k++ )
                 {
                     // Don't analyze the same triangle.
@@ -499,7 +500,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                                 bFound = true;
                                 nb = t.n;
                                 tb = t;
-                                edgeN += t.n;
+                                edgeN += (*kOrig).n;
                                 break;
                             }
                             // Check the last point of triangle.
@@ -511,7 +512,7 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
                                 bFound = true;
                                 nb = t.n;
                                 tb = t;
-                                edgeN += t.n;
+                                edgeN += (*kOrig).n;
                                 break;
                             }
                         }

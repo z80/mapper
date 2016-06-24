@@ -168,15 +168,36 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     int outerTriesLeft = ITER_MAX;
     while ( true )
     {
-        double f = fi( a );
-        double g[9];
-        double alpha = 1.0;
-        gradFi( a, g );
+        int improvementsCnt = 0;
+        for ( auto dir=0; dir<9; dir++ )
+        {
+            double f = fi( a );
+            double g[9];
+            double alpha = 1.0;
+            gradFi( a, g );
+            double newA[9];
+            for ( int i=0; i<9; i++ )
+                newA[i] = a[i];
+            if ( fabs( g[dir] ) > std::numeric_limits<double>::epsilon() )
+            {
+                for ( int tries=0; tries<ITER_MAX; tries++ )
+                {
+                    newA[dir] = a[dir] - alpha*f/g[dir];
+                    double newF = fi( newA );
+                    if ( fabs(newF) < fabs( f ) )
+                    {
+                        // Indicate that situation was improved.
+                        improvenets++;
+                        //
+                    }
+                }
+            }
+        }
+
         double newF;
         int innerTriesLeft = ITER_MAX;
         while ( true )
         {
-            double newA[9];
             for ( int i=0; i<9; i++ )
             {
                 if ( fabs( g[i] ) > std::numeric_limits<double>::epsilon() )

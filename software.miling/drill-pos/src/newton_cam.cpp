@@ -150,33 +150,28 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
 
     // Copy A to a.
     int ind = 0;
+    double a[10];
     for ( int i=0; i<2; i++ )
     {
         for ( int j=0; j<3; j++ )
         {
-            this->a[ ind++ ] = A.at<double>( i, j );
+            a[ ind++ ] = A.at<double>( i, j );
         }
     }
-    lambda[0] = lambda[1] = lambda[2] = 0.0;
+    for ( int i=0; i<4; i++ )
+        a[i+6] = 1.0;
 
-    double a[9];
-    for ( int i=0; i<6; i++ )
-        a[i] = this->a[i];
-    for ( int i=0; i<3; i++ )
-        a[i+6] = this->lambda[i];
-
-    int outerTriesLeft = ITER_MAX;
     while ( true )
     {
         int improvementsCnt = 0;
         for ( auto dir=0; dir<9; dir++ )
         {
             double f = fi( a );
-            double g[9];
+            double g[10];
             double alpha = 1.0;
             gradFi( a, g );
-            double newA[9];
-            for ( int i=0; i<9; i++ )
+            double newA[10];
+            for ( int i=0; i<10; i++ )
                 newA[i] = a[i];
             if ( fabs( g[dir] ) > std::numeric_limits<double>::epsilon() )
             {
@@ -187,50 +182,23 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
                     if ( fabs(newF) < fabs( f ) )
                     {
                         // Indicate that situation was improved.
-                        improvenets++;
-                        //
+                        improvementsCnt++;
+                        // Apply changes.
+                        for ( auto i=0;i<10; i++ )
+                            a[i]=newA[i];
+                        f = newF;
+                        // Terminate cutrrent loop.
+                        break;
                     }
+                    else
+                        alpha *= ALPHA;
                 }
             }
         }
+        if ( improvementsCnt < 1 )
+            break;
+        improvementsCnt = 0;
 
-        double newF;
-        int innerTriesLeft = ITER_MAX;
-        while ( true )
-        {
-            for ( int i=0; i<9; i++ )
-            {
-                if ( fabs( g[i] ) > std::numeric_limits<double>::epsilon() )
-                    newA[i] = a[i] - alpha*f/g[i];
-                else
-                    newA[i] = a[i];
-            }
-            newF = fi( newA );
-            if ( fabs( f - newF ) < EPS )
-            {
-                // If it has become better assign newA to a and exit from step decreasing loop.
-                for ( int i=0; i<9; i++ )
-                    a[i] = newA[i];
-                break;
-            }
-            alpha *= ALPHA;
-            innerTriesLeft--;
-            if ( innerTriesLeft <= 0 )
-            {
-                // Can't improve this iteration anymore.
-                for ( int i=0; i<9; i++ )
-                    a[i] = newA[i];
-                break;
-            }
-        }
-        if ( fabs( f - newF ) < EPS )
-            break;
-        outerTriesLeft--;
-        if ( outerTriesLeft <= 0 )
-        {
-            // Can't improve this matrix anymore.
-            break;
-        }
     }
     cam2Floor = cv::Mat::zeros( 2, 3, CV_64F );
     ind = 0;
@@ -265,6 +233,8 @@ double NewtonCam::fi( double * a )
     f += d;
     d = a[8] * ( a[0] * a[1] + a[3] * a[4] );
     f += d;
+    d = a[9] * ( a[0] * a[4] - a[1] * a[3] - 1.0 );
+    f += d;
     return f;
 }
 
@@ -277,14 +247,15 @@ void  NewtonCam::gradFi( double * a, double * dfi )
     grad = (XtX * A - XtY) * 2.0;
     for ( auto i=0; i<6; i++ )
         dfi[i] = grad.at<double>( i, 0 );
-    dfi[0] += 2.0*a[6]*a[0] + a[8]*a[1];
-    dfi[1] += 2.0*a[7]*a[1] + a[8]*a[0];
-    dfi[3] += 2.0*a[6]*a[3] + a[8]*a[4];
-    dfi[4] += 2.0*a[7]*a[4] + a[8]*a[3];
+    dfi[0] += 2.0*a[6]*a[0] + a[8]*a[1] + a[9]*a[4];
+    dfi[1] += 2.0*a[7]*a[1] + a[8]*a[0] - a[9]*a[3];
+    dfi[3] += 2.0*a[6]*a[3] + a[8]*a[4] - a[9]*a[1];
+    dfi[4] += 2.0*a[7]*a[4] + a[8]*a[3] + a[9]*a[0];
 
     dfi[6] = a[0]*a[0] + a[3]*a[3] - 1.0;
     dfi[7] = a[1]*a[1] + a[4]*a[4] - 1.0;
     dfi[8] = a[0]*a[1] + a[3]*a[4];
+    dfi[9] = a[0]*a[4] - a[1]*a[3] - 1.0;
 }
 
 

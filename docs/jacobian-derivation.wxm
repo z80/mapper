@@ -1,0 +1,48 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 13.04.2 ] */
+
+/* [wxMaxima: input   start ] */
+kill( all );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+XtX: matrix( [x0,  x1,  x2,  x3,  x4,  x5], 
+             [x6,  x7,  x8,  x9,  x10, x11], 
+             [x12, x13, x14, x15, x16, x17], 
+             [x18, x19, x20, x21, x22, x23], 
+             [x24, x25, x26, x27, x28, x29], 
+             [x30, x31, x32, x33, x34, x35] );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fi: L0*(a0^2 + a3^2 - 1) + L1*(a1^2 + a4^2 - 1) + L2*(a0*a1 - a3*a4) + L3*(a0*a4-a1*a3-1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+dfi: matrix( [ ( diff( fi, a0 ) ) ], 
+             [ ( diff( fi, a1 ) ) ], 
+             [ ( diff( fi, a2 ) ) ], 
+             [ ( diff( fi, a3 ) ) ], 
+             [ ( diff( fi, a4 ) ) ], 
+             [ ( diff( fi, a5 ) ) ], 
+             [ ( diff( fi, L0 ) ) ], 
+             [ ( diff( fi, L1 ) ) ], 
+             [ ( diff( fi, L2 ) ) ], 
+             [ ( diff( fi, L3 ) ) ] );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+J: matrix( [diff( dfi, a0 ), 
+            diff( dfi, a1 ), 
+            diff( dfi, a2 ), 
+            diff( dfi, a3 ), 
+            diff( dfi, a4 ), 
+            diff( dfi, a5 ), 
+            diff( dfi, L0 ), 
+            diff( dfi, L1 ), 
+            diff( dfi, L2 ), 
+            diff( dfi, L3 ) ] );
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

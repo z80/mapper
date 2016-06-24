@@ -117,7 +117,7 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
         x.at<double>( j, 0 ) = 0.0;
         x.at<double>( j, 1 ) = 0.0;
         x.at<double>( j, 2 ) = 0.0;
-        x.at<double>( j, 3 ) = static_cast<double>( foundPt.x );;
+        x.at<double>( j, 3 ) = static_cast<double>( foundPt.x );
         x.at<double>( j, 4 ) = static_cast<double>( foundPt.y );
         x.at<double>( j, 5 ) = 1.0;
 

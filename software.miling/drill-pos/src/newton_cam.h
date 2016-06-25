@@ -21,6 +21,7 @@ public:
     bool matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts, cv::Mat & cam2Floor );
     double fi( double * a );
     void  gradFi( double * a, double * dfi );
+    void  J( double * a, double * j );
 
     double a[6], lambda[3];
 

@@ -23,7 +23,7 @@ public:
     void  gradFi( double * a, double * dfi );
     void  J( double * a, double * j );
 
-    double a[6], lambda[3];
+    //double a[6], lambda[3];
 
     cv::Mat XtX, XtY;
 

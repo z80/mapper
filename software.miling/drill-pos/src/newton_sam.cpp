@@ -5,7 +5,7 @@
 const double NewtonSam::ALPHA        = 0.2;
 const double NewtonSam::MIN_STEP     = 1.0e-6;
 const double NewtonSam::EPS          = 1.0e-6;
-const int    NewtonSam::ITER_MAX     = 32;
+const int    NewtonSam::ITER_MAX     = 24;
 
 
 NewtonSam::NewtonSam()
@@ -58,10 +58,10 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
     }
     cv::Mat Xt = X.t();
     cv::Mat XtX = Xt * X;
-    this->XtX = XtX;
-    XtX = XtX.inv();
+    this->XtX = XtX.clone();
     cv::Mat XtY = Xt * Y;
-    this->XtY = XtY;
+    this->XtY = XtY.clone();
+    XtX = XtX.inv();
     cv::Mat S = XtX * XtY; // Initial guess.
 
     std::cout << "X: " << std::endl;
@@ -112,12 +112,9 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
     // Copy S to a.
     ind = 0;
     double a[10];
-    for ( int i=0; i<2; i++ )
+    for ( int i=0; i<6; i++ )
     {
-        for ( int j=0; j<3; j++ )
-        {
-            a[ ind++ ] = S.at<double>( i, j );
-        }
+        a[ ind++ ] = S.at<double>( i, 0 );
     }
     for ( int i=0; i<4; i++ )
         a[i+6] = 1.0;

@@ -11,22 +11,20 @@ public:
 
     FaceSelectorStyle()
     {
+        picker = vtkSmartPointer<vtkCellPicker>::New();
+        picker->SetTolerance(0.0005);
     }
 
     ~FaceSelectorStyle()
     {
-        if ( picker )
-            picker->Delete();
+        //if ( picker )
+        //    picker->Delete();
     }
 
     virtual void OnLeftButtonDown()
     {
       // Get the location of the click (in window coordinates)
       int * pos = this->GetInteractor()->GetEventPosition();
-
-      if ( !picker )
-        picker = vtkSmartPointer<vtkCellPicker>::New();
-      picker->SetTolerance(0.0005);
 
       int maxIndex = 0;
       if ( model->selectionMode == Model::FACE_SAMPLE )

@@ -5,7 +5,7 @@
 const double NewtonCam::ALPHA        = 0.2;
 const double NewtonCam::MIN_STEP     = 1.0e-6;
 const double NewtonCam::EPS          = 1.0e-6;
-const int    NewtonCam::ITER_MAX     = 32;
+const int    NewtonCam::ITER_MAX     = 8;
 
 
 NewtonCam::NewtonCam()

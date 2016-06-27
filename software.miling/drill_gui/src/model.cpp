@@ -28,12 +28,22 @@ public:
         picker = vtkSmartPointer<vtkCellPicker>::New();
       picker->SetTolerance(0.0005);
 
+      int maxIndex = 0;
+      if ( model->selectionMode == Model::FACE_SAMPLE )
+          maxIndex = model->sample.tris.size();
+      else if ( model->selectionMode == Model::EDGE_SAMPLE )
+          maxIndex = model->sample.tris.size() * 3;
+      else if ( model->selectionMode == Model::FACE_MODEL )
+          maxIndex = model->model.tris.size();
+      else if ( model->selectionMode == Model::EDGE_MODEL )
+          maxIndex = model->model.tris.size() * 3;
+
       // Pick from this location.
       picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
 
       vtkIdType cellId = picker->GetCellId();
 
-      if ( cellId != -1 )
+      if ( ( cellId != -1 ) && ( cellId < maxIndex ) )
       {
           vtkIdType cnt, * inds;
           Data->GetCellPoints( cellId, cnt, inds );

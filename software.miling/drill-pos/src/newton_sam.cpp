@@ -45,7 +45,9 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
         std::remove_copy_if( p.begin(), p.end(), to.begin(), [=](const std::vector<double> & v) { return ( (v[2]==rx) && (v[3]==ry) && (v[4]==nx) && (v[5]==ny) ); } );
         lines.push_back( to );
     }
-    // For each line derive closest line.
+    std::sort( lines.begin(), lines.end(), [=]( std::vector< std::vector<double> > & a, std::vector< std::vector<double> > & b ) { return (a.size () < b.size()); } );
+    // The very first line hast the most points.
+    // Approximate it with line using eigenvalues.
 
 
 

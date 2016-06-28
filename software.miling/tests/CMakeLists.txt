@@ -6,3 +6,8 @@
 #add_subdirectory( "./vtk" )
 #add_subdirectory( "./cam-test" )
 add_subdirectory( "./study" )
+add_subdirectory( "./fit-test" )
+
+
+
+

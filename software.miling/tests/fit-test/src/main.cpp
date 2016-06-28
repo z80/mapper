@@ -5,31 +5,17 @@
 #include <numeric>
 #include <iostream>
 
+#include "opencv2/core/core.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/video/tracking.hpp"
+#include "opencv2/videoio/videoio.hpp"
 
+void fitLine( std::vector< std::vector<double> > & line, cv::Point2d & c, cv::Point2d & a );
 
 int main()
-{
-
-
-#include "newton_sam.h"
-#include <algorithm>
-#include <numeric>
-
-const double NewtonSam::ALPHA        = 0.2;
-const double NewtonSam::MIN_STEP     = 1.0e-6;
-const double NewtonSam::EPS          = 1.0e-6;
-const int    NewtonSam::ITER_MAX     = 24;
-
-
-NewtonSam::NewtonSam()
-{
-}
-
-NewtonSam::~NewtonSam()
-{
-}
-
-bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floor2Sample )
 {
     std::vector<double> pts;
     pts.push_back( 1.0 );
@@ -52,6 +38,7 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
     pts.push_back( 1.0 );
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
+
     // Points number.
     auto sz = pts.size() / 6;
     // Sort points by lines.
@@ -83,4 +70,15 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
 
 
    return 0;
+}
+
+void fitLine( std::vector< std::vector<double> > & line, cv::Point2d & c, cv::Point2d & a )
+{
+    auto sz = line.size();
+    cv::Mat x( sz, 2, CV_64F );
+    for ( auto i=0; i<sz; i++ )
+    {
+        x.at<> = line[i][0];
+        x.at<> = line[i][1];
+    }
 }

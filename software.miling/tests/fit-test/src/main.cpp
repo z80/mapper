@@ -37,7 +37,9 @@ public:
         return *this;
     }
 
-    void fitLine();
+    bool fitLine();
+    bool fitLine( Line & line );
+    bool determineN( Line & line );
 
     cv::Point2d ni, ri; // Declared line parameters; "i" from "ideal" word.
 
@@ -121,11 +123,11 @@ int main()
    return 0;
 }
 
-void Line::fitLine()
+bool Line::fitLine()
 {
     auto sz = pts.size();
     if ( sz < 2 )
-        return;
+        return false;
 
     cv::Mat x( sz, 2, CV_64F );
     for ( auto i=0; i<sz; i++ )
@@ -143,4 +145,55 @@ void Line::fitLine()
 
     int ind = ( fabs( e0 ) > fabs( e1 ) ) ? 0 : 1;
     a = cv::Point2d( pca_analysis.eigenvectors.at<double>(ind, 0), pca_analysis.eigenvectors.at<double>(ind, 1) );
+
+    return true;
 }
+
+bool Line::fitLine( Line & line )
+{
+    auto sz = pts.size();
+
+    // Determine mean value.
+    double rx = 0.0,
+           ry = 0.0;
+    for ( auto i=0; i<sz; i++ )
+    {
+        rx += pts[i].x;
+        ry += pts[i].y;
+    }
+    rx /= static_cast<double>( sz );
+    ry /= static_cast<double>( sz );
+
+    // Cross with line and orient a away from intersection point.
+    //cv::Point ai = cv::Point2d( -line.ni.y, line.ni.x );
+    double ns = line.ni.x * ni.y - line.ni.y * ni.x;
+    double nc = ni.dot( line.ni );
+
+    double ax = line.a.x * nc - line.a.y * ns;
+    double ay = line.a.x * ns + line.a.y * nc;
+
+    a = cv::Point2d( ax, ay );
+    r = cv::Point2d( rx, ry );
+
+    return true;
+}
+
+bool Line::determineN( Line & line )
+{
+    // Define original dot product.
+    bool res = fitLine();
+    if ( !res )
+        return false;
+    res = line.fitLine();
+    if ( !res )
+        line.fitLine( *this );
+    
+    // If it is >0 then 
+
+    return true;
+}
+
+
+
+
+

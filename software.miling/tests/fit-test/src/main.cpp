@@ -33,18 +33,20 @@ public:
             pts = line.pts;
             r   = line.r;
             a   = line.a;
+            n   = line.n;
         }
         return *this;
     }
 
     bool fitLine();
     bool fitLine( Line & line );
-    bool determineN( Line & line );
+    bool adjustNormals( Line & line );
+    bool intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point2d & r0 );
 
     cv::Point2d ni, ri; // Declared line parameters; "i" from "ideal" word.
 
     std::vector< cv::Point2d > pts; // Obtained points close to line.
-    cv::Point2d r, a; // Derived line parameteres.
+    cv::Point2d r, a, n; // Derived line parameteres.
 };
 
 void fitLine( std::vector< std::vector<double> > & line, cv::Point2d & c, cv::Point2d & a );
@@ -146,6 +148,8 @@ bool Line::fitLine()
     int ind = ( fabs( e0 ) > fabs( e1 ) ) ? 0 : 1;
     a = cv::Point2d( pca_analysis.eigenvectors.at<double>(ind, 0), pca_analysis.eigenvectors.at<double>(ind, 1) );
 
+    n = cv::Point2d( -a.y, a.x );
+
     return true;
 }
 
@@ -174,12 +178,19 @@ bool Line::fitLine( Line & line )
 
     a = cv::Point2d( ax, ay );
     r = cv::Point2d( rx, ry );
+    n = cv::Point2d( -a.y, a.x );
 
     return true;
 }
 
-bool Line::determineN( Line & line )
+bool Line::adjustNormals( Line & line )
 {
+    // Determine cosine between normals. If it is too big, lines are almost parallel.
+    double dot = ni.dot( line.ni );
+    const double MAX_DOT = 0.8;
+    if ( fabs( dot ) >= MAX_DOT )
+        return false;
+
     // Define original dot product.
     bool res = fitLine();
     if ( !res )
@@ -188,8 +199,79 @@ bool Line::determineN( Line & line )
     if ( !res )
         line.fitLine( *this );
     
-    // If it is >0 then 
 
+    // Determine intersection point.
+    cv::Mat N( 2, 2, CV_64F );
+    N.at<double>( 0, 0 ) = n.x;
+    N.at<double>( 0, 1 ) = n.y;
+    N.at<double>( 1, 0 ) = line.n.x;
+    N.at<double>( 1, 1 ) = line.n.y;
+
+    cv::Mat RN( 2, 1, CV_64F );
+    RN.at<double>( 0, 0 ) = n.dot( r );
+    RN.at<double>( 0, 0 ) = line.n.dot( line.r );
+    cv::Mat R = N.inv() * RN;
+
+    cv::Point2d r0( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) ); // Common point.
+
+    // Determine correct "a" vector directions for current line positions.
+    // they are to be in the direction of mean points.
+    cv::Point2d aa = r - r0;
+    cv::Point2d ab = line.r - r0;
+
+    // Determine "a" directions for original positions.
+    cv::Point aai( -ni.y, ni.x );
+    cv::Point abi( -line.ni.y, line.ni.x );
+    // Dot profuct of "a" with another line "n" should be positive.
+    if ( aai.dot( line.ni ) < 0.0 )
+        aai = -aai;
+    if ( abi.dot( ni ) < 0.0 )
+        abi = -abi;
+
+    // By comparing cross products adjust normals for current reference frame.
+    double crossi = aai.x*ni.y - aai.y*ni.x;
+    double cross  = aa.x*n.y   - aa.y*n.x;
+    if ( crossi*cross < 0.0 )
+        n = -n;
+
+    crossi = abi.x*line.ni.y - abi.y*line.ni.x;
+    cross  = ab.x*line.n.y   - ab.y*line.n.x;
+    if ( crossi*cross < 0.0 )
+        line.n = -line.n;
+    return true;
+}
+
+bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point2d & r0 )
+{
+    bool res = adjustNormals( line );
+    if ( !res )
+        return false;
+
+    // Determine intersection point.
+    cv::Mat N( 2, 2, CV_64F );
+    N.at<double>( 0, 0 ) = ni.x;
+    N.at<double>( 0, 1 ) = ni.y;
+    N.at<double>( 1, 0 ) = line.ni.x;
+    N.at<double>( 1, 1 ) = line.ni.y;
+
+    cv::Mat RN( 2, 1, CV_64F );
+    RN.at<double>( 0, 0 ) = ni.dot( ri );
+    RN.at<double>( 0, 0 ) = line.ni.dot( line.ri );
+    cv::Mat R = N.inv() * RN;
+
+    ri =  cv::Point2d( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) ); // Common point.
+
+    // Determine the same point in corrent reference frame.
+    N.at<double>( 0, 0 ) = n.x;
+    N.at<double>( 0, 1 ) = n.y;
+    N.at<double>( 1, 0 ) = line.n.x;
+    N.at<double>( 1, 1 ) = line.n.y;
+
+    RN.at<double>( 0, 0 ) = n.dot( r - n*(d/2.0) );
+    RN.at<double>( 0, 0 ) = line.n.dot( line.r - line.n*(d/2.0) );
+    R = N.inv() * RN;
+
+    r0 = cv::Point2d( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) );
     return true;
 }
 

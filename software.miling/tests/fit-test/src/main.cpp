@@ -71,22 +71,22 @@ void fitLine( std::vector< std::vector<double> > & line, cv::Point2d & c, cv::Po
 int main()
 {
     std::vector<double> pts;
+    pts.push_back( 1.0 ); // r
     pts.push_back( 1.0 );
+    pts.push_back( 1.0 ); // ri
+    pts.push_back( 0.0 );
+    pts.push_back( 0.0 ); // ni
+    pts.push_back( 1.0 );
+
+    pts.push_back( 2.0 );
     pts.push_back( 1.0 );
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
     pts.push_back( 0.0 );
     pts.push_back( 1.0 );
 
-    pts.push_back( 0.0 );
+    pts.push_back( 1.0 );
     pts.push_back( 2.0 );
-    pts.push_back( 1.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 1.0 );
-
-    pts.push_back( 2.0 );
-    pts.push_back( 1.0 );
     pts.push_back( 0.0 );
     pts.push_back( 1.0 );
     pts.push_back( 1.0 );
@@ -94,9 +94,9 @@ int main()
 
     LineHandler h;
     h.pointsToLines( pts );
-    h.derivePoints( 0.5 );
+    h.derivePoints( 2.0 );
 
-   return 0;
+    return 0;
 }
 
 bool Line::fitLine()
@@ -181,6 +181,10 @@ bool Line::adjustNormals( Line & line )
     N.at<double>( 1, 0 ) = line.n.x;
     N.at<double>( 1, 1 ) = line.n.y;
 
+    double det = cv::determinant( N );
+    if ( fabs( det ) <= (1000.0*std::numeric_limits<double>::epsilon()) )
+        return false;
+
     cv::Mat RN( 2, 1, CV_64F );
     RN.at<double>( 0, 0 ) = n.dot( r );
     RN.at<double>( 0, 0 ) = line.n.dot( line.r );
@@ -228,6 +232,10 @@ bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point
     N.at<double>( 1, 0 ) = line.ni.x;
     N.at<double>( 1, 1 ) = line.ni.y;
 
+    double det = cv::determinant( N );
+    if ( fabs( det ) <= (1000.0*std::numeric_limits<double>::epsilon()) )
+        return false;
+
     cv::Mat RN( 2, 1, CV_64F );
     RN.at<double>( 0, 0 ) = ni.dot( ri );
     RN.at<double>( 0, 0 ) = line.ni.dot( line.ri );
@@ -240,6 +248,10 @@ bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point
     N.at<double>( 0, 1 ) = n.y;
     N.at<double>( 1, 0 ) = line.n.x;
     N.at<double>( 1, 1 ) = line.n.y;
+
+    det = cv::determinant( N );
+    if ( fabs( det ) <= (1000.0*std::numeric_limits<double>::epsilon()) )
+        return false;
 
     RN.at<double>( 0, 0 ) = n.dot( r - n*(d/2.0) );
     RN.at<double>( 0, 0 ) = line.n.dot( line.r - line.n*(d/2.0) );
@@ -287,7 +299,7 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts )
         double ry = p[0][3];
         double nx = p[0][4];
         double ny = p[0][5];
-        std::vector< std::vector<double> > to(30);
+        std::vector< std::vector<double> > to;
         std::copy_if( p.begin(), p.end(), std::back_inserter(to), [=](const std::vector<double> & v) { return ( (v[2]==rx) && (v[3]==ry) && (v[4]==nx) && (v[5]==ny) ); } );
         p.erase( std::remove_if( p.begin(), p.end(), [=](const std::vector<double> & v) { return ( (v[2]==rx) && (v[3]==ry) && (v[4]==nx) && (v[5]==ny) ); } ), p.end() ); // 
         lines.push_back( to );
@@ -297,10 +309,11 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts )
     for ( auto i=0; i<sz; i++ )
     {
         std::vector< std::vector<double> > & lineFrom = lines[i];
+        auto lineSz = lineFrom.size();
+        assert( lineSz > 0 );
         Line line;
         line.ni = cv::Point2d( lineFrom[0][4], lineFrom[0][5] );
-        line.ri = cv::Point2d( lineFrom[0][2], lineFrom[3][5] );
-        auto lineSz = lineFrom.size();
+        line.ri = cv::Point2d( lineFrom[0][2], lineFrom[0][3] );
         for ( auto j=0; j<lineSz; j++ )
         {
             line.pts.push_back( cv::Point2d( lineFrom[j][0], lineFrom[j][1] ) );

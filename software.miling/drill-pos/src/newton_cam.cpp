@@ -161,40 +161,47 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     for ( int i=0; i<4; i++ )
         a[i+6] = 1.0;
 
-    while ( true )
+    double f = fi( a );
+
+    double alpha = 1.0;
+    for ( int tries=0; tries<ITER_MAX; tries++ )
     {
-        int improvementsCnt = 0;
+        int improvementsCnt;
 
-        double jac[100];
-        J( a, jac );
-        cv::Mat jacobian( 10, 10, CV_64F );
-        ind = 0;
-        for ( int i=0; i<10; i++ )
-        {
-            for ( int j=0; j<10; j++ )
-            {
-                jacobian.at<double>(i, j) = jac[ind++];
-            }
-        }
-        jacobian = jacobian.inv();
-        ind = 0;
-        for ( int i=0; i<10; i++ )
-        {
-            for ( int j=0; j<10; j++ )
-            {
-                jac[ind++] = jacobian.at<double>(i, j);
-            }
-        }
-
-        double g[10];
-        gradFi( a, g );
-
-        double f = fi( a );
         double newA[10];
 
-        double alpha = 1.0;
-        for ( int tries=0; tries<ITER_MAX; tries++ )
-        {
+        do {
+            double jac[100];
+            J( a, jac );
+            cv::Mat jacobian( 10, 10, CV_64F );
+            ind = 0;
+            for ( int i=0; i<10; i++ )
+            {
+                for ( int j=0; j<10; j++ )
+                {
+                    jacobian.at<double>(i, j) = jac[ind++];
+                }
+            }
+
+            double det = cv::determinant( jacobian );
+            if ( fabs( det ) < 1000.0*std::numeric_limits<double>::epsilon() )
+                return false;
+
+            jacobian = jacobian.inv();
+            ind = 0;
+            for ( int i=0; i<10; i++ )
+            {
+                for ( int j=0; j<10; j++ )
+                {
+                    jac[ind++] = jacobian.at<double>(i, j);
+                }
+            }
+
+            double g[10];
+            gradFi( a, g );
+
+
+            improvementsCnt = 0;
             ind = 0;
             for ( int i=0; i<10; i++ )
             {
@@ -214,10 +221,8 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
                 // Terminate cutrrent loop.
                 break;
             }
-            alpha *= ALPHA;
-        }
-        if ( improvementsCnt == 0 )
-            break;
+        } while ( improvementsCnt > 0 );
+        alpha *= ALPHA;
     }
 
     cam2Floor = cv::Mat::zeros( 2, 3, CV_64F );

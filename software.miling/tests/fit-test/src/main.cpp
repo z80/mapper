@@ -1,9 +1,10 @@
-#include<stdio.h>
+#include <stdio.h>
 #include <math.h>
 #include <cmath>
 #include <algorithm>
 #include <numeric>
 #include <iostream>
+#include <limits>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
@@ -29,8 +30,8 @@ public:
         {
             ni   = line.ni;
             ri   = line.ri;
+            pts  = line.pts;
 
-            pts = line.pts;
             r   = line.r;
             a   = line.a;
             n   = line.n;
@@ -44,9 +45,25 @@ public:
     bool intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point2d & r0 );
 
     cv::Point2d ni, ri; // Declared line parameters; "i" from "ideal" word.
-
     std::vector< cv::Point2d > pts; // Obtained points close to line.
+
     cv::Point2d r, a, n; // Derived line parameteres.
+};
+
+class LineHandler
+{
+public:
+    LineHandler();
+    ~LineHandler();
+
+    bool pointsToLines( const std::vector<double> & pts );
+    bool derivePoints( double d );
+
+    std::vector<Line> lines;
+    std::vector<cv::Point2d> ptsFrom;
+    std::vector<cv::Point2d> ptsTo;
+
+    double A[6];
 };
 
 void fitLine( std::vector< std::vector<double> > & line, cv::Point2d & c, cv::Point2d & a );
@@ -75,52 +92,9 @@ int main()
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
 
-    // Points number.
-    auto sz = pts.size() / 6;
-    // Sort points by lines.
-    std::vector< std::vector<double> > p;
-    for ( auto i=0; i<sz; )
-    {
-        std::vector<double> v( 6 );
-        for ( auto j=0; j<6; j++ )
-        {
-            v[j] = pts[i];
-            i++;
-        }
-        p.push_back( v );
-    }
-    std::vector< std::vector< std::vector<double> > > lines;
-    while ( p.size() > 0 )
-    {
-        double rx = p[0][2];
-        double ry = p[0][3];
-        double nx = p[0][4];
-        double ny = p[0][5];
-        std::vector< std::vector<double> > to;
-        std::remove_copy_if( p.begin(), p.end(), to.begin(), [=](const std::vector<double> & v) { return ( (v[2]==rx) && (v[3]==ry) && (v[4]==nx) && (v[5]==ny) ); } );
-        lines.push_back( to );
-    }
-    std::sort( lines.begin(), lines.end(), [=]( std::vector< std::vector<double> > & a, std::vector< std::vector<double> > & b ) { return (a.size () < b.size()); } );
-    // The very first line hast the most points.
-    // Approximate it with line using eigenvalues.
-    sz = lines.size();
-    std::vector<Line> linesS;
-    for ( auto i=0; i<sz; i++ )
-    {
-        Line line;
-        std::vector< std::vector<double> > & l = lines[i];
-        auto lsz = l.size();
-        for ( auto j=0; j<lsz; j++ )
-        {
-            std::vector<double> & pt = l[j];
-            line.ri = cv::Point2d( pt[2], pt[3] );
-            line.ni = cv::Point2d( pt[4], pt[5] );
-            line.pts.push_back( cv::Point2d( pt[0], pt[1] ) );
-        }
-        line.fitLine();
-        linesS.push_back( line );
-    }
-
+    LineHandler h;
+    h.pointsToLines( pts );
+    h.derivePoints( 0.5 );
 
    return 0;
 }
@@ -220,8 +194,8 @@ bool Line::adjustNormals( Line & line )
     cv::Point2d ab = line.r - r0;
 
     // Determine "a" directions for original positions.
-    cv::Point aai( -ni.y, ni.x );
-    cv::Point abi( -line.ni.y, line.ni.x );
+    cv::Point2d aai( -ni.y, ni.x );
+    cv::Point2d abi( -line.ni.y, line.ni.x );
     // Dot profuct of "a" with another line "n" should be positive.
     if ( aai.dot( line.ni ) < 0.0 )
         aai = -aai;
@@ -274,6 +248,132 @@ bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point
     r0 = cv::Point2d( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) );
     return true;
 }
+
+LineHandler::LineHandler()
+{
+}
+
+LineHandler::~LineHandler()
+{
+}
+
+bool validator( const std::vector<double> & v )
+{
+
+    return ( (v[2]==1.0) && (v[3]==0.0) && (v[4]==0.0) && (v[5]==1.0) );
+}
+
+bool LineHandler::pointsToLines( const std::vector<double> & pts )
+{
+    this->lines.clear();
+    // Points number.
+    auto sz = pts.size();
+    // Sort points by lines.
+    std::vector< std::vector<double> > p;
+    for ( auto i=0; i<sz; )
+    {
+        std::vector<double> v( 6 );
+        for ( auto j=0; j<6; j++ )
+        {
+            v[j] = pts[i];
+            i++;
+        }
+        p.push_back( v );
+    }
+    std::vector< std::vector< std::vector<double> > > lines;
+    while ( p.size() > 0 )
+    {
+        double rx = p[0][2];
+        double ry = p[0][3];
+        double nx = p[0][4];
+        double ny = p[0][5];
+        std::vector< std::vector<double> > to(30);
+        std::copy_if( p.begin(), p.end(), std::back_inserter(to), [=](const std::vector<double> & v) { return ( (v[2]==rx) && (v[3]==ry) && (v[4]==nx) && (v[5]==ny) ); } );
+        p.erase( std::remove_if( p.begin(), p.end(), [=](const std::vector<double> & v) { return ( (v[2]==rx) && (v[3]==ry) && (v[4]==nx) && (v[5]==ny) ); } ), p.end() ); // 
+        lines.push_back( to );
+    }
+
+    sz = lines.size();
+    for ( auto i=0; i<sz; i++ )
+    {
+        std::vector< std::vector<double> > & lineFrom = lines[i];
+        Line line;
+        line.ni = cv::Point2d( lineFrom[0][4], lineFrom[0][5] );
+        line.ri = cv::Point2d( lineFrom[0][2], lineFrom[3][5] );
+        auto lineSz = lineFrom.size();
+        for ( auto j=0; j<lineSz; j++ )
+        {
+            line.pts.push_back( cv::Point2d( lineFrom[j][0], lineFrom[j][1] ) );
+        }
+        this->lines.push_back( line );
+    }
+
+    return true;
+}
+
+bool LineHandler::derivePoints( double d )
+{
+    ptsFrom.clear();
+    ptsTo.clear();
+
+    // Intersect each line with each.
+    auto sz = lines.size();
+    for ( auto i=0; i!=sz-1; i++ )
+    {
+        Line & lineA = lines[i];
+        for ( auto j=i+1; j<sz; j++ )
+        {
+            Line & lineB = lines[j];
+            cv::Point2d ri, ro;
+            if ( lineA.intersectionPoint( lineB, d, ri, ro ) )
+            {
+                // Lines intersect normally. Add points.
+                ptsFrom.push_back( ri );
+                ptsFrom.push_back( ri + lineA.ni );
+                ptsFrom.push_back( ri + lineB.ni );
+
+                ptsTo.push_back( ro );
+                ptsTo.push_back( ro + lineA.n );
+                ptsTo.push_back( ro + lineB.n );
+            }
+        }
+    }
+
+    sz = ptsFrom.size();
+    // Using obtained points derive best fit transformation matrix.
+    cv::Mat X( sz, 3, CV_64F );
+    cv::Mat Y( sz, 2, CV_64F );
+
+    for ( auto i=0; i<sz; i++ )
+    {
+        cv::Point2d & from = ptsFrom[i];
+        cv::Point2d & to   = ptsTo[i];
+        X.at<double>( i, 0 ) = from.x;
+        X.at<double>( i, 1 ) = from.y;
+        X.at<double>( i, 2 ) = 1.0;
+
+        Y.at<double>( i, 0 ) = to.x;
+        Y.at<double>( i, 1 ) = to.y;
+    }
+    cv::Mat XtX = X.t() * X;
+    cv::Mat XtY = X.t() * Y;
+
+    double det = cv::determinant( XtX );
+    if ( fabs( det ) <= (1000.0*std::numeric_limits<double>::epsilon()) )
+        return false;
+
+    cv::Mat At = XtX.inv() * XtY; // It is supposed to be transposed.
+    int ind = 0;
+    for ( auto i=0; i<2; i++ )
+    {
+        for ( auto j=0; j<3; j++ )
+        {
+            A[ind++] = At.at<double>( j, i );
+        }
+    }
+    return true;
+}
+
 
 
 

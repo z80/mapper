@@ -164,6 +164,7 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     double f = fi( a );
 
     double alpha = 1.0;
+    bool improved = true;
     for ( int tries=0; tries<ITER_MAX; tries++ )
     {
         int improvementsCnt;
@@ -172,34 +173,40 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
 
         do {
             double jac[100];
-            J( a, jac );
-            cv::Mat jacobian( 10, 10, CV_64F );
-            ind = 0;
-            for ( int i=0; i<10; i++ )
-            {
-                for ( int j=0; j<10; j++ )
-                {
-                    jacobian.at<double>(i, j) = jac[ind++];
-                }
-            }
-
-            double det = cv::determinant( jacobian );
-            if ( fabs( det ) < 1000.0*std::numeric_limits<double>::epsilon() )
-                return false;
-
-            jacobian = jacobian.inv();
-            ind = 0;
-            for ( int i=0; i<10; i++ )
-            {
-                for ( int j=0; j<10; j++ )
-                {
-                    jac[ind++] = jacobian.at<double>(i, j);
-                }
-            }
-
             double g[10];
-            gradFi( a, g );
+            if ( improved )
+            {
+                improved = false;
 
+                J( a, jac );
+                cv::Mat jacobian( 10, 10, CV_64F );
+                ind = 0;
+                for ( int i=0; i<10; i++ )
+                {
+                    for ( int j=0; j<10; j++ )
+                    {
+                        jacobian.at<double>(i, j) = jac[ind++];
+                    }
+                }
+
+                double det = cv::determinant( jacobian );
+                if ( fabs( det ) < 1000.0*std::numeric_limits<double>::epsilon() )
+                    // If determinant is 0 matrix is already
+                    // very ortogonal.
+                    break;
+
+                jacobian = jacobian.inv();
+                ind = 0;
+                for ( int i=0; i<10; i++ )
+                {
+                    for ( int j=0; j<10; j++ )
+                    {
+                        jac[ind++] = jacobian.at<double>(i, j);
+                    }
+                }
+
+                gradFi( a, g );
+            }
 
             improvementsCnt = 0;
             ind = 0;
@@ -214,12 +221,11 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
             {
                 // Indicate that situation was improved.
                 improvementsCnt++;
+                improved = true;
                 // Apply changes.
                 for ( auto i=0;i<10; i++ )
                     a[i]=newA[i];
                 f = newF;
-                // Terminate cutrrent loop.
-                break;
             }
         } while ( improvementsCnt > 0 );
         alpha *= ALPHA;

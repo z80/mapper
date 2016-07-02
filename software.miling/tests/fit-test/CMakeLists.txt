@@ -38,7 +38,7 @@ set( MOC_Hdrs ${Hdrs} )
 file( GLOB UIs "./src/*.ui" )
 file( GLOB QRCs "./icons/*.qrc" )
 
-set( Srcs ${Srcs} ${ROOT}/drill-pos/src/newton_sam.cpp )
+set( Srcs ${Srcs} ${ROOT}/drill-pos/src/newton_sam.cpp ${ROOT}/drill-pos/src/newton_cam.cpp )
 
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)

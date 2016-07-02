@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <numeric>
 
+#include "newton_cam.h"
+
 const double NewtonSam::ALPHA        = 0.2;
 const double NewtonSam::MIN_STEP     = 1.0e-6;
 const double NewtonSam::EPS          = 1.0e-6;
@@ -77,211 +79,35 @@ NewtonSam::~NewtonSam()
 
 bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floor2Sample )
 {
+    this->pts = pts;
+
     // Make initial guess.
     LineHandler lh;
-    lh.pointsToLines( pts );
-    lh.derivePoints( d );
+    bool res = lh.pointsToLines( pts );
+    if ( !res )
+        return false;
+    res = lh.derivePoints( d );
+    if ( !res )
+        return false;
 
-    // Prepare matrices.
-    auto xSz = lh.ptsFrom.size();
-
-    // Construct matrices for calculating minimizing function.
-    cv::Mat x = cv::Mat::zeros( 2*xSz, 6, CV_64F );
-    cv::Mat y = cv::Mat::zeros( 2*xSz, 1, CV_64F );
-    int ind = 0;
-    for ( auto i=0; i<xSz; i++ )
-    {
-        const cv::Point2d & foundPt = lh.ptsFrom[i];
-        const cv::Point2d & knownPt = lh.ptsTo[i];
-        int ia = 2*i;
-        int ib = ia + 1;
-        x.at<double>( ia, 0 ) = static_cast<double>( foundPt.x );
-        x.at<double>( ia, 1 ) = static_cast<double>( foundPt.y );
-        x.at<double>( ia, 2 ) = 1.0;
-        x.at<double>( ia, 3 ) = 0.0;
-        x.at<double>( ia, 4 ) = 0.0;
-        x.at<double>( ia, 5 ) = 0.0;
-
-        x.at<double>( ib, 0 ) = 0.0;
-        x.at<double>( ib, 1 ) = 0.0;
-        x.at<double>( ib, 2 ) = 0.0;
-        x.at<double>( ib, 3 ) = static_cast<double>( foundPt.x );
-        x.at<double>( ib, 4 ) = static_cast<double>( foundPt.y );
-        x.at<double>( ib, 5 ) = 1.0;
-
-        y.at<double>( ia, 0 ) = knownPt.x;
-        y.at<double>( ib, 0 ) = knownPt.y;
-    }
-
-    // Initialize matrices needed for iterative calculations.
-    this->XtX = x.t() * x;
-    this->XtY = x.t() * y;
-
-    std::cout << "X: " << std::endl;
-    for ( auto i=0; i<x.rows; i++ )
-    {
-        for ( auto j=0; j<x.cols; j++ )
-        {
-            std::cout << x.at<double>( i, j ) << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << "Y: " << std::endl;
-    for ( auto i=0; i<y.rows; i++ )
-    {
-        for ( auto j=0; j<y.cols; j++ )
-        {
-            std::cout << y.at<double>( i, j ) << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    
+    cv::Mat S;
+    NewtonCam nc;
+    res = nc.matchPoints( lh.ptsFrom, lh.ptsTo, floor2Sample );
 
 
-
-    // Construct matrices for calculating minimizing function.
-
-
-
-    std::cout << "XtX: " << std::endl;
-    for ( auto i=0; i<6; i++ )
-    {
-        for ( auto j=0; j<6; j++ )
-        {
-            std::cout << this->XtX.at<double>( i, j ) << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << "XtY: " << std::endl;
-    for ( auto i=0; i<6; i++ )
-    {
-        std::cout << this->XtY.at<double>( i, 0 ) << std::endl;
-    }
-
-
-    // Copy initial guess to a.
-    ind = 0;
-    double a[10];
-    for ( int i=0; i<6; i++ )
-    {
-        a[ ind++ ] = lh.A[i];
-    }
-    for ( int i=0; i<4; i++ )
-        a[i+6] = 1.0;
-
-    double f = fi( a );
-
-    double alpha = 1.0;
-    for ( int tries=0; tries<ITER_MAX; tries++ )
-    {
-        int improvements = 0;
-
-
-
-        double newA[10];
-
-        do {
-            improvements = 0;
-
-            double jac[100];
-            J( a, jac );
-            cv::Mat jacobian( 10, 10, CV_64F );
-            ind = 0;
-            for ( int i=0; i<10; i++ )
-            {
-                for ( int j=0; j<10; j++ )
-                {
-                    jacobian.at<double>(i, j) = jac[ind++];
-                }
-            }
-
-            double det = cv::determinant( this->XtX );
-            det = cv::determinant( jacobian );
-            //if ( fabs( det ) < 1000.0*std::numeric_limits<double>::epsilon() )
-            //    return false;
-
-            jacobian = jacobian.inv();
-            ind = 0;
-            for ( int i=0; i<10; i++ )
-            {
-                for ( int j=0; j<10; j++ )
-                {
-                    jac[ind++] = jacobian.at<double>(i, j);
-                }
-            }
-
-            double g[10];
-            gradFi( a, g );
-
-
-
-            ind = 0;
-            for ( int i=0; i<10; i++ )
-            {
-                newA[i] = a[i];
-                for ( int j=0; j<10; j++ )
-                    newA[i] -= alpha*jac[ind++]*g[j];
-            }
-            double newF = fi( newA );
-            if ( fabs(newF) < fabs( f ) )
-            {
-                // Indicate that situation was improved.
-                improvements++;
-                // Apply changes.
-                for ( auto i=0;i<10; i++ )
-                    a[i]=newA[i];
-                f = newF;
-                // Terminate cutrrent loop.
-                break;
-            }
-        } while ( improvements > 0 );
-        alpha *= ALPHA;
-    }
-
-    floor2Sample = cv::Mat::zeros( 2, 3, CV_64F );
-    ind = 0;
-    for ( int i=0; i<2; i++ )
-    {
-        for ( int j=0; j<3; j++ )
-        {
-            floor2Sample.at<double>( i, j ) = a[ind++];
-        }
-    }
-    return true;
+    return res;
 }
 
 double NewtonSam::fi( double * a )
 {
     double f = 0.0;
-    auto sz = pts.size() / 6;
-    // Points part.
-    for ( auto i=0; i<sz; i++ )
+    double g[10];
+    gradFi( a, g );
+    for ( auto i=0; i<10; i++ )
     {
-        int ind = i*6;
-
-        double xc = pts[ ind ];
-        double yc = pts[ ind+1 ];
-        double xs = a[0]*xc + a[1]*yc + a[2];
-        double ys = a[3]*xc + a[4]*yc + a[5];
-        double rx = pts[ ind+2 ];
-        double ry = pts[ ind+3 ];
-        double nx = pts[ ind+4 ];
-        double ny = pts[ ind+5 ];
-        double d = (xs - rx) * nx + (ys - ny) * ny;
-        f += d*d;
+        double v = g[i]*g[i];
+        f += v;
     }
-    // Lambda part.
-    double d = a[6] * ( a[0] * a[0] + a[3] * a[3] - 1.0 );
-    f += d;
-    d = a[7] * ( a[1] * a[1] + a[4] * a[4] - 1.0 );
-    f += d;
-    d = a[8] * ( a[0] * a[1] + a[3] * a[4] );
-    f += d;
-    d = a[9] * ( a[0] * a[4] - a[1] * a[3] - 1.0 );
-    f += d;
     return f;
 }
 

@@ -95,6 +95,7 @@ else()
 
   add_definitions(-DQT_GUI_LIBS -DQT_CORE_LIB -DQT3_SUPPORT)
 
+
   add_executable(${appname} 
     ${Srcs} ${Hdrs} ${UI_Srcs} ${MOC_Hdrs} ${QRC_Srcs})
   target_link_libraries(${appname}

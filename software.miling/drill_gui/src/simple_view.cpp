@@ -127,6 +127,11 @@ SimpleView::~SimpleView()
   delete model;
 }
 
+void SimpleView::showGrid()
+{
+
+}
+
 // Action to be taken upon file open
 void SimpleView::slotOpenFileM()
 {

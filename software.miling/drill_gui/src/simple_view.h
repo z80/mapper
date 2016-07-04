@@ -48,6 +48,8 @@ public:
   SimpleView();
   ~SimpleView();
 
+  void showGrid();
+
 public slots:
 
   virtual void slotOpenFileM();

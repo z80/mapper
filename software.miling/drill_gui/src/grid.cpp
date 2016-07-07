@@ -11,21 +11,14 @@
 Grid::Grid( ocl::STLSurf * s )
     : surf( s )
 {
-    //ocl::Waterline w;
-
-    std::vector<ocl::CLPoint> pts;
-    pts.push_back( ocl::CLPoint( 0.0, 0.0, 0.0 ) );
-    pts.push_back( ocl::CLPoint( 0.1, 0.0, 0.0 ) );
-    pts.push_back( ocl::CLPoint( 0.2, 0.0, 0.0 ) );
-
-    bdc.setSTL( *s );
-    bdc.setCutter( &cutter );
-    bdc.setSampling( 0.1 );
-    std::for_each( pts.begin(), pts.end(),
-                   std::bind( &ocl::BatchDropCutter::appendPoint, &bdc, std::placeholders::_1 ) );
-    //bdc.setZ( 0.0 );
-
-    bdc.run();
+    pts      = vtkPoints::New();
+    polyData = vtkPolyData::New();
+    polyData->Allocate();
+    mapper = vtkPolyDataMapper::New();
+    mapper->SetInputData( polyData );
+    actor = vtkActor::New();
+    actor->SetMapper( mapper );
+    actor->GetProperty()->SetColor( 0.75, 0.0, 0.0 );
 }
 
 Grid::~Grid()
@@ -73,7 +66,8 @@ void Grid::setPoints( const cv::Point2d & at, double d )
             for ( auto j=0; j<0; j++ )
             {
                 double y = at.y + k*static_cast<double>( j );
-                bdc.appendPoint( ocl::CLPoint( x, y, z ) );
+                ocl::CLPoint pt( x, y, z );
+                bdc.appendPoint( pt );
             }
         }
     }
@@ -82,6 +76,44 @@ void Grid::setPoints( const cv::Point2d & at, double d )
 void Grid::run()
 {
     bdc.run();
+    std::vector<ocl::CLPoint> data = bdc.getCLPoints();
+
+
+
+
+    if ( pts )
+        pts->Delete();
+    if ( polyData )
+        polyData->Delete();
+    pts = vtkPoints::New();
+    polyData = vtkPolyData::New();
+    polyData->Allocate();
+
+    mapper->SetInputData( polyData );
+
+
+    for ( auto i=data.begin(); i!=data.end(); i++ )
+    {
+        const ocl::CLPoint & pt = *i;
+        double x1 = pt.x;
+        double x2 = pt.y;
+        double x3 = pt.z;
+        pts->InsertNextPoint( x1, x2, x3 );
+    }
+
+    for ( int i=1;i<data.size(); i++ )
+    {
+        vtkIdType ids[2];
+        ids[0] = i-1;
+        ids[1] = i+1;
+
+        polyData->InsertNextCell( VTK_LINE, 2, ids );
+    }
+    polyData->SetPoints( pts );
+    polyData->BuildCells();
+    polyData->BuildLinks();
+
+    renderer->GetRenderWindow()->Render();
 }
 
 

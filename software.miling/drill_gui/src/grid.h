@@ -23,6 +23,43 @@
 #include "cylcutter.hpp"
 #include "clpoint.hpp"
 
+
+
+#include "vtkConeSource.h"
+#include "vtkPolyDataMapper.h"
+#include "vtkRenderWindow.h"
+#include "vtkCamera.h"
+#include "vtkActor.h"
+#include "vtkRenderer.h"
+#include "vtkProperty.h"
+#include "vtkRenderWindowInteractor.h"
+#include "vtkInteractorStyleMultiTouchCamera.h"
+
+#include <vtkVersion.h>
+#include <vtkSmartPointer.h>
+#include <vtkRendererCollection.h>
+#include <vtkDataSetMapper.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkIdTypeArray.h>
+#include <vtkTriangleFilter.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkCommand.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkPolyData.h>
+#include <vtkPoints.h>
+#include <vtkCellArray.h>
+#include <vtkPlaneSource.h>
+#include <vtkCellPicker.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkProperty.h>
+#include <vtkSelectionNode.h>
+#include <vtkSelection.h>
+#include <vtkExtractSelection.h>
+#include <vtkObjectFactory.h>
+
 class Grid
 {
 public:
@@ -48,10 +85,10 @@ public:
     vtkSmartPointer<vtkRenderWindowInteractor> iren;
 
     // Visualization data.
-    vtkSmartPointer<vtkPoints>         ptsM;
-    vtkSmartPointer<vtkPolyData>       polyDataM;
-    vtkSmartPointer<vtkPolyDataMapper> mapperM;
-    vtkSmartPointer<vtkActor>          actorM;
+    vtkSmartPointer<vtkPoints>         pts;
+    vtkSmartPointer<vtkPolyData>       polyData;
+    vtkSmartPointer<vtkPolyDataMapper> mapper;
+    vtkSmartPointer<vtkActor>          actor;
 
 };
 

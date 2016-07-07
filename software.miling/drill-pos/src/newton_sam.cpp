@@ -90,12 +90,26 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floo
     if ( !res )
         return false;
 
-    cv::Mat S;
+    cv::Mat S( 2, 3, CV_64F );
+
+    int ind = 0;
+    for ( auto i=0; i<2; i++ )
+    {
+        for ( auto j=0; j<3; j++ )
+        {
+            S.at<double>( i, j ) = lh.A[ind++];
+        }
+    }
+    floor2Sample = S;
+    return true;
+
+    /*
     NewtonCam nc;
-    res = nc.matchPoints( lh.ptsFrom, lh.ptsTo, floor2Sample );
+    res = nc.matchPoints( lh.ptsTo, lh.ptsFrom, floor2Sample );
 
 
     return res;
+    */
 }
 
 double NewtonSam::fi( double * a )
@@ -270,7 +284,7 @@ bool Line::fitLine()
     r = cv::Point2d( pca_analysis.mean.at<double>(0, 0), pca_analysis.mean.at<double>(0, 1) );
 
     double e0 = pca_analysis.eigenvalues.at<double>(0, 0);
-    double e1 = pca_analysis.eigenvalues.at<double>(0, 1);
+    double e1 = pca_analysis.eigenvalues.at<double>(1, 0);
 
     int ind = ( fabs( e0 ) > fabs( e1 ) ) ? 0 : 1;
     a = cv::Point2d( pca_analysis.eigenvectors.at<double>(ind, 0), pca_analysis.eigenvectors.at<double>(ind, 1) );
@@ -340,7 +354,7 @@ bool Line::adjustNormals( Line & line )
 
     cv::Mat RN( 2, 1, CV_64F );
     RN.at<double>( 0, 0 ) = n.dot( r );
-    RN.at<double>( 0, 0 ) = line.n.dot( line.r );
+    RN.at<double>( 1, 0 ) = line.n.dot( line.r );
     cv::Mat R = N.inv() * RN;
 
     cv::Point2d r0( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) ); // Common point.
@@ -391,7 +405,7 @@ bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point
 
     cv::Mat RN( 2, 1, CV_64F );
     RN.at<double>( 0, 0 ) = ni.dot( ri );
-    RN.at<double>( 0, 0 ) = line.ni.dot( line.ri );
+    RN.at<double>( 1, 0 ) = line.ni.dot( line.ri );
     cv::Mat R = N.inv() * RN;
 
     ri =  cv::Point2d( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) ); // Common point.
@@ -407,7 +421,7 @@ bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point
         return false;
 
     RN.at<double>( 0, 0 ) = n.dot( r - n*(d/2.0) );
-    RN.at<double>( 0, 0 ) = line.n.dot( line.r - line.n*(d/2.0) );
+    RN.at<double>( 1, 0 ) = line.n.dot( line.r - line.n*(d/2.0) );
     R = N.inv() * RN;
 
     r0 = cv::Point2d( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) );
@@ -466,6 +480,10 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts )
         assert( lineSz > 0 );
         Line line;
         line.ni = cv::Point2d( lineFrom[0][4], lineFrom[0][5] );
+        // Normalize line normal.
+        double l = sqrt( line.ni.x*line.ni.x + line.ni.y*line.ni.y );
+        line.ni.x /= l;
+        line.ni.y /= l;
         line.ri = cv::Point2d( lineFrom[0][2], lineFrom[0][3] );
         for ( auto j=0; j<lineSz; j++ )
         {

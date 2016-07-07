@@ -24,6 +24,8 @@
 #include <vtkVectorText.h>
 #include <vtkSTLReader.h>
 #include <vtkSmartPointer.h>
+#include <vtkAxesActor.h>
+#include <vtkOrientationMarkerWidget.h>
 
 #include <QFileDialog>
 
@@ -90,6 +92,20 @@ SimpleView::SimpleView()
 
   // VTK/Qt wedded
   this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
+
+
+  vtkSmartPointer<vtkAxesActor> axes = 
+    vtkSmartPointer<vtkAxesActor>::New();
+ 
+  //vtkSmartPointer<vtkOrientationMarkerWidget> widget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
+  vtkOrientationMarkerWidget * widget = vtkOrientationMarkerWidget::New();
+  widget->SetOutlineColor( 0.9300, 0.5700, 0.1300 );
+  widget->SetOrientationMarker( axes );
+  QVTKInteractor * interactor = this->ui->qvtkWidget->GetInteractor();
+  widget->SetInteractor( interactor );
+  widget->SetViewport( 0.0, 0.0, 0.4, 0.4 );
+  widget->SetEnabled( 1 );
+  //widget->InteractiveOn();
 
   // Just a bit of Qt interest: Culling off the
   // point data and handing it to a vtkQtTableView

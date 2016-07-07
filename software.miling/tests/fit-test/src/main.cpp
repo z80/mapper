@@ -26,22 +26,22 @@ int main()
     pts.push_back( 0.0 ); // ni
     pts.push_back( 1.0 );
 
-    pts.push_back( 2.0 );
     pts.push_back( 1.0 );
+    pts.push_back( 2.0 );
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
     pts.push_back( 0.0 );
     pts.push_back( 1.0 );
 
+    pts.push_back( 1.0 );
     pts.push_back( 3.0 );
-    pts.push_back( 1.2 );
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
     pts.push_back( 0.0 );
     pts.push_back( 1.0 );
 
+    pts.push_back( 0.0 );
     pts.push_back( 1.0 );
-    pts.push_back( 2.0 );
     pts.push_back( 0.0 );
     pts.push_back( 1.0 );
     pts.push_back( 1.0 );
@@ -50,6 +50,26 @@ int main()
     NewtonSam sam;
     cv::Mat A;
     sam.matchPoints( pts, 2.0, A );
+    double x = 1.0;
+    double y = 1.0;
+    double xo = A.at<double>( 0, 0 )*x + A.at<double>( 0, 1 )*y + A.at<double>( 0, 2 );
+    double yo = A.at<double>( 1, 0 )*x + A.at<double>( 1, 1 )*y + A.at<double>( 1, 2 );
+
+    x = 2.0;
+    y = 1.0;
+    xo = A.at<double>( 0, 0 )*x + A.at<double>( 0, 1 )*y + A.at<double>( 0, 2 );
+    yo = A.at<double>( 1, 0 )*x + A.at<double>( 1, 1 )*y + A.at<double>( 1, 2 );
+
+    x = 3.0;
+    y = 1.2;
+    xo = A.at<double>( 0, 0 )*x + A.at<double>( 0, 1 )*y + A.at<double>( 0, 2 );
+    yo = A.at<double>( 1, 0 )*x + A.at<double>( 1, 1 )*y + A.at<double>( 1, 2 );
+
+    x = 1.0;
+    y = 2.0;
+    xo = A.at<double>( 0, 0 )*x + A.at<double>( 0, 1 )*y + A.at<double>( 0, 2 );
+    yo = A.at<double>( 1, 0 )*x + A.at<double>( 1, 1 )*y + A.at<double>( 1, 2 );
+
 
     return 0;
 }

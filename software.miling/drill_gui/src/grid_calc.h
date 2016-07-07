@@ -22,7 +22,7 @@ public:
     void setHeight( qreal val );
     qreal height() const;
 
-public SLOTS:
+public slots:
     void slotShowGrid();
 
 private:

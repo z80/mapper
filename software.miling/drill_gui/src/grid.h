@@ -18,6 +18,10 @@
 #include <stlreader.hpp>
 #include <triangle.hpp>
 
+#include "waterline.hpp"
+#include "batchdropcutter.hpp"
+#include "cylcutter.hpp"
+#include "clpoint.hpp"
 
 class Grid
 {
@@ -33,6 +37,22 @@ public:
     void run();
 
     ocl::STLSurf * surf;
+    ocl::CylCutter cutter;
+    double gridStep;
+    double zFrom, zTo;
+
+    ocl::BatchDropCutter bdc;
+
+    // Needed pointers.
+    vtkSmartPointer<vtkRenderer>               renderer;
+    vtkSmartPointer<vtkRenderWindowInteractor> iren;
+
+    // Visualization data.
+    vtkSmartPointer<vtkPoints>         ptsM;
+    vtkSmartPointer<vtkPolyData>       polyDataM;
+    vtkSmartPointer<vtkPolyDataMapper> mapperM;
+    vtkSmartPointer<vtkActor>          actorM;
+
 };
 
 

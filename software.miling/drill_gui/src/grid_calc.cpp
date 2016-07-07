@@ -9,6 +9,8 @@ GridCalc::GridCalc( QWidget * parent )
     this->setWindowFlags( Qt::Tool );
 
     sv = 0;
+
+    connect( ui.showGrid, SIGNAL(clicked()), this, SLOT(slotShowGrid()) );
 }
 
 GridCalc::~GridCalc()

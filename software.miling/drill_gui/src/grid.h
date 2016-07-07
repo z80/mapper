@@ -63,9 +63,10 @@
 class Grid
 {
 public:
-    Grid( ocl::STLSurf * surf );
+    Grid( vtkRenderer * ren );
     ~Grid();
 
+    void setModel( ocl::STLSurf * surf );
     void setCutter( double d, double l );
     void setPrecision( double prec );
     void setZInterval( double zFrom, double zTo );
@@ -73,8 +74,8 @@ public:
 
     void run();
 
-    ocl::STLSurf * surf;
-    ocl::CylCutter cutter;
+    ocl::STLSurf surf;
+    std::auto_ptr<ocl::CylCutter> cutter;
     double gridStep;
     double zFrom, zTo;
 
@@ -82,7 +83,6 @@ public:
 
     // Needed pointers.
     vtkSmartPointer<vtkRenderer>               renderer;
-    vtkSmartPointer<vtkRenderWindowInteractor> iren;
 
     // Visualization data.
     vtkSmartPointer<vtkPoints>         pts;

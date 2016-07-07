@@ -25,7 +25,7 @@ public:
 public slots:
     void slotShowGrid();
 
-private:
+public:
     Ui_GridCalc ui;
     SimpleView * sv;
 };

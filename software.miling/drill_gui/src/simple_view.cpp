@@ -83,7 +83,10 @@ SimpleView::SimpleView()
   renderer->AddActor( visibleRects.actor );
   renderer->AddActor( knownRects.actor );
   renderer->AddActor( endMill.actor );
+  grid = new Grid( renderer );
   model = new Model( renderer, this->ui->qvtkWidget->GetInteractor() );
+
+  gridCalc = new GridCalc( 0 );
 
   // VTK/Qt wedded
   this->ui->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
@@ -103,6 +106,7 @@ SimpleView::SimpleView()
   connect( this->ui->actionExit,           SIGNAL(triggered()), this, SLOT(slotExit()) );
 
   connect( this->ui->actionDrive_movement, SIGNAL(triggered()), this, SLOT(slotDrivesCtrl()) );
+  connect( this->ui->gridCalc, SIGNAL(triggered()), this, SLOT(slotGrid()) );
 
   connect( this->ui->emCalibrate, SIGNAL(clicked()),         this, SLOT(slotEmCalibrate()) );
   connect( this->ui->emAppend,    SIGNAL(clicked()),         this, SLOT(slotEmAppend()) );
@@ -123,13 +127,25 @@ SimpleView::SimpleView()
 
 SimpleView::~SimpleView()
 {
-  // The smart pointers should clean up for up
-  delete model;
+    // The smart pointers should clean up for up
+    gridCalc->deleteLater();
+    delete grid;
+    delete model;
 }
 
 void SimpleView::showGrid()
 {
-
+    double d = gridCalc->size();
+    double step = gridCalc->precission();
+    double height = gridCalc->height();
+    grid->setCutter( ui->emDiameter->value(), height + 100.0 );
+    grid->setPrecision( step );
+    grid->setZInterval( height, height-step/2.0 );
+    double x, y;
+    positioner.drillPos( x, y );
+    grid->setPoints( cv::Point2d( x, y ), d );
+    grid->setModel( &(model->model) );
+    grid->run();
 }
 
 // Action to be taken upon file open
@@ -162,6 +178,12 @@ void SimpleView::slotDrivesCtrl()
 {
     DrivesCtrl dc( this );
     dc.exec();
+}
+
+void SimpleView::slotGrid()
+{
+    gridCalc->sv = this;
+    gridCalc->show();
 }
 
 void SimpleView::slotVideoAlign()

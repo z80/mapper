@@ -8,8 +8,8 @@
 #include <numeric>
 #include <functional>
 
-Grid::Grid( ocl::STLSurf * s )
-    : surf( s )
+Grid::Grid( vtkRenderer * ren )
+    : renderer( ren )
 {
     pts      = vtkPoints::New();
     polyData = vtkPolyData::New();
@@ -18,7 +18,9 @@ Grid::Grid( ocl::STLSurf * s )
     mapper->SetInputData( polyData );
     actor = vtkActor::New();
     actor->SetMapper( mapper );
-    actor->GetProperty()->SetColor( 0.75, 0.0, 0.0 );
+    actor->GetProperty()->SetColor( 0.75, 0.0, 0.75 );
+
+    renderer->AddActor( actor );
 }
 
 Grid::~Grid()
@@ -26,10 +28,16 @@ Grid::~Grid()
 
 }
 
+void Grid::setModel( ocl::STLSurf * surf )
+{
+    this->surf = *surf;
+    bdc.setSTL( *surf );
+}
+
 void Grid::setCutter( double d, double l )
 {
-    cutter = ocl::CylCutter( d, l );
-    bdc.setCutter( &cutter );
+    cutter = std::auto_ptr<ocl::CylCutter>( new ocl::CylCutter( d, l ) );
+    bdc.setCutter( cutter.get() );
 }
 
 void Grid::setPrecision( double prec )

@@ -25,6 +25,8 @@
 #include "known_rects.h"
 #include "end_mill.h"
 #include "model.h"
+#include "grid.h"
+#include "grid_calc.h"
 
 
 // Forward Qt class declarations
@@ -59,6 +61,7 @@ public slots:
   void slotVideoAlign();
 
   void slotDrivesCtrl();
+  void slotGrid();
 
   void slotEmCalibrate();
   void slotEmAppend();
@@ -104,7 +107,10 @@ private:
     VisibleRects visibleRects;
     EndMill      endMill;
     Fov          fov;
+    Grid         * grid;
     Model        * model;
+    GridCalc     * gridCalc;
+
 
     // Current edge point and normal to this edge.
     ocl::Point edgePt, edgeNorm;

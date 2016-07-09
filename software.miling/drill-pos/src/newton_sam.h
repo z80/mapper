@@ -19,20 +19,8 @@ public:
     ~NewtonSam();
 
     bool matchPoints( std::vector<double> & pts, std::vector<double> & ptsOff, double d, cv::Mat & floor2Sample );
-    double fi( double * a );
-    void  gradFi( double * a, double * dfi );
-    void  J( double * a, double * j );
-
-    double a[6], lambda[3];
-
-    cv::Mat XtX, XtY;
 
     std::vector<double> pts;
-
-    static const double ALPHA;
-    static const double MIN_STEP;
-    static const double EPS;
-    static const int ITER_MAX;
 };
 
 

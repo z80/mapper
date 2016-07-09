@@ -80,6 +80,7 @@ public slots:
 
   void slotSampleAlign();
   void slotAddEdgeContact();
+  void slotAddEdgeFront();
 
 protected:
 

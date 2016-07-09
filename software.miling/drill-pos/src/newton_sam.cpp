@@ -6,10 +6,6 @@
 
 #include "newton_cam.h"
 
-const double NewtonSam::ALPHA        = 0.2;
-const double NewtonSam::MIN_STEP     = 1.0e-6;
-const double NewtonSam::EPS          = 1.0e-6;
-const int    NewtonSam::ITER_MAX     = 24;
 
 
 
@@ -113,156 +109,6 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, std::vector<double> & pt
     */
 }
 
-double NewtonSam::fi( double * a )
-{
-    double f = 0.0;
-    double g[10];
-    gradFi( a, g );
-    for ( auto i=0; i<10; i++ )
-    {
-        double v = g[i]*g[i];
-        f += v;
-    }
-    return f;
-}
-
-void  NewtonSam::gradFi( double * a, double * dfi )
-{
-    cv::Mat A( 6, 1, CV_64F );
-    cv::Mat grad( 6, 1, CV_64F );
-    for ( auto i=0; i<6; i++ )
-        A.at<double>( i, 0 ) = a[i];
-    grad = (XtX * A - XtY) * 2.0;
-    for ( auto i=0; i<6; i++ )
-        dfi[i] = grad.at<double>( i, 0 );
-
-    double * L = &a[6];
-
-    dfi[0] += 2.0*L[0]*a[0] + L[2]*a[1] + L[3]*a[4];
-    dfi[1] += 2.0*L[1]*a[1] + L[2]*a[0] - L[3]*a[3];
-    dfi[3] += 2.0*L[0]*a[3] + L[2]*a[4] - L[3]*a[1];
-    dfi[4] += 2.0*L[1]*a[4] - L[2]*a[3] + L[3]*a[0];
-
-    dfi[6] = a[0]*a[0] + a[3]*a[3] - 1.0;
-    dfi[7] = a[1]*a[1] + a[4]*a[4] - 1.0;
-    dfi[8] = a[0]*a[1] + a[3]*a[4];
-    dfi[9] = a[0]*a[4] - a[1]*a[3] - 1.0;
-}
-
-void NewtonSam::J( double * a, double * j )
-{
-    double * L = &a[6];
-    int ind = 0;
-
-    // Row 0;
-    for ( auto i=0; i<6; i++ )
-        j[ind++] = XtX.at<double>( 0, i );
-    j[0] += 2.0*L[0];
-    j[1] += L[2];
-    j[4] += L[3];
-    j[ind++] = 2.0*a[0];
-    j[ind++] = 0.0;
-    j[ind++] = a[1];
-    j[ind++] = a[4];
-
-    // Row 1;
-    for ( auto i=0; i<6; i++ )
-        j[ind++] = XtX.at<double>( 1, i );
-    j[10] += L[2];
-    j[11] += 2.0*L[1];
-    j[13] += -L[3];
-    j[ind++] = 0.0;
-    j[ind++] = 2.0*a[1];
-    j[ind++] = a[0];
-    j[ind++] = -a[3];
-
-    // Row 2;
-    for ( auto i=0; i<6; i++ )
-        j[ind++] = XtX.at<double>( 2, i );
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-
-    // Row 3;
-    for ( auto i=0; i<6; i++ )
-        j[ind++] = XtX.at<double>( 3, i );
-    j[31] += -L[3];
-    j[33] += 2.0*L[0];
-    j[34] += -L[2];
-    j[ind++] = 2.0*a[3];
-    j[ind++] = 0.0;
-    j[ind++] = -a[4];
-    j[ind++] = -a[1];
-
-    // Row 4;
-    for ( auto i=0; i<6; i++ )
-        j[ind++] = XtX.at<double>( 4, i );
-    j[40] += L[3];
-    j[43] += -L[2];
-    j[44] += 2.0*L[1];
-    j[ind++] = 0.0;
-    j[ind++] = 2.0*a[4];
-    j[ind++] = -a[3];
-    j[ind++] = a[0];
-
-    // Row 5;
-    for ( auto i=0; i<6; i++ )
-        j[ind++] = XtX.at<double>( 5, i );
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-
-    // Row 6;
-    j[ind++] = 2.0*a[0];
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 2.0*a[3];
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-
-    // Row 7;
-    j[ind++] = 0.0;
-    j[ind++] = 2.0*a[1];
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 2.0*a[4];
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-
-    // Row 8;
-    j[ind++] = a[1];
-    j[ind++] = a[0];
-    j[ind++] = 0.0;
-    j[ind++] = -a[4];
-    j[ind++] = -a[3];
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-
-    // Row 9;
-    j[ind++] = a[4];
-    j[ind++] = -a[3];
-    j[ind++] = 0.0;
-    j[ind++] = -a[1];
-    j[ind++] = a[0];
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-}
-
 
 
 
@@ -292,8 +138,16 @@ bool Line::fitLine()
 
     n = cv::Point2d( -a.y, a.x );
 
-    // Calc mean point.
+    // Calc mean outer point.
+    if ( outerPts.size() < 1 )
+        return false;
     cv::Point2d m = std::accumulate< std::vector<cv::Point2d>::iterator, cv::Point2d >( outerPts.begin(), outerPts.end(), cv::Point2d( 0, 0 ) );
+    m /= static_cast<double>( outerPts.size() );
+    m -= r;
+
+    // dot( (m-r), n ) should be positive.
+    if ( m.dot( n ) < 0.0 )
+        n = -n;
 
     return true;
 }
@@ -325,6 +179,17 @@ bool Line::fitLine( Line & line )
     r = cv::Point2d( rx, ry );
     n = cv::Point2d( -a.y, a.x );
 
+    // Calc mean outer point.
+    if ( outerPts.size() < 1 )
+        return false;
+    cv::Point2d m = std::accumulate< std::vector<cv::Point2d>::iterator, cv::Point2d >( outerPts.begin(), outerPts.end(), cv::Point2d( 0, 0 ) );
+    m /= static_cast<double>( outerPts.size() );
+    m -= r;
+
+    // dot( (m-r), n ) should be positive.
+    if ( m.dot( n ) < 0.0 )
+        n = -n;
+
     return true;
 }
 
@@ -344,49 +209,6 @@ bool Line::adjustNormals( Line & line )
     if ( !res )
         line.fitLine( *this );
 
-
-    // Determine intersection point.
-    cv::Mat N( 2, 2, CV_64F );
-    N.at<double>( 0, 0 ) = n.x;
-    N.at<double>( 0, 1 ) = n.y;
-    N.at<double>( 1, 0 ) = line.n.x;
-    N.at<double>( 1, 1 ) = line.n.y;
-
-    double det = cv::determinant( N );
-    if ( fabs( det ) <= (1000.0*std::numeric_limits<double>::epsilon()) )
-        return false;
-
-    cv::Mat RN( 2, 1, CV_64F );
-    RN.at<double>( 0, 0 ) = n.dot( r );
-    RN.at<double>( 1, 0 ) = line.n.dot( line.r );
-    cv::Mat R = N.inv() * RN;
-
-    cv::Point2d r0( R.at<double>( 0, 0 ), R.at<double>( 1, 0 ) ); // Common point.
-
-    // Determine correct "a" vector directions for current line positions.
-    // they are to be in the direction of mean points.
-    cv::Point2d aa = r - r0;
-    cv::Point2d ab = line.r - r0;
-
-    // Determine "a" directions for original positions.
-    cv::Point2d aai( -ni.y, ni.x );
-    cv::Point2d abi( -line.ni.y, line.ni.x );
-    // Dot profuct of "a" with another line "n" should be positive.
-    if ( aai.dot( line.ni ) < 0.0 )
-        aai = -aai;
-    if ( abi.dot( ni ) < 0.0 )
-        abi = -abi;
-
-    // By comparing cross products adjust normals for current reference frame.
-    double crossi = aai.x*ni.y - aai.y*ni.x;
-    double cross  = aa.x*n.y   - aa.y*n.x;
-    if ( crossi*cross < 0.0 )
-        n = -n;
-
-    crossi = abi.x*line.ni.y - abi.y*line.ni.x;
-    cross  = ab.x*line.n.y   - ab.y*line.n.x;
-    if ( crossi*cross < 0.0 )
-        line.n = -line.n;
     return true;
 }
 

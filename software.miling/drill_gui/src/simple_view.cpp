@@ -136,6 +136,7 @@ SimpleView::SimpleView()
   connect( this->ui->dropOnFace,     SIGNAL(clicked()), this, SLOT(slotDropOnFace()) );
   connect( this->ui->sampleAlign,    SIGNAL(clicked()), this, SLOT(slotSampleAlign()) );
   connect( this->ui->addEdgeContact, SIGNAL(clicked()), this, SLOT(slotAddEdgeContact()) );
+  connect( this->ui->addEdgeFront,   SIGNAL(clicked()), this, SLOT(slotAddEdgeFront()) );
 
 
   inputCapture.open( 0 );
@@ -335,6 +336,22 @@ void SimpleView::slotAddEdgeContact()
     cv::Point2d da( pa.x, pa.y );
     cv::Point2d dn( n.x, n.y );
     positioner.appendSamplePos( da, dn );
+}
+
+void SimpleView::slotAddEdgeFront()
+{
+    ocl::Point & pa = model->edgeA;
+    ocl::Point & pb = model->edgeB;
+    ocl::Point n = model->edgeN;
+    ocl::Point a = pb - pa;
+    a.z = 0.0;
+    n.z = 0.0;
+    n = n.cross( a );
+    n = a.cross( n );
+
+    cv::Point2d da( pa.x, pa.y );
+    cv::Point2d dn( n.x, n.y );
+    positioner.appendSampleFrontPos( da, dn );
 }
 
 

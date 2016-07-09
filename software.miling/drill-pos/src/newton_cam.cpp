@@ -150,7 +150,7 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
 
     // Copy A to a.
     int ind = 0;
-    double a[10];
+    double a[9];
     for ( int i=0; i<2; i++ )
     {
         for ( int j=0; j<3; j++ )
@@ -158,7 +158,7 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
             a[ ind++ ] = A.at<double>( i, j );
         }
     }
-    for ( int i=0; i<4; i++ )
+    for ( int i=0; i<3; i++ )
         a[i+6] = 1.0;
 
     double f = fi( a );
@@ -172,18 +172,19 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
         double newA[10];
 
         do {
-            double jac[100];
-            double g[10];
+            double jac[81];
+            double g[9];
+            bool perCoordinate;
             if ( improved )
             {
                 improved = false;
 
                 J( a, jac );
-                cv::Mat jacobian( 10, 10, CV_64F );
+                cv::Mat jacobian( 9, 9, CV_64F );
                 ind = 0;
-                for ( int i=0; i<10; i++ )
+                for ( int i=0; i<9; i++ )
                 {
-                    for ( int j=0; j<10; j++ )
+                    for ( int j=0; j<9; j++ )
                     {
                         jacobian.at<double>(i, j) = jac[ind++];
                     }
@@ -193,15 +194,19 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
                 if ( fabs( det ) < 1000.0*std::numeric_limits<double>::epsilon() )
                     // If determinant is 0 matrix is already
                     // very ortogonal.
-                    break;
-
-                jacobian = jacobian.inv();
-                ind = 0;
-                for ( int i=0; i<10; i++ )
+                    perCoordinate = true;
+                else
                 {
-                    for ( int j=0; j<10; j++ )
+                    perCoordinate = false;
+
+                    jacobian = jacobian.inv();
+                    ind = 0;
+                    for ( int i=0; i<9; i++ )
                     {
-                        jac[ind++] = jacobian.at<double>(i, j);
+                        for ( int j=0; j<9; j++ )
+                        {
+                            jac[ind++] = jacobian.at<double>(i, j);
+                        }
                     }
                 }
 
@@ -209,23 +214,47 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
             }
 
             improvementsCnt = 0;
-            ind = 0;
-            for ( int i=0; i<10; i++ )
+            if ( !perCoordinate )
             {
-                newA[i] = a[i];
-                for ( int j=0; j<10; j++ )
-                    newA[i] -= alpha*jac[ind++]*g[j];
+                ind = 0;
+                for ( int i=0; i<9; i++ )
+                {
+                    newA[i] = a[i];
+                    for ( int j=0; j<9; j++ )
+                        newA[i] -= alpha*jac[ind++]*g[j];
+                }
+                double newF = fi( newA );
+                if ( fabs(newF) < fabs( f ) )
+                {
+                    // Indicate that situation was improved.
+                    improvementsCnt++;
+                    improved = true;
+                    // Apply changes.
+                    for ( auto i=0;i<9; i++ )
+                        a[i]=newA[i];
+                    f = newF;
+                }
             }
-            double newF = fi( newA );
-            if ( fabs(newF) < fabs( f ) )
+            else
             {
-                // Indicate that situation was improved.
-                improvementsCnt++;
-                improved = true;
-                // Apply changes.
-                for ( auto i=0;i<10; i++ )
-                    a[i]=newA[i];
-                f = newF;
+                ind = 0;
+                for ( auto i=0; i<9; i++ )
+                {
+                    newA[i] = a[i];
+                    double den = 0.0;
+                    for ( int j=0; j<9; j++ )
+                        den += jac[ind++]*g[j];
+                    if ( fabs( den ) > ( std::numeric_limits<double>::epsilon() * 1000.0 ) )
+                    {
+                        newA[i] -= alpha*f/den;
+                        double newF = fi( newA );
+                        if ( fabs(newF) < fabs(f) )
+                        {
+                            improvementsCnt += 1;
+                            a[i] = newA[i];
+                        }
+                    }
+                }
             }
         } while ( improvementsCnt > 0 );
         alpha *= ALPHA;
@@ -248,7 +277,7 @@ double NewtonCam::fi( double * a )
     double f = 0.0;
     double g[10];
     gradFi( a, g );
-    for ( auto i=0; i<10; i++ )
+    for ( auto i=0; i<9; i++ )
     {
         double v = g[i]*g[i];
         f += v;
@@ -268,15 +297,14 @@ void  NewtonCam::gradFi( double * a, double * dfi )
 
     double * L = &a[6];
 
-    dfi[0] += 2.0*L[0]*a[0] + L[2]*a[1] + L[3]*a[4];
-    dfi[1] += 2.0*L[1]*a[1] + L[2]*a[0] - L[3]*a[3];
-    dfi[3] += 2.0*L[0]*a[3] + L[2]*a[4] - L[3]*a[1];
-    dfi[4] += 2.0*L[1]*a[4] - L[2]*a[3] + L[3]*a[0];
+    dfi[0] += 2.0*L[0]*a[0] + L[2]*a[1];
+    dfi[1] += 2.0*L[1]*a[1] + L[2]*a[0];
+    dfi[3] += 2.0*L[0]*a[3] + L[2]*a[4];
+    dfi[4] += 2.0*L[1]*a[4] - L[2]*a[3];
 
     dfi[6] = a[0]*a[0] + a[3]*a[3] - 1.0;
     dfi[7] = a[1]*a[1] + a[4]*a[4] - 1.0;
     dfi[8] = a[0]*a[1] + a[3]*a[4];
-    dfi[9] = a[0]*a[4] - a[1]*a[3] - 1.0;
 }
 
 void NewtonCam::J( double * a, double * j )
@@ -289,22 +317,18 @@ void NewtonCam::J( double * a, double * j )
         j[ind++] = XtX.at<double>( 0, i );
     j[0] += 2.0*L[0];
     j[1] += L[2];
-    j[4] += L[3];
     j[ind++] = 2.0*a[0];
     j[ind++] = 0.0;
     j[ind++] = a[1];
-    j[ind++] = a[4];
     
     // Row 1;
     for ( auto i=0; i<6; i++ )
         j[ind++] = XtX.at<double>( 1, i );
     j[10] += L[2];
     j[11] += 2.0*L[1];
-    j[13] += -L[3];
     j[ind++] = 0.0;
     j[ind++] = 2.0*a[1];
     j[ind++] = a[0];
-    j[ind++] = -a[3];
 
     // Row 2;
     for ( auto i=0; i<6; i++ )
@@ -312,34 +336,28 @@ void NewtonCam::J( double * a, double * j )
     j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;
-    j[ind++] = 0.0;
 
     // Row 3;
     for ( auto i=0; i<6; i++ )
         j[ind++] = XtX.at<double>( 3, i );
-    j[31] += -L[3];
     j[33] += 2.0*L[0];
     j[34] += -L[2];
     j[ind++] = 2.0*a[3];
     j[ind++] = 0.0;
     j[ind++] = -a[4];
-    j[ind++] = -a[1];
 
     // Row 4;
     for ( auto i=0; i<6; i++ )
         j[ind++] = XtX.at<double>( 4, i );
-    j[40] += L[3];
     j[43] += -L[2];
     j[44] += 2.0*L[1];
     j[ind++] = 0.0;
     j[ind++] = 2.0*a[4];
     j[ind++] = -a[3];
-    j[ind++] = a[0];
 
     // Row 5;
     for ( auto i=0; i<6; i++ )
         j[ind++] = XtX.at<double>( 5, i );
-    j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;
@@ -349,7 +367,6 @@ void NewtonCam::J( double * a, double * j )
     j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 2.0*a[3];
-    j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;
@@ -366,7 +383,6 @@ void NewtonCam::J( double * a, double * j )
     j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;
-    j[ind++] = 0.0;
 
     // Row 8;
     j[ind++] = a[1];
@@ -374,19 +390,6 @@ void NewtonCam::J( double * a, double * j )
     j[ind++] = 0.0;
     j[ind++] = -a[4];
     j[ind++] = -a[3];
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-    j[ind++] = 0.0;
-
-    // Row 9;
-    j[ind++] = a[4];
-    j[ind++] = -a[3];
-    j[ind++] = 0.0;
-    j[ind++] = -a[1];
-    j[ind++] = a[0];
-    j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;
     j[ind++] = 0.0;

@@ -49,7 +49,7 @@ int main()
 
     NewtonSam sam;
     cv::Mat A;
-    sam.matchPoints( pts, 2.0, A );
+    // sam.matchPoints( pts, 2.0, A );
     double x = 1.0;
     double y = 1.0;
     double xo = A.at<double>( 0, 0 )*x + A.at<double>( 0, 1 )*y + A.at<double>( 0, 2 );

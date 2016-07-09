@@ -46,6 +46,7 @@ public:
 
     cv::Point2d ni, ri; // Declared line parameters; "i" from "ideal" word.
     std::vector< cv::Point2d > pts; // Obtained points close to line.
+    std::vector< cv::Point2d > outerPts; // Points in front of the edge.
 
     cv::Point2d r, a, n; // Derived line parameteres.
 };
@@ -56,7 +57,7 @@ public:
     LineHandler();
     ~LineHandler();
 
-    bool pointsToLines( const std::vector<double> & pts );
+    bool pointsToLines( const std::vector<double> & pts, const std::vector<double> & ptsOff );
     bool derivePoints( double d );
 
     std::vector<Line> lines;
@@ -77,13 +78,13 @@ NewtonSam::~NewtonSam()
 {
 }
 
-bool NewtonSam::matchPoints( std::vector<double> & pts, double d, cv::Mat & floor2Sample )
+bool NewtonSam::matchPoints( std::vector<double> & pts, std::vector<double> & ptsOff, double d, cv::Mat & floor2Sample )
 {
     this->pts = pts;
 
     // Make initial guess.
     LineHandler lh;
-    bool res = lh.pointsToLines( pts );
+    bool res = lh.pointsToLines( pts, ptsOff );
     if ( !res )
         return false;
     res = lh.derivePoints( d );
@@ -291,6 +292,9 @@ bool Line::fitLine()
 
     n = cv::Point2d( -a.y, a.x );
 
+    // Calc mean point.
+    cv::Point2d m = std::accumulate< std::vector<cv::Point2d>::iterator, cv::Point2d >( outerPts.begin(), outerPts.end(), cv::Point2d( 0, 0 ) );
+
     return true;
 }
 
@@ -442,7 +446,7 @@ bool validator( const std::vector<double> & v )
     return ( (v[2]==1.0) && (v[3]==0.0) && (v[4]==0.0) && (v[5]==1.0) );
 }
 
-bool LineHandler::pointsToLines( const std::vector<double> & pts )
+bool LineHandler::pointsToLines( const std::vector<double> & pts, const std::vector<double> & ptsOff )
 {
     this->lines.clear();
     // Points number.
@@ -472,7 +476,6 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts )
         lines.push_back( to );
     }
 
-    sz = lines.size();
     for ( auto i=0; i<sz; i++ )
     {
         std::vector< std::vector<double> > & lineFrom = lines[i];
@@ -480,10 +483,6 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts )
         assert( lineSz > 0 );
         Line line;
         line.ni = cv::Point2d( lineFrom[0][4], lineFrom[0][5] );
-        // Normalize line normal.
-        double l = sqrt( line.ni.x*line.ni.x + line.ni.y*line.ni.y );
-        line.ni.x /= l;
-        line.ni.y /= l;
         line.ri = cv::Point2d( lineFrom[0][2], lineFrom[0][3] );
         for ( auto j=0; j<lineSz; j++ )
         {
@@ -491,6 +490,32 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts )
         }
         this->lines.push_back( line );
     }
+
+    // Process and add front points to lines.
+    sz = ptsOff.size();
+    for ( auto i=0; i<sz; )
+    {
+        double v[ 6 ];
+        for ( auto j=0; j<6; j++ )
+        {
+            v[j] = pts[i];
+            i++;
+        }
+
+        std::for_each( this->lines.begin(), this->lines.end(), [&]( Line & line )
+                {
+                    if ( (line.ri.x == v[2]) && (line.ri.y == v[3]) && (line.ni.x == v[4]) && (line.ni.y == v[5]) )
+                        line.outerPts.push_back( cv::Point2d( v[0], v[1] ) );
+                } );
+    }
+
+    // Normalize line normals.
+    std::for_each( this->lines.begin(), this->lines.end(), [&]( Line & line )
+    {
+        double l = sqrt( line.ni.x*line.ni.x + line.ni.y*line.ni.y );
+        line.ni.x /= l;
+        line.ni.y /= l;        
+    } );
 
     return true;
 }

@@ -45,6 +45,7 @@ public:
     // Align to sample.
     void startSamplePos();
     void appendSamplePos( cv::Point2d r, cv::Point2d n );
+    void appendSampleFrontPos( cv::Point2d r, cv::Point2d n );
     void endSamplePos(); // Determine end mill diameter.
     void endSamplePos( double d ); // End mill diameter is provided, use it while aligning RF.
     void calcSample2Floor();
@@ -112,6 +113,7 @@ public:
 
     // Sample alignment.
     std::vector<double> sample2As;
+    std::vector<double> sampleOffEdge;
 
     NewtonCam newtonCam;
     NewtonSam newtonSam;

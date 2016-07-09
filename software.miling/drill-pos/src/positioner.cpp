@@ -239,6 +239,7 @@ void Positioner::finishAxesPos()
 void Positioner::startSamplePos()
 {
     sample2As.clear();
+    sampleOffEdge.clear();
 }
 
 void Positioner::appendSamplePos( cv::Point2d r, cv::Point2d n )
@@ -259,6 +260,19 @@ void Positioner::appendSamplePos( cv::Point2d r, cv::Point2d n )
     sample2As.push_back( r.y );
     sample2As.push_back( n.x );
     sample2As.push_back( n.y );
+}
+
+void Positioner::appendSampleFrontPos( cv::Point2d r, cv::Point2d n )
+{
+
+    double x, y;
+    drillPos( x, y, true );
+    sampleOffEdge.push_back( x );
+    sampleOffEdge.push_back( y );
+    sampleOffEdge.push_back( r.x );
+    sampleOffEdge.push_back( r.y );
+    sampleOffEdge.push_back( n.x );
+    sampleOffEdge.push_back( n.y );
 }
 
 void Positioner::endSamplePos()
@@ -353,7 +367,7 @@ void Positioner::endSamplePos( double d )
         return;
     // Only alignment matrix.
     // Derivation of both alignment matrix and end mill diameter.
-    newtonSam.matchPoints( sample2As, d, floor2Sample );
+    newtonSam.matchPoints( sample2As, sampleOffEdge, d, floor2Sample );
     
     
     calcSample2Floor();

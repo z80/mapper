@@ -18,7 +18,7 @@ public:
     NewtonSam();
     ~NewtonSam();
 
-    bool matchPoints( std::vector<double> & pts, double d, cv::Mat & floor2Sample );
+    bool matchPoints( std::vector<double> & pts, std::vector<double> & ptsOff, double d, cv::Mat & floor2Sample );
     double fi( double * a );
     void  gradFi( double * a, double * dfi );
     void  J( double * a, double * j );

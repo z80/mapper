@@ -18,7 +18,13 @@ public:
     NewtonCam();
     ~NewtonCam();
 
-    bool matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts, cv::Mat & cam2Floor );
+    bool matchPoints( std::vector<cv::Point2d> & knownPts,
+                      std::vector<cv::Point2d> & foundPts,
+                      cv::Mat & cam2Floor );
+    bool removeOutlayers( std::vector<cv::Point2d> & knownPts,
+                          std::vector<cv::Point2d> & foundPts,
+                          cv::Mat & cam2Floor,
+                          double percent = 0.5 );
     double fi( double * a );
     void  gradFi( double * a, double * dfi );
     void  J( double * a, double * j );

@@ -443,29 +443,9 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
     int xSz = static_cast<int>( knownPts.size() );
     if ( xSz > 3 )
     {
-        /*
-        cv::Mat X = cv::Mat::zeros( xSz, 3, CV_64F );
-        cv::Mat Y = cv::Mat::zeros( xSz, 2, CV_64F );
-        for ( int i=0; i<xSz; i++ )
-        {
-            cv::Point2d foundPt = foundPts[i];
-            cv::Point2d knownPt = knownPts[i];
-            X.at<double>( i, 0 ) = static_cast<double>( foundPt.x );
-            X.at<double>( i, 1 ) = static_cast<double>( foundPt.y );
-            X.at<double>( i, 2 ) = 1.0;
-            Y.at<double>( i, 0 ) = knownPt.x;
-            Y.at<double>( i, 1 ) = knownPt.y;
-        }
-        cv::Mat Xt = X.t();
-        cv::Mat XtX = Xt * X;
-        XtX = XtX.inv();
-        cv::Mat XtY = Xt * Y;
-        cv::Mat A = (XtX * XtY).t();
-        */
-
-        //matchPoints( knownPts, foundPts );
-
-        newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+        //newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+        // Finds best fit with data outlayers removing.
+        newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
 
         // Smoothing matrix to determine end mill position.
         img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;

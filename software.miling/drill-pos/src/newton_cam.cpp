@@ -272,6 +272,58 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     return true;
 }
 
+bool NewtonCam::removeOutlayers( std::vector<cv::Point2d> & knownPts,
+                                 std::vector<cv::Point2d> & foundPts,
+                                 cv::Mat & cam2Floor,
+                                 double percent )
+{
+    using Pair = std::pair<cv::Point2d, cv::Point2d>;
+
+    int sz = static_cast<int>( knownPts.size() );
+    if ( sz < 4 ) // At least one point is supposed to be extra point.
+        return false;
+    sz = static_cast<int>( static_cast<double>( sz ) * percent + 0.5 );
+    sz = ( sz >= 3 ) ? sz : 3;
+
+    // Derive very first approach.
+    bool res = matchPoints( knownPts, foundPts, cam2Floor );
+    if ( !res )
+        return false;
+
+    // Trim data based on that first approach.
+    std::vector< Pair > pairs;
+    auto n = knownPts.size();
+    for ( auto i=0; i<n; i++ )
+        pairs.push_back( Pair( knownPts[i], foundPts[i] ) );
+    std::sort( pairs.begin(), pairs.end(), [&]( const Pair & a, const Pair & b )
+        {
+            double x = a.first.x - a.second.x * cam2Floor.at<double>( 0, 0 ) + a.second.y * cam2Floor.at<double>( 0, 1 ) + cam2Floor.at<double>( 0, 2 );
+            double y = a.first.y - a.second.x * cam2Floor.at<double>( 1, 0 ) + a.second.y * cam2Floor.at<double>( 1, 1 ) + cam2Floor.at<double>( 1, 2 );
+            double la = sqrt( x*x + y*y );
+
+            x = b.first.x - b.second.x * cam2Floor.at<double>( 0, 0 ) + b.second.y * cam2Floor.at<double>( 0, 1 ) + cam2Floor.at<double>( 0, 2 );
+            y = b.first.y - b.second.x * cam2Floor.at<double>( 1, 0 ) + b.second.y * cam2Floor.at<double>( 1, 1 ) + cam2Floor.at<double>( 1, 2 );
+            double lb = sqrt( x*x + y*y );
+
+            return (la <= lb);
+        }
+    );
+
+    // Generate new data arrays.
+    std::vector<cv::Point2d> knPts( sz ), fnPts( sz );
+    for ( auto i=0; i<sz; i++ )
+    {
+        knPts[i] = pairs[i].first;
+        fnPts[i] = pairs[i].second;
+    }
+    // Generate improved transformation with only points which fit the best.
+    res = matchPoints( knPts, fnPts, cam2Floor );
+    if ( !res )
+        return false;
+
+    return true;
+}
+
 double NewtonCam::fi( double * a )
 {
     double f = 0.0;

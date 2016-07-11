@@ -4,62 +4,31 @@
 #include <algorithm>
 #include <numeric>
 #include <iostream>
+#include <string>
 
-class Base
+template<typename T> struct Tr: public std::char_traits<T>
 {
 public:
-    virtual void method()
+    static int compare(const T* s1, const T* s2, size_t n)
     {
-        std::cout << "From base" << std::endl;
-    }
+        for ( auto i=0; i<n; i++ )
+        {
+            T ss1 = ( ( s1[i] >= 'A' ) && (s1[i] <= 'Z') ) ? (s1[i] + 'a' - 'A') : s1[i];
+            T ss2 = ( ( s2[i] >= 'A' ) && (s2[i] <= 'Z') ) ? (s2[i] + 'a' - 'A') : s2[i];
 
-    void call()
-    {
-        method();
-    }
-
-    Base() {}
-
-    virtual ~Base()
-    {
-        method();
+            if ( ss1 < ss2 )
+                return -1;
+            else if ( ss1 > ss2 )
+                return 1;
+        }
+        return 0;
     }
 };
 
-class Derived: public Base
-{
-public:
-    virtual void method()
-    {
-        std::cout << "From derived" << std::endl;
-    }
-
-    Derived()
-    {
-        method();
-    }
-    ~Derived()
-    {
-        method();
-    }
-
-};
+using String = std::basic_string<char, Tr<char> >;
 
 int main(){
-    /*
-   char a=250;
-   int expr;
-   expr= a+ !a + ~a + ++a;
-   printf("%d",expr);
-   return 0;
-   */
-   Derived * d = new Derived();
-   Base * b = dynamic_cast<Base *>( d );
-   d->method();
-   b->method();
-   d->call();
-   b->call();
+    std::cout << (String( "a" ) > String( "A" ) ) << std::endl;
 
-   delete d;
    return 0;
 }

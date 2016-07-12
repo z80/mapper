@@ -1,5 +1,8 @@
 
 #include "positioner.h"
+#include <iostream>
+#include <iomanip>
+#include <locale>
 
 const bool Positioner::DEBUG = true;
 const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
@@ -260,6 +263,8 @@ void Positioner::appendSamplePos( cv::Point2d r, cv::Point2d n )
     sample2As.push_back( r.y );
     sample2As.push_back( n.x );
     sample2As.push_back( n.y );
+
+    std::cout << std::setw( 8 ) << std::setfill( '0' ) << std::setprecision(5) << "pt: " << x << " " << y << " " << r.x << " " << r.y << " " << n.x << " " << n.y << std::endl;
 }
 
 void Positioner::appendSampleFrontPos( cv::Point2d r, cv::Point2d n )
@@ -273,6 +278,8 @@ void Positioner::appendSampleFrontPos( cv::Point2d r, cv::Point2d n )
     sampleOffEdge.push_back( r.y );
     sampleOffEdge.push_back( n.x );
     sampleOffEdge.push_back( n.y );
+
+    std::cout << std::setw( 8 ) << std::setfill( '0' ) << std::setprecision(5) << "n: " << x << " " << y << " " << r.x << " " << r.y << " " << n.x << " " << n.y << std::endl;
 }
 
 void Positioner::endSamplePos()

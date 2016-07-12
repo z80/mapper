@@ -23,6 +23,7 @@ static void displayA( cv::Mat & img, cv::Mat & A );
 Positioner::Positioner()
 {
     appendNew = false;
+    roundMode = false;
 
     sampleAngle = sampleX = sampleY = 0.0;
     img2FloorSmooth = cv::Mat::zeros(2, 3, CV_64F );
@@ -79,6 +80,12 @@ bool Positioner::loadSettings()
 
 
     return true;
+}
+
+void Positioner::setRoundMode( bool en, double size )
+{
+    roundMode = en;
+    sideSize  = size;
 }
 
 void Positioner::frame( cv::Mat & img )
@@ -378,6 +385,14 @@ void Positioner::endSamplePos( double d )
     
     
     calcSample2Floor();
+
+    cv::FileStorage fs( "./floor2sample.xml", cv::FileStorage::WRITE ); // Read the settings
+    if (!fs.isOpened())
+          return;
+
+    fs << "floor2Sample" << floor2Sample;
+    fs.release();
+
 }
 
 void Positioner::calcSample2Floor()

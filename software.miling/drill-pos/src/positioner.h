@@ -24,6 +24,8 @@ public:
 
     bool loadSettings();
 
+    void setRoundMode( bool en, double size = 2.0 );
+
     void frame( cv::Mat & img );
     void appendNewShapes();
     void resetImage2Floor();
@@ -85,6 +87,8 @@ public:
 
     // Probably will determine a few more.
     cv::Mat img2Floor; // Image position matrix.
+    bool roundMode;
+    double sideSize;
     cv::Point2d R;     // Drill position in camera ref frame.
     double r;          // Drill radius.
     cv::Mat floor2CrossVise;

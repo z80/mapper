@@ -277,7 +277,8 @@ bool NewtonCam::removeOutlayers( std::vector<cv::Point2d> & knownPts,
                                  cv::Mat & cam2Floor,
                                  double percent )
 {
-    using Pair = std::pair<cv::Point2d, cv::Point2d>;
+    //using Pair = std::pair<cv::Point2d, cv::Point2d>;
+    typedef std::pair<cv::Point2d, cv::Point2d> Pair;
 
     int sz = static_cast<int>( knownPts.size() );
     if ( sz < 4 ) // At least one point is supposed to be extra point.

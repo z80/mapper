@@ -26,30 +26,47 @@ int main()
     pts.push_back( 0.0 ); // ni
     pts.push_back( 1.0 );
 
-    pts.push_back( 1.0 );
     pts.push_back( 2.0 );
     pts.push_back( 1.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 1.0 );
-
-    pts.push_back( 1.0 );
-    pts.push_back( 3.0 );
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
     pts.push_back( 0.0 );
     pts.push_back( 1.0 );
 
-    pts.push_back( 0.0 );
+    pts.push_back( 3.1 );
+    pts.push_back( 1.1 );
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
+    pts.push_back( 0.0 );
+    pts.push_back( 1.0 );
+
+    pts.push_back( 1.0 );
+    pts.push_back( 2.0 );
+    pts.push_back( 0.0 );
     pts.push_back( 1.0 );
     pts.push_back( 1.0 );
     pts.push_back( 0.0 );
+
+
+    std::vector<double> ptsFront;
+    ptsFront.push_back( 5.0 ); // r
+    ptsFront.push_back( 5.0 );
+    ptsFront.push_back( 1.0 ); // ri
+    ptsFront.push_back( 0.0 );
+    ptsFront.push_back( 0.0 ); // ni
+    ptsFront.push_back( 1.0 );
+
+    ptsFront.push_back( 8.0 );
+    ptsFront.push_back( 8.0 );
+    ptsFront.push_back( 0.0 );
+    ptsFront.push_back( 1.0 );
+    ptsFront.push_back( 1.0 );
+    ptsFront.push_back( 0.0 );
+
 
     NewtonSam sam;
     cv::Mat A;
-    // sam.matchPoints( pts, 2.0, A );
+    sam.matchPoints( pts, ptsFront, 2.0, A );
     double x = 1.0;
     double y = 1.0;
     double xo = A.at<double>( 0, 0 )*x + A.at<double>( 0, 1 )*y + A.at<double>( 0, 2 );

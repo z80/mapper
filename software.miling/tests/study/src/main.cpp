@@ -25,10 +25,10 @@ public:
     }
 };
 
-using String = std::basic_string<char, Tr<char> >;
+//using String = std::basic_string<char, Tr<char> >;
 
 int main(){
-    std::cout << (String( "a" ) > String( "A" ) ) << std::endl;
+    // std::cout << (String( "a" ) > String( "A" ) ) << std::endl;
 
-   return 0;
+    return 0;
 }

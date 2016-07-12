@@ -24,7 +24,7 @@ public:
     bool removeOutlayers( std::vector<cv::Point2d> & knownPts,
                           std::vector<cv::Point2d> & foundPts,
                           cv::Mat & cam2Floor,
-                          double percent = 0.5 );
+                          double percent = 0.75 );
     double fi( double * a );
     void  gradFi( double * a, double * dfi );
     void  J( double * a, double * j );

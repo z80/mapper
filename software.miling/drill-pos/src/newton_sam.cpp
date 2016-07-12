@@ -87,6 +87,7 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, std::vector<double> & pt
     if ( !res )
         return false;
 
+    
     cv::Mat S( 2, 3, CV_64F );
 
     int ind = 0;
@@ -99,14 +100,13 @@ bool NewtonSam::matchPoints( std::vector<double> & pts, std::vector<double> & pt
     }
     floor2Sample = S;
     return true;
-
+    
     /*
     NewtonCam nc;
     res = nc.matchPoints( lh.ptsTo, lh.ptsFrom, floor2Sample );
-
+    */
 
     return res;
-    */
 }
 
 
@@ -298,6 +298,7 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts, const std::vec
         lines.push_back( to );
     }
 
+    sz = lines.size();
     for ( auto i=0; i<sz; i++ )
     {
         std::vector< std::vector<double> > & lineFrom = lines[i];
@@ -320,7 +321,7 @@ bool LineHandler::pointsToLines( const std::vector<double> & pts, const std::vec
         double v[ 6 ];
         for ( auto j=0; j<6; j++ )
         {
-            v[j] = pts[i];
+            v[j] = ptsOff[i];
             i++;
         }
 

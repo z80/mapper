@@ -264,7 +264,7 @@ void Positioner::appendSamplePos( cv::Point2d r, cv::Point2d n )
     sample2As.push_back( n.x );
     sample2As.push_back( n.y );
 
-    std::cout << std::setw( 8 ) << std::setfill( '0' ) << std::setprecision(5) << "pt: " << x << " " << y << " " << r.x << " " << r.y << " " << n.x << " " << n.y << std::endl;
+    std::cout << std::setprecision(5) << "pt: " << x << " " << y << " r: " << r.x << " " << r.y << " n: " << n.x << " " << n.y << std::endl;
 }
 
 void Positioner::appendSampleFrontPos( cv::Point2d r, cv::Point2d n )
@@ -279,7 +279,7 @@ void Positioner::appendSampleFrontPos( cv::Point2d r, cv::Point2d n )
     sampleOffEdge.push_back( n.x );
     sampleOffEdge.push_back( n.y );
 
-    std::cout << std::setw( 8 ) << std::setfill( '0' ) << std::setprecision(5) << "n: " << x << " " << y << " " << r.x << " " << r.y << " " << n.x << " " << n.y << std::endl;
+    std::cout << std::setprecision(5) << "n: " << x << " " << y << " r: " << r.x << " " << r.y << " n: " << n.x << " " << n.y << std::endl;
 }
 
 void Positioner::endSamplePos()

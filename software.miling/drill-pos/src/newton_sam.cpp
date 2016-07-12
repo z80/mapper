@@ -220,8 +220,8 @@ bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point
 
     // Determine intersection point.
     cv::Mat N( 2, 2, CV_64F );
-    N.at<double>( 0, 0 ) = ni.x;
-    N.at<double>( 0, 1 ) = ni.y;
+    N.at<double>( 0, 0 ) = this->ni.x;
+    N.at<double>( 0, 1 ) = this->ni.y;
     N.at<double>( 1, 0 ) = line.ni.x;
     N.at<double>( 1, 1 ) = line.ni.y;
 
@@ -230,7 +230,7 @@ bool Line::intersectionPoint( Line & line, double d, cv::Point2d & ri, cv::Point
         return false;
 
     cv::Mat RN( 2, 1, CV_64F );
-    RN.at<double>( 0, 0 ) = ni.dot( ri );
+    RN.at<double>( 0, 0 ) = this->ni.dot( this->ri );
     RN.at<double>( 1, 0 ) = line.ni.dot( line.ri );
     cv::Mat R = N.inv() * RN;
 

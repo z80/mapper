@@ -19,48 +19,62 @@
 int main()
 {
     std::vector<double> pts;
-    pts.push_back( 1.0 ); // r
-    pts.push_back( 1.0 );
-    pts.push_back( 1.0 ); // ri
-    pts.push_back( 0.0 );
+    pts.push_back( -1.4677 ); // r
+    pts.push_back( 25.464 );
+    pts.push_back( 6.8 ); // ri
+    pts.push_back( 6.8 );
     pts.push_back( 0.0 ); // ni
-    pts.push_back( 1.0 );
+    pts.push_back( 92.48 );
 
-    pts.push_back( 2.0 );
-    pts.push_back( 1.0 );
-    pts.push_back( 1.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 1.0 );
+    pts.push_back( -1.694 ); // r
+    pts.push_back( 27.44 );
+    pts.push_back( 6.8 ); // ri
+    pts.push_back( 6.8 );
+    pts.push_back( 0.0 ); // ni
+    pts.push_back( 92.48 );
 
-    pts.push_back( 3.1 );
-    pts.push_back( 1.1 );
-    pts.push_back( 1.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 0.0 );
-    pts.push_back( 1.0 );
+    pts.push_back( -0.87209 ); // r
+    pts.push_back( 28.044 );
+    pts.push_back( 6.8 ); // ri
+    pts.push_back( 6.8 );
+    pts.push_back( 0.0 ); // ni
+    pts.push_back( 92.48 );
 
-    pts.push_back( 1.0 );
-    pts.push_back( 2.0 );
+    pts.push_back( -0.31734 );
+    pts.push_back( 24.74 );
+    pts.push_back( 6.8 );
     pts.push_back( 0.0 );
-    pts.push_back( 1.0 );
-    pts.push_back( 1.0 );
+    pts.push_back( 92.48 );
+    pts.push_back( 0.0 );
+
+    pts.push_back( 2.1256 );
+    pts.push_back( 25.977 );
+    pts.push_back( 6.8 );
+    pts.push_back( 0.0 );
+    pts.push_back( 92.48 );
+    pts.push_back( 0.0 );
+
+    pts.push_back( 4.3727 );
+    pts.push_back( 25.29 );
+    pts.push_back( 6.8 );
+    pts.push_back( 0.0 );
+    pts.push_back( 92.48 );
     pts.push_back( 0.0 );
 
 
     std::vector<double> ptsFront;
-    ptsFront.push_back( 5.0 ); // r
-    ptsFront.push_back( 5.0 );
-    ptsFront.push_back( 1.0 ); // ri
-    ptsFront.push_back( 0.0 );
+    ptsFront.push_back( -2.901 ); // r
+    ptsFront.push_back( 26.823 );
+    ptsFront.push_back( 6.8 ); // ri
+    ptsFront.push_back( 6.8 );
     ptsFront.push_back( 0.0 ); // ni
-    ptsFront.push_back( 1.0 );
+    ptsFront.push_back( 92.48 );
 
-    ptsFront.push_back( 8.0 );
-    ptsFront.push_back( 8.0 );
+    ptsFront.push_back( 3.2432 );
+    ptsFront.push_back( 23.5 );
+    ptsFront.push_back( 6.8 );
     ptsFront.push_back( 0.0 );
-    ptsFront.push_back( 1.0 );
-    ptsFront.push_back( 1.0 );
+    ptsFront.push_back( 92.48 );
     ptsFront.push_back( 0.0 );
 
 

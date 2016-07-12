@@ -530,9 +530,9 @@ void Model::edgeSelectedCallback( vtkIdType * inds )
         if ( bFound )
         {
             // Debugging output.
-            std::cout << "selected edge: ";
-            std::cout << std::setw( 10 ) << std::setprecision( 3 ) << edgeA.x << ", " << edgeA.y << ", " << edgeA.z << std::endl;
-            std::cout << std::setw( 10 ) << std::setprecision( 3 ) << edgeN.x << ", " << edgeN.y << ", " << edgeN.z << std::endl;
+            std::cout << "selected edge: " << std::endl;
+            std::cout << std::setprecision( 3 ) << "n: " << edgeA.x << ", " << edgeA.y << std::endl;
+            std::cout << std::setprecision( 3 ) << "r: " << edgeN.x << ", " << edgeN.y << std::endl;
 
             if ( ptsSel )
                 ptsSel->Delete();

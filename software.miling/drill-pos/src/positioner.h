@@ -54,6 +54,7 @@ public:
 
 
     void matchSquares( std::vector<std::vector<cv::Point>> & squares, bool opticalFlow = true );
+    void matchSquaresRound( std::vector<std::vector<cv::Point>> & squares );
     void applyPerspective( std::vector<std::vector<cv::Point>> & squares );
     void applyCamera();
     bool matchSquares( int knownInd,

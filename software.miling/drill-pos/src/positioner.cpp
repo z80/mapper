@@ -23,7 +23,7 @@ static void displayA( cv::Mat & img, cv::Mat & A );
 Positioner::Positioner()
 {
     appendNew = false;
-    roundMode = false;
+    roundMode = true;
     sideSize  = 2.0;
 
     sampleAngle = sampleX = sampleY = 0.0;
@@ -513,6 +513,95 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
                 ptF.x = floor( ptF.x / sideSize  + 0.5 ) *sideSize;
                 ptF.y = floor( ptF.y / sideSize  + 0.5 ) *sideSize;
             }
+            rectFloor.push_back( ptF );
+        }
+        knownSquares.push_back( rectFloor );
+    }
+}
+
+void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & squares )
+{
+    applyPerspective( squares );
+    applyCamera();
+
+    std::vector<cv::Point2d> knownPts;
+    std::vector<cv::Point2d> foundPts;
+    std::vector<int>         newRects;
+    std::vector<bool>        newAlready;
+    // And now match all squares one by one with known ones.
+    int locatedSz = static_cast<int>( locatedSquaresImg.size() );
+    int knownSz   = static_cast<int>( knownSquares.size() );
+    newAlready.resize( locatedSz, false );
+    if ( knownSz > 0 )
+    {
+        for( int i=0; i<locatedSz; i++ )
+        {
+            bool match = false;
+            for( int j=0; j<knownSz; j++ )
+            {
+                bool m = matchSquares( j, i, knownPts, foundPts );
+                match = (match || m);
+                if ( m )
+                    break;
+            }
+            // If it doesn't match any known rects append known rects with this one.
+            if ( ( !match ) && ( !newAlready[i] ) )
+            {
+                newRects.push_back( i );
+                newAlready[i] = true;
+            }
+        }
+    }
+    else
+    {
+        for ( int i=0; i<locatedSz; i++ )
+            newRects.push_back( i );
+    }
+
+    int xSz = static_cast<int>( knownPts.size() );
+    if (xSz < 1)
+    {
+        // If rounding take the very first rectangle and declare it's position.
+        knownPts.push_back( cv::Point2d( 0.0, 0.0 ) );
+        knownPts.push_back( cv::Point2d( sideSize, 0.0 ) );
+        knownPts.push_back( cv::Point2d( sideSize, sideSize ) );
+        knownPts.push_back( cv::Point2d( 0.0, sideSize ) );
+    }
+
+    // if at least one square is found adjust camera position matrix.
+    // X - image coordinates.
+    // Y - floor coordinates.
+    if ( xSz > 3 )
+    {
+        //newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+        // Finds best fit with data outlayers removing.
+        newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
+
+        // Smoothing matrix to determine end mill position.
+        img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
+    }
+    // If no known points there is no way to estimate drift.
+    else
+        // If current position is unknown just return as there is no way to add new points.
+        return;
+
+
+    int newSz = static_cast<int>( newRects.size() );
+    for ( int i=0; i<newSz; i++ )
+    {
+        int ind = newRects[i];
+        std::vector<cv::Point2d> & rectImg = locatedSquaresImg[ind];
+        std::vector<cv::Point2d> rectFloor;
+        for ( int j=0; j<4; j++ )
+        {
+            cv::Point2d & pt = rectImg[j];
+            cv::Point2d ptF;
+            ptF.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) + pt.y * img2FloorSmooth.at<double>( 0, 1 ) + img2FloorSmooth.at<double>( 0, 2 );
+            ptF.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) + pt.y * img2FloorSmooth.at<double>( 1, 1 ) + img2FloorSmooth.at<double>( 1, 2 );
+
+            ptF.x = floor( ptF.x / sideSize  + 0.5 ) *sideSize;
+            ptF.y = floor( ptF.y / sideSize  + 0.5 ) *sideSize;
+
             rectFloor.push_back( ptF );
         }
         knownSquares.push_back( rectFloor );

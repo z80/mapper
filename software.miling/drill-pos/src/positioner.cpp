@@ -3,6 +3,8 @@
 #include <iostream>
 #include <iomanip>
 #include <locale>
+#include <algorithm>
+#include <numeric>
 
 const bool Positioner::DEBUG = true;
 const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
@@ -549,13 +551,30 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
     }
 
     int xSz = static_cast<int>( knownPts.size() );
-    if (xSz < 1)
+    if ( ( xSz < 1 ) && ( locatedSz > 0 ) )
     {
         // If rounding take the very first rectangle and declare it's position.
         knownPts.push_back( cv::Point2d( 0.0, 0.0 ) );
         knownPts.push_back( cv::Point2d( sideSize, 0.0 ) );
         knownPts.push_back( cv::Point2d( sideSize, sideSize ) );
         knownPts.push_back( cv::Point2d( 0.0, sideSize ) );
+
+        foundPts.push_back( locatedSquaresFloor[0][0] );
+        foundPts.push_back( locatedSquaresFloor[0][1] );
+        foundPts.push_back( locatedSquaresFloor[0][2] );
+        foundPts.push_back( locatedSquaresFloor[0][3] );
+        xSz = 4;
+
+        newRects.clear();
+        newRects.reserve( locatedSz-1 );
+        newAlready.clear();
+        newAlready.reserve( locatedSz-1 );
+        for ( auto i=1; i<locatedSz; i++ )
+        {
+            newRects.push_back( i );
+            newAlready.push_back( true );
+        }
+
     }
 
     // if at least one square is found adjust camera position matrix.
@@ -563,9 +582,9 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
     // Y - floor coordinates.
     if ( xSz > 3 )
     {
-        //newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+        newtonCam.matchPoints( knownPts, foundPts, img2Floor );
         // Finds best fit with data outlayers removing.
-        newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
+        //newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
 
         // Smoothing matrix to determine end mill position.
         img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
@@ -596,6 +615,25 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
         }
         knownSquares.push_back( rectFloor );
     }
+}
+
+void Positioner::orderSquarePoints( std::vector<cv::Point2d> & pts )
+{
+    cv::Point2d m( 0.0, 0.0 );
+    m = std::accumulate( pts.begin(), pts.end(), m );
+    m /= 4.0;
+    std::sort( pts.begin(), pts.end(), [&](cv::Point2d & a1, cv::Point2d & a2)
+    {
+        cv::Point2d a = a1 - m;
+        cv::Point2d b = a2 - m;
+        double la = sqrt( a.x * a.x + a.y * a.y );
+        double ca = a.x/la;
+        double sa = a.y/la;
+        double lb = sqrt( b.x * b.x + b.y * b.y );
+        double cb = b.x/lb;
+        double sb = b.y/lb;
+        return ( atan2( sa, ca ) < atan2( sb, cb ) );
+    } );
 }
 
 void Positioner::applyPerspective( std::vector<std::vector<cv::Point>> & squares )
@@ -653,6 +691,9 @@ void Positioner::applyCamera()
                            img2Floor.at<double>( 1, 2 );
             rectA.push_back( ptA );
         }
+
+        orderSquarePoints( rectA );
+
         locatedSquaresFloor.push_back( rectA );
     }
 }

@@ -169,7 +169,7 @@ bool NewtonCam::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv
     {
         int improvementsCnt;
 
-        double newA[10];
+        double newA[9];
 
         do {
             double jac[81];

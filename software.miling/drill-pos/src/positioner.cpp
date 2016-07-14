@@ -107,7 +107,11 @@ void Positioner::frame( cv::Mat & img )
             noOpticalFlowCounter += 1;
     }
     findSquares( undistorted, squares );
-    matchSquares( squares, (noOpticalFlowCounter <= MIN_NO_FLOW_FRAMES) );
+    if ( !roundMode )
+        matchSquares( squares, (noOpticalFlowCounter <= MIN_NO_FLOW_FRAMES) );
+    else
+        matchSquaresRound( squares );
+
 
     // Assign
     int sz = static_cast<int>( squares.size() );
@@ -463,19 +467,10 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
             newRects.push_back( i );
     }
 
-    int xSz = static_cast<int>( knownPts.size() );
-    if ( (xSz < 1) && ( roundMode ) )
-    {
-        // If rounding take the very first rectangle and declare it's position.
-        knownPts.push_back( cv::Point2d( 0.0, 0.0 ) );
-        knownPts.push_back( cv::Point2d( sideSize, 0.0 ) );
-        knownPts.push_back( cv::Point2d( sideSize, sideSize ) );
-        knownPts.push_back( cv::Point2d( 0.0, sideSize ) );
-    }
-
     // if at least one square is found adjust camera position matrix.
     // X - image coordinates.
     // Y - floor coordinates.
+    int xSz = static_cast<int>( knownPts.size() );
     if ( xSz > 3 )
     {
         //newtonCam.matchPoints( knownPts, foundPts, img2Floor );
@@ -508,11 +503,6 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
             cv::Point2d ptF;
             ptF.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) + pt.y * img2FloorSmooth.at<double>( 0, 1 ) + img2FloorSmooth.at<double>( 0, 2 );
             ptF.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) + pt.y * img2FloorSmooth.at<double>( 1, 1 ) + img2FloorSmooth.at<double>( 1, 2 );
-            if ( roundMode )
-            {
-                ptF.x = floor( ptF.x / sideSize  + 0.5 ) *sideSize;
-                ptF.y = floor( ptF.y / sideSize  + 0.5 ) *sideSize;
-            }
             rectFloor.push_back( ptF );
         }
         knownSquares.push_back( rectFloor );

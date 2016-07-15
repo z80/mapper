@@ -553,16 +553,23 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
     int xSz = static_cast<int>( knownPts.size() );
     if ( ( xSz < 1 ) && ( locatedSz > 0 ) )
     {
+        // Points are presorted counterclockwise.
+
         // If rounding take the very first rectangle and declare it's position.
         knownPts.push_back( cv::Point2d( 0.0, 0.0 ) );
         knownPts.push_back( cv::Point2d( sideSize, 0.0 ) );
         knownPts.push_back( cv::Point2d( sideSize, sideSize ) );
         knownPts.push_back( cv::Point2d( 0.0, sideSize ) );
 
+
         foundPts.push_back( locatedSquaresFloor[0][0] );
         foundPts.push_back( locatedSquaresFloor[0][1] );
         foundPts.push_back( locatedSquaresFloor[0][2] );
         foundPts.push_back( locatedSquaresFloor[0][3] );
+
+        // Remember permanently square.
+        knownSquares.push_back( knownPts );
+
         xSz = 4;
 
         newRects.clear();
@@ -622,7 +629,8 @@ void Positioner::orderSquarePoints( std::vector<cv::Point2d> & pts )
     cv::Point2d m( 0.0, 0.0 );
     m = std::accumulate( pts.begin(), pts.end(), m );
     m /= 4.0;
-    std::sort( pts.begin(), pts.end(), [&](cv::Point2d & a1, cv::Point2d & a2)
+
+    std::sort( pts.begin(), pts.end(), [&](const cv::Point2d & a1, const cv::Point2d & a2)
     {
         cv::Point2d a = a1 - m;
         cv::Point2d b = a2 - m;

@@ -515,8 +515,9 @@ void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bo
 
 void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & squares )
 {
+    if ( squares.size() < 1 )
+        return;
     applyPerspective( squares );
-    applyCamera();
 
     std::vector<cv::Point2d> knownPts;
     std::vector<cv::Point2d> foundPts;
@@ -524,36 +525,38 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
     //int locatedSz = static_cast<int>( locatedSquaresImg.size() );
     //int knownSz   = static_cast<int>( knownSquares.size() );
 
-    // Sort by area to make the very first suqre to have the biggest area.
-    std::sort(  locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & r1, const std::vector<cv::Point2d> & r2 )
+    if ( !floorLocked )
     {
-        std::vector<cv::Point2f> c1;
-        std::vector<cv::Point2f> c2;
-        for ( auto i=0; i<4; i++ )
+        // Sort by area to make the very first suqre to have the biggest area.
+        std::sort(  locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & r1, const std::vector<cv::Point2d> & r2 )
         {
-            c1.push_back( r1[i] );
-            c2.push_back( r2[i] );
-        }
-        double a1 = cv::contourArea( c1 );
-        double a2 = cv::contourArea( c2 );
-        return ( a1 > a2 );
-    } );
+            std::vector<cv::Point2f> c1;
+            std::vector<cv::Point2f> c2;
+            for ( auto i=0; i<4; i++ )
+            {
+                c1.push_back( r1[i] );
+                c2.push_back( r2[i] );
+            }
+            double a1 = cv::contourArea( c1 );
+            double a2 = cv::contourArea( c2 );
+            return ( a1 > a2 );
+        } );
 
-    // Sort other squares by distance from the biggest one.
-    cv::Point2d m( 0.0, 0.0 );
-    m = std::accumulate( locatedSquaresImg[0].begin(), locatedSquaresImg[0].end(), m );
-    m /= 4.0;
-    std::sort( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1, const std::vector<cv::Point2d> & a2 )
-    {
-        double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
-        double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
-        double x2 = (a2[0].x + a2[1].x + a2[2].x + a2[3].x)/4.0 - m.x;
-        double y2 = (a2[0].y + a2[1].y + a2[2].y + a2[3].y)/4.0 - m.y;
-        double r1 = sqrt( x1*x1 + y1*y1 );
-        double r2 = sqrt( x2*x2 + y2*y2 );
-        return ( r1 < r2 );
-    } );
-
+        // Sort other squares by distance from the biggest one.
+        cv::Point2d m( 0.0, 0.0 );
+        m = std::accumulate( locatedSquaresImg[0].begin(), locatedSquaresImg[0].end(), m );
+        m /= 4.0;
+        std::sort( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1, const std::vector<cv::Point2d> & a2 )
+        {
+            double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
+            double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
+            double x2 = (a2[0].x + a2[1].x + a2[2].x + a2[3].x)/4.0 - m.x;
+            double y2 = (a2[0].y + a2[1].y + a2[2].y + a2[3].y)/4.0 - m.y;
+            double r1 = sqrt( x1*x1 + y1*y1 );
+            double r2 = sqrt( x2*x2 + y2*y2 );
+            return ( r1 < r2 );
+        } );
+    }
 
 
     int xSz = static_cast<int>( locatedSquaresImg.size() );
@@ -599,6 +602,8 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
     newtonCam.matchPoints( knownPts, foundPts, img2Floor );
     // Smoothing matrix to determine end mill position.
     img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
+
+    applyCamera();
 }
 
 void Positioner::orderSquarePoints( std::vector<cv::Point2d> & pts )
@@ -668,12 +673,12 @@ void Positioner::applyCamera()
         {
             const cv::Point2d & pt = rect[j];
             cv::Point2d ptA;
-            ptA.x = pt.x * img2Floor.at<double>( 0, 0 ) +
-                    pt.y * img2Floor.at<double>( 0, 1 ) +
-                           img2Floor.at<double>( 0, 2 );
-            ptA.y = pt.x * img2Floor.at<double>( 1, 0 ) +
-                    pt.y * img2Floor.at<double>( 1, 1 ) +
-                           img2Floor.at<double>( 1, 2 );
+            ptA.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) +
+                    pt.y * img2FloorSmooth.at<double>( 0, 1 ) +
+                           img2FloorSmooth.at<double>( 0, 2 );
+            ptA.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) +
+                    pt.y * img2FloorSmooth.at<double>( 1, 1 ) +
+                           img2FloorSmooth.at<double>( 1, 2 );
             rectA.push_back( ptA );
         }
 

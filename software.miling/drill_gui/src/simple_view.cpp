@@ -80,10 +80,10 @@ SimpleView::SimpleView()
   renderer->SetActiveCamera( camera.cam );
 
   // Inserting Camera and FieldOfView.
-  renderer->AddActor( fov.actor );
   //camera.
   renderer->AddActor( visibleRects.actor );
   renderer->AddActor( knownRects.actor );
+  renderer->AddActor( fov.actor );
   renderer->AddActor( endMill.actor );
   grid = new Grid( renderer );
   model = new Model( renderer, this->ui->qvtkWidget->GetInteractor() );

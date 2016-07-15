@@ -12,7 +12,7 @@ Fov::Fov()
     mapper->SetInputData( polyData );
     actor = vtkActor::New();
     actor->SetMapper( mapper );
-    actor->GetProperty()->SetColor( 0.75, 0.0, 0.0 );
+    actor->GetProperty()->SetColor( 0.75, 0.0, 0.75 );
 }
 
 Fov::~Fov()

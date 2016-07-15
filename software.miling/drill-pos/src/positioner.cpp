@@ -8,7 +8,7 @@
 
 const bool Positioner::DEBUG = true;
 const double Positioner::SEARCH_RANGE = 5.0; // This is in centimeters.
-const double Positioner::ALPHA = 0.1;
+const double Positioner::ALPHA = 0.4;
 const int    Positioner::MIN_NO_FLOW_FRAMES = 100;
 const int    Positioner::IMAGE_MARGIN = 50;
 const double Positioner::MAX_FLOW_SPEED = 1.0;
@@ -27,6 +27,7 @@ Positioner::Positioner()
     appendNew = false;
     roundMode = true;
     sideSize  = 2.0;
+    floorLocked = false;
 
     sampleAngle = sampleX = sampleY = 0.0;
     img2FloorSmooth = cv::Mat::zeros(2, 3, CV_64F );
@@ -98,7 +99,8 @@ void Positioner::frame( cv::Mat & img )
     cv::cvtColor( img, gray, CV_RGB2GRAY );
     cv::Mat undistorted;
     cv::undistort( gray, undistorted, cameraMatrix, distCoeffs );
-    cv::blur( gray, gray, cv::Size( 5, 5 ) );
+    cv::blur( gray, gray, cv::Size( 15, 15 ) );
+    imgSize = cv::Size( gray.cols, gray.rows );
 
     if ( !roundMode )
     {
@@ -518,92 +520,30 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
 
     std::vector<cv::Point2d> knownPts;
     std::vector<cv::Point2d> foundPts;
-    std::vector<int>         newRects;
-    std::vector<bool>        newAlready;
-    // And now match all squares one by one with known ones.
-    int locatedSz = static_cast<int>( locatedSquaresImg.size() );
-    int knownSz   = static_cast<int>( knownSquares.size() );
-    newAlready.resize( locatedSz, false );
-    if ( knownSz > 0 )
+
+    //int locatedSz = static_cast<int>( locatedSquaresImg.size() );
+    //int knownSz   = static_cast<int>( knownSquares.size() );
+
+    // Sort by area to make the very first suqre to have the biggest area.
+    std::sort(  locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & r1, const std::vector<cv::Point2d> & r2 )
     {
-        for( int i=0; i<locatedSz; i++ )
+        std::vector<cv::Point2f> c1;
+        std::vector<cv::Point2f> c2;
+        for ( auto i=0; i<4; i++ )
         {
-            bool match = false;
-            for( int j=0; j<knownSz; j++ )
-            {
-                bool m = matchSquares( j, i, knownPts, foundPts );
-                match = (match || m);
-                if ( m )
-                    break;
-            }
-            // If it doesn't match any known rects append known rects with this one.
-            if ( ( !match ) && ( !newAlready[i] ) )
-            {
-                newRects.push_back( i );
-                newAlready[i] = true;
-            }
+            c1.push_back( r1[i] );
+            c2.push_back( r2[i] );
         }
-    }
+        double a1 = cv::contourArea( c1 );
+        double a2 = cv::contourArea( c2 );
+        return ( a1 > a2 );
+    } );
 
-
-    int xSz = static_cast<int>( knownPts.size() );
-    if ( ( xSz < 1 ) && ( locatedSz > 0 ) )
-    {
-        // Points are presorted counterclockwise.
-
-        // If rounding take the very first rectangle and declare it's position.
-        knownPts.push_back( cv::Point2d( 0.0, 0.0 ) );
-        knownPts.push_back( cv::Point2d( sideSize, 0.0 ) );
-        knownPts.push_back( cv::Point2d( sideSize, sideSize ) );
-        knownPts.push_back( cv::Point2d( 0.0, sideSize ) );
-
-
-        foundPts.push_back( locatedSquaresFloor[0][0] );
-        foundPts.push_back( locatedSquaresFloor[0][1] );
-        foundPts.push_back( locatedSquaresFloor[0][2] );
-        foundPts.push_back( locatedSquaresFloor[0][3] );
-
-        // Remember permanently square.
-        knownSquares.push_back( knownPts );
-
-        xSz = 4;
-
-        newRects.clear();
-        newRects.reserve( locatedSz-1 );
-        for ( auto i=1; i<locatedSz; i++ )
-        {
-            newRects.push_back( i );
-        }
-
-        newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
-        img2FloorSmooth = img2Floor.clone();
-    } else if ( xSz > 3 )
-    {
-        // if at least one square is found adjust camera position matrix.
-        // X - image coordinates.
-        // Y - floor coordinates.
-
-        newtonCam.matchPoints( knownPts, foundPts, img2Floor );
-        // Finds best fit with data outlayers removing.
-        //newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
-
-        // Smoothing matrix to determine end mill position.
-        img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
-    }
-    // If no known points there is no way to estimate drift.
-    else
-        // If current position is unknown just return as there is no way to add new points.
-        return;
-
-
-    // Sort locatedSquaresImg by distance from center of known points.
-    std::vector<std::vector<cv::Point2d>> imgRectsToAdd;
-    imgRectsToAdd.reserve( newRects.size() );
-    std::for_each( newRects.begin(), newRects.end(), [&]( int ind ) { imgRectsToAdd.push_back( locatedSquaresImg[ ind ] ); } );
+    // Sort other squares by distance from the biggest one.
     cv::Point2d m( 0.0, 0.0 );
-    m = std::accumulate( foundPts.begin(), foundPts.end(), m );
-    m /= static_cast<double>( foundPts.size() );
-    std::sort( imgRectsToAdd.begin(), imgRectsToAdd.end(), [&]( const std::vector<cv::Point2d> & a1, const std::vector<cv::Point2d> & a2 )
+    m = std::accumulate( locatedSquaresImg[0].begin(), locatedSquaresImg[0].end(), m );
+    m /= 4.0;
+    std::sort( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1, const std::vector<cv::Point2d> & a2 )
     {
         double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
         double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
@@ -614,39 +554,51 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
         return ( r1 < r2 );
     } );
 
-    int newSz = static_cast<int>( imgRectsToAdd.size() );
-    for ( int i=0; i<newSz; i++ )
+
+
+    int xSz = static_cast<int>( locatedSquaresImg.size() );
+    for ( auto i=0; i<xSz; i++ )
     {
-        std::vector<cv::Point2d> & rectImg = imgRectsToAdd[i];
-        std::vector<cv::Point2d> rectFloor;
-        for ( int j=0; j<4; j++ )
+        std::vector<cv::Point2d> & rectImg = locatedSquaresImg[i];
+        if ( !floorLocked )
         {
-            cv::Point2d & pt = rectImg[j];
-            cv::Point2d ptF;
-            ptF.x = pt.x * img2Floor.at<double>( 0, 0 ) + pt.y * img2Floor.at<double>( 0, 1 ) + img2Floor.at<double>( 0, 2 );
-            ptF.y = pt.x * img2Floor.at<double>( 1, 0 ) + pt.y * img2Floor.at<double>( 1, 1 ) + img2Floor.at<double>( 1, 2 );
+            floorLocked = true;
+            // Points are presorted counterclockwise.
 
-            ptF.x = floor( ptF.x / sideSize  + 0.5 ) *sideSize;
-            ptF.y = floor( ptF.y / sideSize  + 0.5 ) *sideSize;
+            // If rounding take the very first rectangle and declare it's position.
+            knownPts.push_back( cv::Point2d( 0.0, 0.0 ) );
+            knownPts.push_back( cv::Point2d( sideSize, 0.0 ) );
+            knownPts.push_back( cv::Point2d( sideSize, sideSize ) );
+            knownPts.push_back( cv::Point2d( 0.0, sideSize ) );
 
-            rectFloor.push_back( ptF );
+            foundPts.push_back( rectImg[0] );
+            foundPts.push_back( rectImg[1] );
+            foundPts.push_back( rectImg[2] );
+            foundPts.push_back( rectImg[3] );
+            newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+            img2FloorSmooth = img2Floor.clone();
         }
-        knownSquares.push_back( rectFloor );
+        else
+        {
+            for ( auto j=0; j<4; j++ )
+            {
+                cv::Point2d & pt = rectImg[j];
+                cv::Point2d ptF;
+                ptF.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) + pt.y * img2FloorSmooth.at<double>( 0, 1 ) + img2FloorSmooth.at<double>( 0, 2 );
+                ptF.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) + pt.y * img2FloorSmooth.at<double>( 1, 1 ) + img2FloorSmooth.at<double>( 1, 2 );
 
-        // Add all squares to adjustment arrays.
-        foundPts.push_back( rectImg[0] );
-        foundPts.push_back( rectImg[1] );
-        foundPts.push_back( rectImg[2] );
-        foundPts.push_back( rectImg[3] );
+                ptF.x = floor( ptF.x / sideSize  + 0.5 ) *sideSize;
+                ptF.y = floor( ptF.y / sideSize  + 0.5 ) *sideSize;
 
-        knownPts.push_back( rectFloor[0] );
-        knownPts.push_back( rectFloor[1] );
-        knownPts.push_back( rectFloor[2] );
-        knownPts.push_back( rectFloor[3] );
-
-        // Adjust position matrix based on newly discovered points.
-        newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+                foundPts.push_back( pt );
+                knownPts.push_back( ptF );
+            }
+        }
     }
+    // Adjust position matrix based on newly discovered points.
+    newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+    // Smoothing matrix to determine end mill position.
+    img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
 }
 
 void Positioner::orderSquarePoints( std::vector<cv::Point2d> & pts )
@@ -913,7 +865,7 @@ bool Positioner::fieldOfView( std::vector<double> & corners )
         P[i] = perspective.at<double>( i, 0 );
 
     // Convert image corners into points on a floor.
-    cv::Size imgSz = cv::Size( grayPrev.cols, grayPrev.rows );
+    cv::Size imgSz = cv::Size( imgSize.width, imgSize.height );
     cv::Point2d pt[12];
     pt[0] = cv::Point2d( 0, 0 );
     pt[1] = cv::Point2d( imgSz.width/3, 0 );

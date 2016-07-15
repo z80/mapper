@@ -79,6 +79,7 @@ public:
     void dbgDisplay( cv::Point imgSz );
 
     // To derive optical flow.
+    cv::Size imgSize;
     cv::Mat grayPrev;
     std::vector<cv::Point2f> pointsNext, pointsPrev;
 
@@ -91,6 +92,7 @@ public:
     cv::Mat img2Floor; // Image position matrix.
     bool roundMode;
     double sideSize;
+    bool floorLocked;
     cv::Point2d R;     // Drill position in camera ref frame.
     double r;          // Drill radius.
     cv::Mat floor2CrossVise;

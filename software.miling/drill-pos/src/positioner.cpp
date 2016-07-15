@@ -574,12 +574,9 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
 
         newRects.clear();
         newRects.reserve( locatedSz-1 );
-        newAlready.clear();
-        newAlready.reserve( locatedSz-1 );
         for ( auto i=1; i<locatedSz; i++ )
         {
             newRects.push_back( i );
-            newAlready.push_back( true );
         }
 
     }

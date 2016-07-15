@@ -544,11 +544,7 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
             }
         }
     }
-    else
-    {
-        for ( int i=0; i<locatedSz; i++ )
-            newRects.push_back( i );
-    }
+
 
     int xSz = static_cast<int>( knownPts.size() );
     if ( ( xSz < 1 ) && ( locatedSz > 0 ) )
@@ -579,13 +575,14 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
             newRects.push_back( i );
         }
 
-    }
-
-    // if at least one square is found adjust camera position matrix.
-    // X - image coordinates.
-    // Y - floor coordinates.
-    if ( xSz > 3 )
+        newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
+        img2FloorSmooth = img2Floor.clone();
+    } else if ( xSz > 3 )
     {
+        // if at least one square is found adjust camera position matrix.
+        // X - image coordinates.
+        // Y - floor coordinates.
+
         newtonCam.matchPoints( knownPts, foundPts, img2Floor );
         // Finds best fit with data outlayers removing.
         //newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
@@ -599,18 +596,35 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
         return;
 
 
-    int newSz = static_cast<int>( newRects.size() );
+    // Sort locatedSquaresImg by distance from center of known points.
+    std::vector<std::vector<cv::Point2d>> imgRectsToAdd;
+    imgRectsToAdd.reserve( newRects.size() );
+    std::for_each( newRects.begin(), newRects.end(), [&]( int ind ) { imgRectsToAdd.push_back( locatedSquaresImg[ ind ] ); } );
+    cv::Point2d m( 0.0, 0.0 );
+    m = std::accumulate( foundPts.begin(), foundPts.end(), m );
+    m /= static_cast<double>( foundPts.size() );
+    std::sort( imgRectsToAdd.begin(), imgRectsToAdd.end(), [&]( const std::vector<cv::Point2d> & a1, const std::vector<cv::Point2d> & a2 )
+    {
+        double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
+        double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
+        double x2 = (a2[0].x + a2[1].x + a2[2].x + a2[3].x)/4.0 - m.x;
+        double y2 = (a2[0].y + a2[1].y + a2[2].y + a2[3].y)/4.0 - m.y;
+        double r1 = sqrt( x1*x1 + y1*y1 );
+        double r2 = sqrt( x2*x2 + y2*y2 );
+        return ( r1 < r2 );
+    } );
+
+    int newSz = static_cast<int>( imgRectsToAdd.size() );
     for ( int i=0; i<newSz; i++ )
     {
-        int ind = newRects[i];
-        std::vector<cv::Point2d> & rectImg = locatedSquaresImg[ind];
+        std::vector<cv::Point2d> & rectImg = imgRectsToAdd[i];
         std::vector<cv::Point2d> rectFloor;
         for ( int j=0; j<4; j++ )
         {
             cv::Point2d & pt = rectImg[j];
             cv::Point2d ptF;
-            ptF.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) + pt.y * img2FloorSmooth.at<double>( 0, 1 ) + img2FloorSmooth.at<double>( 0, 2 );
-            ptF.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) + pt.y * img2FloorSmooth.at<double>( 1, 1 ) + img2FloorSmooth.at<double>( 1, 2 );
+            ptF.x = pt.x * img2Floor.at<double>( 0, 0 ) + pt.y * img2Floor.at<double>( 0, 1 ) + img2Floor.at<double>( 0, 2 );
+            ptF.y = pt.x * img2Floor.at<double>( 1, 0 ) + pt.y * img2Floor.at<double>( 1, 1 ) + img2Floor.at<double>( 1, 2 );
 
             ptF.x = floor( ptF.x / sideSize  + 0.5 ) *sideSize;
             ptF.y = floor( ptF.y / sideSize  + 0.5 ) *sideSize;
@@ -618,6 +632,20 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
             rectFloor.push_back( ptF );
         }
         knownSquares.push_back( rectFloor );
+
+        // Add all squares to adjustment arrays.
+        foundPts.push_back( rectImg[0] );
+        foundPts.push_back( rectImg[1] );
+        foundPts.push_back( rectImg[2] );
+        foundPts.push_back( rectImg[3] );
+
+        knownPts.push_back( rectFloor[0] );
+        knownPts.push_back( rectFloor[1] );
+        knownPts.push_back( rectFloor[2] );
+        knownPts.push_back( rectFloor[3] );
+
+        // Adjust position matrix based on newly discovered points.
+        newtonCam.matchPoints( knownPts, foundPts, img2Floor );
     }
 }
 

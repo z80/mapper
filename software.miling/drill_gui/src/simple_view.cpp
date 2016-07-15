@@ -73,7 +73,7 @@ SimpleView::SimpleView()
   // VTK Renderer
   //VTK_CREATE(vtkRenderer, ren);
   renderer = vtkRenderer::New();
-  renderer->SetBackground( 0.85, 0.85, 0.4 );
+  renderer->SetBackground( 0.85, 0.95, 0.85 );
 
   // Add Actor to renderer
   renderer->AddActor(actor);

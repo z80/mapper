@@ -546,6 +546,17 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
         cv::Point2d m( 0.0, 0.0 );
         m = std::accumulate( locatedSquaresImg[0].begin(), locatedSquaresImg[0].end(), m );
         m /= 4.0;
+
+        std::cout << "before: ";
+        std::for_each( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1 )
+        {
+            double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
+            double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
+            double r1 = sqrt( x1*x1 + y1*y1 );
+            std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
+        } );
+        std::cout << std::endl;
+
         std::sort( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1, const std::vector<cv::Point2d> & a2 )
         {
             double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
@@ -556,6 +567,18 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
             double r2 = sqrt( x2*x2 + y2*y2 );
             return ( r1 < r2 );
         } );
+
+        std::cout << "after: ";
+        std::for_each( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1 )
+        {
+            double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
+            double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
+            double r1 = sqrt( x1*x1 + y1*y1 );
+            std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
+        } );
+        std::cout << std::endl;
+
+
     }
 
 
@@ -600,6 +623,7 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
     }
     // Adjust position matrix based on newly discovered points.
     newtonCam.matchPoints( knownPts, foundPts, img2Floor );
+    //newtonCam.removeOutlayers( knownPts, foundPts, img2Floor, 0.85 );
     // Smoothing matrix to determine end mill position.
     img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
 

@@ -153,9 +153,9 @@ SimpleView::~SimpleView()
 void SimpleView::showGrid()
 {
     double d = gridCalc->size();
-    double step = gridCalc->precission();
+    double step = gridCalc->precission() / 10000.0;
     double height = gridCalc->height();
-    grid->setCutter( ui->emDiameter->value(), height + 100.0 );
+    grid->setCutter( ui->emDiameter->value()/10.0, height + 100.0 );
     grid->setPrecision( step );
     grid->setZInterval( height, height-step/2.0 );
     double x, y;

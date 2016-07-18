@@ -64,16 +64,18 @@ void Grid::setPoints( const cv::Point2d & at, double d )
     // Bla-bla-bla.
     int n = static_cast<int>( d/gridStep );
     int nz = (zTo-zFrom)/static_cast<double>( gridStep );
+    nz = (nz > 0) ? nz : 1;
+    double bias = static_cast<double>(n)/2.0;
     double k = d/static_cast<double>( n );
     for ( auto p=0; p<nz; p++ )
     {
         double z = zFrom + p*(zTo-zFrom)/static_cast<double>( nz );
         for ( auto i=0; i<n; i++ )
         {
-            double x = at.x + k*static_cast<double>( i );
-            for ( auto j=0; j<0; j++ )
+            double x = at.x + k*(static_cast<double>( i ) - bias);
+            for ( auto j=0; j<n; j++ )
             {
-                double y = at.y + k*static_cast<double>( j );
+                double y = at.y + k*( static_cast<double>( j ) - bias );
                 ocl::CLPoint pt( x, y, z );
                 bdc.appendPoint( pt );
             }
@@ -113,7 +115,7 @@ void Grid::run()
     {
         vtkIdType ids[2];
         ids[0] = i-1;
-        ids[1] = i+1;
+        ids[1] = i;
 
         polyData->InsertNextCell( VTK_LINE, 2, ids );
     }

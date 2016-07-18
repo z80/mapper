@@ -480,25 +480,15 @@ void Positioner::matchSquaresRound( std::vector<Square> & squares )
     std::vector<cv::Point2d> foundPts;
 
     // Sort by area to make the very first square to have the biggest area.
-    std::sort(  squares.begin(), squares.end(), [&]( const Square & s1, const Square & s2 )
-    {
-        return !( s1 < s2 );
-    } );
+    //std::sort(  squares.begin(), squares.end(), [&]( const Square & s1, const Square & s2 )
+    //{
+    //    return !( s1 < s2 );
+    //} );
 
     // Sort other squares by distance from the biggest one.
     cv::Point2f m( 0.0, 0.0 );
     m = std::accumulate( squares[0].imgPts.begin(), squares[0].imgPts.end(), m );
     m /= 4.0;
-
-    std::cout << "before: ";
-    std::for_each( squares.begin(), squares.end(), [&]( const Square & s )
-    {
-        double x1 = (s.imgPts[0].x + s.imgPts[1].x + s.imgPts[2].x + s.imgPts[3].x)/4.0 - m.x;
-        double y1 = (s.imgPts[0].y + s.imgPts[1].y + s.imgPts[2].y + s.imgPts[3].y)/4.0 - m.y;
-        double r1 = sqrt( x1*x1 + y1*y1 );
-        std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
-    } );
-    std::cout << std::endl;
 
     std::sort( squares.begin(), squares.end(), [&]( const Square & a1, const Square & a2 )
     {
@@ -510,16 +500,6 @@ void Positioner::matchSquaresRound( std::vector<Square> & squares )
         double r2 = sqrt( x2*x2 + y2*y2 );
         return ( r1 < r2 );
     } );
-
-    std::cout << "after: ";
-    std::for_each( squares.begin(), squares.end(), [&]( const Square & a1 )
-    {
-        double x1 = (a1.imgPts[0].x + a1.imgPts[1].x + a1.imgPts[2].x + a1.imgPts[3].x)/4.0 - m.x;
-        double y1 = (a1.imgPts[0].y + a1.imgPts[1].y + a1.imgPts[2].y + a1.imgPts[3].y)/4.0 - m.y;
-        double r1 = sqrt( x1*x1 + y1*y1 );
-        std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
-    } );
-    std::cout << std::endl;
 
 
 

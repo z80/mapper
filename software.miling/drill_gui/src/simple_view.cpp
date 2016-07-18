@@ -205,6 +205,7 @@ void SimpleView::slotGrid()
 
 void SimpleView::slotVideoAlign()
 {
+    positioner.resetImage2Floor();
 }
 
 

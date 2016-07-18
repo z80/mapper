@@ -15,6 +15,23 @@
 #include "newton_cam.h"
 #include "newton_sam.h"
 
+class Square
+{
+public:
+    Square();
+    ~Square();
+    Square( const Square & inst );
+    const Square & operator=( const Square & inst );
+    bool operator<( const Square & inst ) const;
+    void orderPts();
+
+    std::vector<cv::Point2f> imgPts;
+    std::vector<cv::Point2f> prevImgPts;
+    std::vector<cv::Point2d> floorPts;
+    std::vector<cv::Point2f> prevFloorPts;
+    std::vector<cv::Point2d> finalPts;
+};
+
 
 class Positioner
 {
@@ -53,20 +70,13 @@ public:
     void calcSample2Floor();
 
 
-    void matchSquares( std::vector<std::vector<cv::Point>> & squares, bool opticalFlow = true );
-    void matchSquaresRound( std::vector<std::vector<cv::Point>> & squares );
-    void orderSquarePoints( std::vector<cv::Point2d> & pts );
-    void applyPerspective( std::vector<std::vector<cv::Point>> & squares );
-    void applyCamera();
-    bool matchSquares( int knownInd,
-                       int foundInd,
-                       std::vector<cv::Point2d> & knownPts,
-                       std::vector<cv::Point2d> & foundPts );
-    bool matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts ); // Experimantal one to search displacement and angle without affecting orthogonality.
+    void matchSquaresRound( std::vector<Square> & squares );
+    void applyPerspective( std::vector<Square> & squares );
+    void applyCamera( std::vector<Square> & squares );
     bool saveImg2Floor();
     bool loadImg2Floor();
 
-    bool detectOpticalFlow( cv::Mat & gray );
+    bool prevPointPositions( cv::Mat & gray, std::vector<Square> & squares );
 
     bool fieldOfView( std::vector<double> & corners );
     bool drillPos( double & x, double & y, bool ignoreSample = false );
@@ -75,13 +85,12 @@ public:
 
 // Just for now public.
 public:
-    static void findSquares( const cv::Mat& image, std::vector<std::vector<cv::Point> >& squares );
+    static void findSquares( const cv::Mat & image, std::vector<Square> & squares );
     void dbgDisplay( cv::Point imgSz );
 
     // To derive optical flow.
     cv::Size imgSize;
     cv::Mat grayPrev;
-    std::vector<cv::Point2f> pointsNext, pointsPrev;
 
     // Camera transformation matrices which are defined exernally.
     cv::Mat cameraMatrix;
@@ -107,9 +116,7 @@ public:
     // Which is supposed to be
     // ptOnTool = cam2Tool*A*( R + sample2Cam * ptOnSample ).
 
-    std::vector<std::vector<cv::Point2d>> knownSquares,      //
-                                          locatedSquaresFloor; // After A.
-    std::vector<std::vector<cv::Point2d>> locatedSquaresImg; // After perspective.
+    std::vector<Square> squares; // For visualization.
     bool appendNew;
 
 

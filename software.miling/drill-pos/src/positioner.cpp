@@ -15,6 +15,61 @@ const double Positioner::MAX_FLOW_SPEED = 1.0;
 const double Positioner::FLOOR_POS_MARGIN = 0.001;
 const double Positioner::FLOOR_DIR_MARGIN = 0.0001;
 
+Square::Square()
+{
+}
+
+Square::~Square()
+{
+}
+
+Square::Square( const Square & inst )
+{
+    *this = inst;
+}
+
+const Square & Square::operator=( const Square & inst )
+{
+    if ( this != &inst )
+    {
+        imgPts       = inst.imgPts;
+        prevImgPts   = inst.prevImgPts;
+        floorPts     = inst.floorPts;
+        prevFloorPts = inst.prevFloorPts;
+        finalPts     = inst.finalPts;
+    }
+
+    return *this;
+}
+
+bool Square::operator<( const Square & inst ) const
+{
+    double area = cv::contourArea( imgPts );
+    double instArea = cv::contourArea( inst.imgPts );
+    return ( area < instArea );
+}
+
+void Square::orderPts()
+{
+    cv::Point2f m( 0.0, 0.0 );
+    m = std::accumulate( imgPts.begin(), imgPts.end(), m );
+    m /= 4.0;
+
+    std::sort( imgPts.begin(), imgPts.end(), [&](const cv::Point2f & a1, const cv::Point2f & a2)
+    {
+        cv::Point2f a = a1 - m;
+        cv::Point2f b = a2 - m;
+        double la = sqrt( a.x * a.x + a.y * a.y );
+        double ca = a.x/la;
+        double sa = a.y/la;
+        double lb = sqrt( b.x * b.x + b.y * b.y );
+        double cb = b.x/lb;
+        double sb = b.y/lb;
+        return ( atan2( sa, ca ) < atan2( sb, cb ) );
+    } );
+}
+
+
 
 
 static double angle( cv::Point pt1, cv::Point pt2, cv::Point pt0 );
@@ -94,7 +149,7 @@ void Positioner::setRoundMode( bool en, double size )
 
 void Positioner::frame( cv::Mat & img )
 {
-    std::vector<std::vector<cv::Point>> squares;
+    std::vector<Square> squares;
     cv::Mat gray;
     cv::cvtColor( img, gray, CV_RGB2GRAY );
     cv::Mat undistorted;
@@ -102,31 +157,14 @@ void Positioner::frame( cv::Mat & img )
     cv::blur( gray, gray, cv::Size( 15, 15 ) );
     imgSize = cv::Size( gray.cols, gray.rows );
 
-    if ( !roundMode )
-    {
-        bool flowPresents = detectOpticalFlow( gray );
-        if ( flowPresents )
-            noOpticalFlowCounter = 0;
-        else
-            noOpticalFlowCounter += 1;
-    }
     findSquares( undistorted, squares );
-    if ( !roundMode )
-        matchSquares( squares, (noOpticalFlowCounter <= MIN_NO_FLOW_FRAMES) );
-    else
-        matchSquaresRound( squares );
+    prevPointPositions( gray, squares );
+    applyPerspective( squares );
+    matchSquaresRound( squares );
+    applyCamera( squares );
 
+    this->squares = squares;
 
-    // Assign
-    int sz = static_cast<int>( squares.size() );
-    pointsPrev.clear();
-    pointsPrev.reserve( sz * 4 );
-    for ( int i=0; i<sz; i++ )
-    {
-        std::vector<cv::Point> & rect = squares[i];
-        for ( int j=0; j<4; j++ )
-            pointsPrev.push_back( cv::Point2f( rect[j].x, rect[j].y ) );
-    }
 
 
     if ( DEBUG )
@@ -432,160 +470,65 @@ void Positioner::calcSample2Floor()
     }
 }
 
-void Positioner::matchSquares( std::vector<std::vector<cv::Point>> & squares, bool opticalFlow )
-{
-    applyPerspective( squares );
-    applyCamera();
-
-    std::vector<cv::Point2d> knownPts;
-    std::vector<cv::Point2d> foundPts;
-    std::vector<int>         newRects;
-    std::vector<bool>        newAlready;
-    // And now match all squares one by one with known ones.
-    int locatedSz = static_cast<int>( locatedSquaresImg.size() );
-    int knownSz   = static_cast<int>( knownSquares.size() );
-    newAlready.resize( locatedSz, false );
-    if ( knownSz > 0 )
-    {
-        for( int i=0; i<locatedSz; i++ )
-        {
-            bool match = false;
-            for( int j=0; j<knownSz; j++ )
-            {
-                bool m = matchSquares( j, i, knownPts, foundPts );
-                match = (match || m);
-                if ( m )
-                    break;
-            }
-            // If it doesn't match any known rects append known rects with this one.
-            if ( ( !match ) && ( !newAlready[i] ) )
-            {
-                newRects.push_back( i );
-                newAlready[i] = true;
-            }
-        }
-    }
-    else
-    {
-        for ( int i=0; i<locatedSz; i++ )
-            newRects.push_back( i );
-    }
-
-    // if at least one square is found adjust camera position matrix.
-    // X - image coordinates.
-    // Y - floor coordinates.
-    int xSz = static_cast<int>( knownPts.size() );
-    if ( xSz > 3 )
-    {
-        //newtonCam.matchPoints( knownPts, foundPts, img2Floor );
-        // Finds best fit with data outlayers removing.
-        newtonCam.removeOutlayers( knownPts, foundPts, img2Floor );
-
-        // Smoothing matrix to determine end mill position.
-        img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
-    }
-    // If no known points there is no way to estimate drift.
-    else if ( knownSz < 1 )
-        appendNew = true;
-
-    // Analyze img2Floor change;
-
-    // Adjust newly discovered rectangles.
-    if ( ( !appendNew ) && ( opticalFlow ) )
-        return;
-    // If user wants to append new shapes.
-    appendNew = false;
-    int newSz = static_cast<int>( newRects.size() );
-    for ( int i=0; i<newSz; i++ )
-    {
-        int ind = newRects[i];
-        std::vector<cv::Point2d> & rectImg = locatedSquaresImg[ind];
-        std::vector<cv::Point2d> rectFloor;
-        for ( int j=0; j<4; j++ )
-        {
-            cv::Point2d & pt = rectImg[j];
-            cv::Point2d ptF;
-            ptF.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) + pt.y * img2FloorSmooth.at<double>( 0, 1 ) + img2FloorSmooth.at<double>( 0, 2 );
-            ptF.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) + pt.y * img2FloorSmooth.at<double>( 1, 1 ) + img2FloorSmooth.at<double>( 1, 2 );
-            rectFloor.push_back( ptF );
-        }
-        knownSquares.push_back( rectFloor );
-    }
-}
-
-void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & squares )
+void Positioner::matchSquaresRound( std::vector<Square> & squares )
 {
     if ( squares.size() < 1 )
         return;
-    applyPerspective( squares );
+
 
     std::vector<cv::Point2d> knownPts;
     std::vector<cv::Point2d> foundPts;
 
-    //int locatedSz = static_cast<int>( locatedSquaresImg.size() );
-    //int knownSz   = static_cast<int>( knownSquares.size() );
-
-    if ( !floorLocked )
+    // Sort by area to make the very first square to have the biggest area.
+    std::sort(  squares.begin(), squares.end(), [&]( const Square & s1, const Square & s2 )
     {
-        // Sort by area to make the very first suqre to have the biggest area.
-        std::sort(  locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & r1, const std::vector<cv::Point2d> & r2 )
-        {
-            std::vector<cv::Point2f> c1;
-            std::vector<cv::Point2f> c2;
-            for ( auto i=0; i<4; i++ )
-            {
-                c1.push_back( r1[i] );
-                c2.push_back( r2[i] );
-            }
-            double a1 = cv::contourArea( c1 );
-            double a2 = cv::contourArea( c2 );
-            return ( a1 > a2 );
-        } );
+        return !( s1 < s2 );
+    } );
 
-        // Sort other squares by distance from the biggest one.
-        cv::Point2d m( 0.0, 0.0 );
-        m = std::accumulate( locatedSquaresImg[0].begin(), locatedSquaresImg[0].end(), m );
-        m /= 4.0;
+    // Sort other squares by distance from the biggest one.
+    cv::Point2f m( 0.0, 0.0 );
+    m = std::accumulate( squares[0].imgPts.begin(), squares[0].imgPts.end(), m );
+    m /= 4.0;
 
-        std::cout << "before: ";
-        std::for_each( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1 )
-        {
-            double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
-            double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
-            double r1 = sqrt( x1*x1 + y1*y1 );
-            std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
-        } );
-        std::cout << std::endl;
+    std::cout << "before: ";
+    std::for_each( squares.begin(), squares.end(), [&]( const Square & s )
+    {
+        double x1 = (s.imgPts[0].x + s.imgPts[1].x + s.imgPts[2].x + s.imgPts[3].x)/4.0 - m.x;
+        double y1 = (s.imgPts[0].y + s.imgPts[1].y + s.imgPts[2].y + s.imgPts[3].y)/4.0 - m.y;
+        double r1 = sqrt( x1*x1 + y1*y1 );
+        std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
+    } );
+    std::cout << std::endl;
 
-        std::sort( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1, const std::vector<cv::Point2d> & a2 )
-        {
-            double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
-            double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
-            double x2 = (a2[0].x + a2[1].x + a2[2].x + a2[3].x)/4.0 - m.x;
-            double y2 = (a2[0].y + a2[1].y + a2[2].y + a2[3].y)/4.0 - m.y;
-            double r1 = sqrt( x1*x1 + y1*y1 );
-            double r2 = sqrt( x2*x2 + y2*y2 );
-            return ( r1 < r2 );
-        } );
+    std::sort( squares.begin(), squares.end(), [&]( const Square & a1, const Square & a2 )
+    {
+        double x1 = (a1.imgPts[0].x + a1.imgPts[1].x + a1.imgPts[2].x + a1.imgPts[3].x)/4.0 - m.x;
+        double y1 = (a1.imgPts[0].y + a1.imgPts[1].y + a1.imgPts[2].y + a1.imgPts[3].y)/4.0 - m.y;
+        double x2 = (a2.imgPts[0].x + a2.imgPts[1].x + a2.imgPts[2].x + a2.imgPts[3].x)/4.0 - m.x;
+        double y2 = (a2.imgPts[0].y + a2.imgPts[1].y + a2.imgPts[2].y + a2.imgPts[3].y)/4.0 - m.y;
+        double r1 = sqrt( x1*x1 + y1*y1 );
+        double r2 = sqrt( x2*x2 + y2*y2 );
+        return ( r1 < r2 );
+    } );
 
-        std::cout << "after: ";
-        std::for_each( locatedSquaresImg.begin(), locatedSquaresImg.end(), [&]( const std::vector<cv::Point2d> & a1 )
-        {
-            double x1 = (a1[0].x + a1[1].x + a1[2].x + a1[3].x)/4.0 - m.x;
-            double y1 = (a1[0].y + a1[1].y + a1[2].y + a1[3].y)/4.0 - m.y;
-            double r1 = sqrt( x1*x1 + y1*y1 );
-            std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
-        } );
-        std::cout << std::endl;
+    std::cout << "after: ";
+    std::for_each( squares.begin(), squares.end(), [&]( const Square & a1 )
+    {
+        double x1 = (a1.imgPts[0].x + a1.imgPts[1].x + a1.imgPts[2].x + a1.imgPts[3].x)/4.0 - m.x;
+        double y1 = (a1.imgPts[0].y + a1.imgPts[1].y + a1.imgPts[2].y + a1.imgPts[3].y)/4.0 - m.y;
+        double r1 = sqrt( x1*x1 + y1*y1 );
+        std::cout << "d: " << std::setw( 3 ) << r1 << ", ";
+    } );
+    std::cout << std::endl;
 
 
-    }
 
 
-    int xSz = static_cast<int>( locatedSquaresImg.size() );
+
+    int xSz = static_cast<int>( squares.size() );
     for ( auto i=0; i<xSz; i++ )
     {
-        std::vector<cv::Point2d> & rectImg = locatedSquaresImg[i];
+        Square & square = squares[i];
         if ( !floorLocked )
         {
             floorLocked = true;
@@ -597,10 +540,10 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
             knownPts.push_back( cv::Point2d( sideSize, sideSize ) );
             knownPts.push_back( cv::Point2d( 0.0, sideSize ) );
 
-            foundPts.push_back( rectImg[0] );
-            foundPts.push_back( rectImg[1] );
-            foundPts.push_back( rectImg[2] );
-            foundPts.push_back( rectImg[3] );
+            foundPts.push_back( square.floorPts[0] );
+            foundPts.push_back( square.floorPts[1] );
+            foundPts.push_back( square.floorPts[2] );
+            foundPts.push_back( square.floorPts[3] );
             newtonCam.matchPoints( knownPts, foundPts, img2Floor );
             img2FloorSmooth = img2Floor.clone();
         }
@@ -608,15 +551,15 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
         {
             for ( auto j=0; j<4; j++ )
             {
-                cv::Point2d & pt = rectImg[j];
+                cv::Point2f & pt = square.prevFloorPts[j];
                 cv::Point2d ptF;
-                ptF.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) + pt.y * img2FloorSmooth.at<double>( 0, 1 ) + img2FloorSmooth.at<double>( 0, 2 );
-                ptF.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) + pt.y * img2FloorSmooth.at<double>( 1, 1 ) + img2FloorSmooth.at<double>( 1, 2 );
+                ptF.x = pt.x * img2Floor.at<double>( 0, 0 ) + pt.y * img2Floor.at<double>( 0, 1 ) + img2Floor.at<double>( 0, 2 );
+                ptF.y = pt.x * img2Floor.at<double>( 1, 0 ) + pt.y * img2Floor.at<double>( 1, 1 ) + img2Floor.at<double>( 1, 2 );
 
                 ptF.x = floor( ptF.x / sideSize  + 0.5 ) *sideSize;
                 ptF.y = floor( ptF.y / sideSize  + 0.5 ) *sideSize;
 
-                foundPts.push_back( pt );
+                foundPts.push_back( square.floorPts[j] );
                 knownPts.push_back( ptF );
             }
         }
@@ -626,45 +569,26 @@ void Positioner::matchSquaresRound( std::vector<std::vector<cv::Point>> & square
     //newtonCam.removeOutlayers( knownPts, foundPts, img2Floor, 0.85 );
     // Smoothing matrix to determine end mill position.
     img2FloorSmooth = (1.0 - ALPHA)*img2FloorSmooth + ALPHA * img2Floor;
-
-    applyCamera();
 }
 
-void Positioner::orderSquarePoints( std::vector<cv::Point2d> & pts )
+void Positioner::applyPerspective( std::vector<Square> & squares )
 {
-    cv::Point2d m( 0.0, 0.0 );
-    m = std::accumulate( pts.begin(), pts.end(), m );
-    m /= 4.0;
-
-    std::sort( pts.begin(), pts.end(), [&](const cv::Point2d & a1, const cv::Point2d & a2)
-    {
-        cv::Point2d a = a1 - m;
-        cv::Point2d b = a2 - m;
-        double la = sqrt( a.x * a.x + a.y * a.y );
-        double ca = a.x/la;
-        double sa = a.y/la;
-        double lb = sqrt( b.x * b.x + b.y * b.y );
-        double cb = b.x/lb;
-        double sb = b.y/lb;
-        return ( atan2( sa, ca ) < atan2( sb, cb ) );
-    } );
-}
-
-void Positioner::applyPerspective( std::vector<std::vector<cv::Point>> & squares )
-{
-    locatedSquaresImg.clear();
     double P[8];
     for ( int i=0; i<8; i++ )
         P[i] = perspective.at<double>( i, 0 );
 
-    for( std::vector<std::vector<cv::Point>>::iterator i=squares.begin();
+    for( std::vector<Square>::iterator i=squares.begin();
          i!=squares.end(); i++ )
     {
-        const std::vector<cv::Point> & rect = *i;
+        Square & rect = *i;
         std::vector<cv::Point2d> rectP;
+        rect.floorPts.clear();
+        rect.floorPts.reserve( 4 );
+        rect.prevFloorPts.clear();
+        rect.prevFloorPts.reserve( 4 );
         for ( int j=0; j<4; j++ )
         {
-            cv::Point2d pi = rect[j];
+            cv::Point2f pi = rect.imgPts[j];
             cv::Point2d pd;
             pd.x = ( pi.x * P[0] +
                      pi.y * P[1] +
@@ -678,156 +602,61 @@ void Positioner::applyPerspective( std::vector<std::vector<cv::Point>> & squares
                    ( pi.x * P[6] +
                      pi.y * P[7] +
                      1.0 );
-            rectP.push_back( pd );
+            rect.floorPts.push_back( pd );
+
+            pi = rect.prevImgPts[j];
+            pd.x = ( pi.x * P[0] +
+                     pi.y * P[1] +
+                            P[2] ) /
+                   ( pi.x * P[6] +
+                     pi.y * P[7] +
+                     1.0 );
+            pd.y = ( pi.x * P[3] +
+                     pi.y * P[4] +
+                            P[5] ) /
+                   ( pi.x * P[6] +
+                     pi.y * P[7] +
+                     1.0 );
+            rect.prevFloorPts.push_back( pd );
         }
-        locatedSquaresImg.push_back( rectP );
     }
 }
 
-void Positioner::applyCamera()
+void Positioner::applyCamera( std::vector<Square> & squares )
 {
-    locatedSquaresFloor.clear();
-    int sz = static_cast<int>( locatedSquaresImg.size() );
-    for( int i=0; i<sz; i++ )
+    double P[8];
+    int ind = 0;
+    for ( int i=0; i<2; i++ )
     {
-        const std::vector<cv::Point2d> & rect = locatedSquaresImg[i];
-        std::vector<cv::Point2d> rectA;
-        // Transform each point to camera current RF.
+        for ( int j=0; j<3; j++ )
+        {
+            P[ind++] = img2FloorSmooth.at<double>( i, j );
+        }
+    }
+
+    for( std::vector<Square>::iterator i=squares.begin();
+         i!=squares.end(); i++ )
+    {
+        Square & rect = *i;
+        std::vector<cv::Point2d> rectP;
+        rect.finalPts.clear();
+        rect.finalPts.reserve( 4 );
         for ( int j=0; j<4; j++ )
         {
-            const cv::Point2d & pt = rect[j];
-            cv::Point2d ptA;
-            ptA.x = pt.x * img2FloorSmooth.at<double>( 0, 0 ) +
-                    pt.y * img2FloorSmooth.at<double>( 0, 1 ) +
-                           img2FloorSmooth.at<double>( 0, 2 );
-            ptA.y = pt.x * img2FloorSmooth.at<double>( 1, 0 ) +
-                    pt.y * img2FloorSmooth.at<double>( 1, 1 ) +
-                           img2FloorSmooth.at<double>( 1, 2 );
-            rectA.push_back( ptA );
+            cv::Point2d pi = rect.floorPts[j];
+            cv::Point2d pd;
+            pd.x = ( pi.x * P[0] +
+                     pi.y * P[1] +
+                            P[2] );
+            pd.y = ( pi.x * P[3] +
+                     pi.y * P[4] +
+                            P[5] );
+            rect.finalPts.push_back( pd );
         }
-
-        orderSquarePoints( rectA );
-
-        locatedSquaresFloor.push_back( rectA );
     }
 }
 
-bool Positioner::matchSquares( int knownInd,
-                               int foundInd,
-                               std::vector<cv::Point2d> & knownPts,
-                               std::vector<cv::Point2d> & foundPts )
-{
-    int inds[4];
-    double dists[4];
-    const std::vector<cv::Point2d> & knownR = knownSquares[knownInd];
-    const std::vector<cv::Point2d> & foundR = locatedSquaresFloor[foundInd];
-    for ( int i=0; i<4; i++ )
-    {
-        // Default is very first point.
-        inds[i] = 0;
-        double dx = knownR[i].x - foundR[0].x;
-        double dy = knownR[i].y - foundR[0].y;
-        dists[i] = sqrt( dx*dx+dy*dy );
-        for ( int j=1; j<4; j++ )
-        {
-            dx = knownR[i].x - foundR[j].x;
-            dy = knownR[i].y - foundR[j].y;
-            double d  = sqrt( dx*dx+dy*dy );
-            if ( d < dists[i] )
-            {
-                dists[i] = d;
-                inds[i]  = j;
-            }
-        }
-    }
 
-    // Validate 1) all inds are different and 2) dists < SEARCH_RANGE.
-    bool valid = true;
-    for ( int i=0; i<3; i++ )
-    {
-        for ( int j=i+1; j<4; j++ )
-        {
-            if ( inds[i] == inds[j] )
-            {
-                valid = false;
-                break;
-            }
-        }
-        if ( !valid )
-            break;
-        if ( dists[i] > SEARCH_RANGE )
-        {
-            valid = false;
-            break;
-        }
-    }
-
-    if ( valid )
-    {
-        // Validation passed.
-        // Add points to RF transformation list.
-        const std::vector<cv::Point2d> & foundR = locatedSquaresImg[foundInd];
-        for ( int i=0; i<4; i++ )
-        {
-            knownPts.push_back( knownR[ i ] );
-            foundPts.push_back( foundR[ inds[i] ] );
-        }
-    }
-    return valid;
-}
-
-bool Positioner::matchPoints( std::vector<cv::Point2d> & knownPts, std::vector<cv::Point2d> & foundPts )
-{
-    cv::Point2d r( 0.0, 0.0 ), 
-                knownC( 0.0, 0.0 ), 
-                foundC( 0.0, 0.0 );
-    int sz = static_cast<int>( knownPts.size() );
-
-    // Displacement.
-    for ( int i=0; i<sz; i++ )
-    {
-        knownC += knownPts[i];
-        foundC += foundPts[i];
-    }
-    knownC /= static_cast<double>( sz );
-    foundC /= static_cast<double>( sz );
-
-
-    // Rotation.
-    double angle = 0.0;
-    int qty = 0;
-    for ( int i=0; i<sz; i++ )
-    {
-        cv::Point2d knownR( knownPts[i] - knownC );
-        cv::Point2d foundR( foundPts[i] - foundC );
-        if ( ( (knownR.x != 0.0) || (knownR.y != 0.0) ) && 
-             ( (foundR.x != 0.0) || (foundR.y != 0.0) ) )
-        {
-            double la = sqrt( knownR.x * knownR.x + knownR.y * knownR.y );
-            double lb = sqrt( foundR.x * foundR.x + foundR.y * foundR.y );
-            double cross = foundR.x*knownR.y - foundR.y*knownR.x;
-            double a = cross / ( la * lb );
-            angle += a;  // Yes, for now instead of angle just angle sine. For small angles it is the same. But it is supposed to be small for 
-            qty += 1;
-        }
-    }
-    if ( qty > 0 )
-    {
-        angle /= static_cast<double>( qty );
-        //angle *= ALPHA;
-        sampleAngle += angle;
-    }
-
-    // Compose matrix.
-    double c = cos( angle );
-    double s = sin( angle );
-    sampleX     = knownC.x - c*foundC.x + s*foundC.y;
-    sampleY     = knownC.y - s*foundC.x - c*foundC.y;
-    img2Floor.at<double>( 0, 0 ) = c; img2Floor.at<double>( 0, 1 ) = -s; img2Floor.at<double>( 0, 2 ) = sampleX;
-    img2Floor.at<double>( 1, 0 ) = s; img2Floor.at<double>( 1, 1 ) =  c; img2Floor.at<double>( 1, 2 ) = sampleY;
-
-    return true;
-}
 
 bool Positioner::saveImg2Floor()
 {
@@ -853,7 +682,9 @@ bool Positioner::loadImg2Floor()
     return true;
 }
 
-bool Positioner::detectOpticalFlow( cv::Mat & gray )
+
+
+bool Positioner::prevPointPositions( cv::Mat & gray, std::vector<Square> & squares )
 {
     cv::TermCriteria termcrit(cv::TermCriteria::COUNT|cv::TermCriteria::EPS,20,0.03);
     cv::Size subPixWinSize(10,10), winSize(31,31);
@@ -863,28 +694,36 @@ bool Positioner::detectOpticalFlow( cv::Mat & gray )
 
     if(grayPrev.empty())
         gray.copyTo(grayPrev);
-    if ( pointsPrev.size() > 1 )
-        cv::calcOpticalFlowPyrLK( grayPrev, gray, pointsPrev, pointsNext, status, err, winSize,
-                             3, termcrit, 0, 0.001);
-
-    // Define max shift.
-    int ind = 0;
-    double shiftMax = 0.0;
-    int sz = static_cast<int>( pointsPrev.size() );
-    if ( sz < 3 ) // If too few points force believe that there was an optical flow.
-        return true;
-    for ( int i=0; i<sz; i++ )
+    auto sz = squares.size() * 4;
+    if ( sz > 1 )
     {
-        cv::Point2d dpt = pointsNext[ind] - pointsPrev[ind];
-        double d = sqrt( dpt.dot( dpt ) );
-        if ( shiftMax < d )
-            shiftMax = d;
-        ind++;
+        std::vector<cv::Point2f> ptsCur, ptsPrev;
+        ptsCur.reserve( sz );
+        ptsPrev.reserve( sz );
+        std::for_each( squares.begin(), squares.end(), [&]( const Square & s )
+        {
+            ptsCur.push_back( s.imgPts[0] );
+            ptsCur.push_back( s.imgPts[1] );
+            ptsCur.push_back( s.imgPts[2] );
+            ptsCur.push_back( s.imgPts[3] );
+        } );
+        cv::calcOpticalFlowPyrLK( gray, grayPrev, ptsCur, ptsPrev, status, err, winSize,
+                             3, termcrit, 0, 0.001);
+        int ind = 0;
+        std::for_each( squares.begin(), squares.end(), [&]( Square & s )
+        {
+            s.prevImgPts.clear();
+            s.prevImgPts.push_back( ptsPrev[ind++] );
+            s.prevImgPts.push_back( ptsPrev[ind++] );
+            s.prevImgPts.push_back( ptsPrev[ind++] );
+            s.prevImgPts.push_back( ptsPrev[ind++] );
+        } );
     }
+    
     gray.copyTo( grayPrev );
-
-    return (shiftMax >= MAX_FLOW_SPEED);
+    return true;
 }
+
 
 bool Positioner::fieldOfView( std::vector<double> & corners )
 {
@@ -960,6 +799,7 @@ bool Positioner::drillPos( double & x, double & y, bool ignoreSample )
 bool Positioner::knownFeatures( std::vector<double> & corners )
 {
     corners.clear();
+/*
 
     int sz = static_cast<int>( knownSquares.size() );
     for ( int i=0; i<sz; i++ )
@@ -970,22 +810,25 @@ bool Positioner::knownFeatures( std::vector<double> & corners )
             corners.push_back( knownSquares[i][j].y );
         }
     }
+    */
     return true;
 }
 
 bool Positioner::visibleFeatures( std::vector<double> & corners )
 {
     corners.clear();
-
-    int sz = static_cast<int>( locatedSquaresFloor.size() );
+    
+    int sz = static_cast<int>( squares.size() );
     for ( int i=0; i<sz; i++ )
     {
+        Square & s = squares[i];
         for ( int j=0; j<4; j++ )
         {
-            corners.push_back( locatedSquaresFloor[i][j].x );
-            corners.push_back( locatedSquaresFloor[i][j].y );
+            corners.push_back( s.finalPts[j].x );
+            corners.push_back( s.finalPts[j].y );
         }
     }
+    
     return true;
 }
 
@@ -994,7 +837,7 @@ bool Positioner::visibleFeatures( std::vector<double> & corners )
 
 // returns sequence of squares detected on the image.
 // the sequence is stored in the specified memory storage
-void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::Point> >& squares )
+void Positioner::findSquares( const cv::Mat & gray, std::vector<Square> & squares )
 {
     squares.clear();
 
@@ -1027,7 +870,7 @@ void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::
         // area may be positive or negative - in accordance with the
         // contour orientation
         if( ( approx.size() == 4 ) &&
-            ( fabs(contourArea(cv::Mat(approx))) > 1000 ) &&
+            ( fabs(contourArea(cv::Mat(approx))) > 400 ) &&
             ( cv::isContourConvex( cv::Mat(approx) ) ) )
         {
             // Accept suqres only within screen margin.
@@ -1043,13 +886,23 @@ void Positioner::findSquares( const cv::Mat & gray, std::vector<std::vector<cv::
                 }
             }
             if ( accept )
-                squares.push_back(approx);
+            {
+                Square s;
+                s.imgPts.reserve( 4 );
+                s.imgPts.push_back( approx[0] );
+                s.imgPts.push_back( approx[1] );
+                s.imgPts.push_back( approx[2] );
+                s.imgPts.push_back( approx[3] );
+                s.orderPts();
+                squares.push_back( s );
+            }
         }
     }
 }
 
 void Positioner::dbgDisplay( cv::Point imgSz )
 {
+/*
     if ( !DEBUG )
         return;
     const int sz = 512;
@@ -1131,22 +984,23 @@ void Positioner::dbgDisplay( cv::Point imgSz )
     cv::line( img, pt3, pt0, BLUE );
 
     imshow( "top view", img );
+*/
 }
 
 
 
-static void drawSquares( cv::Mat& image, std::vector<std::vector<cv::Point> >& squares )
+static void drawSquares( cv::Mat & image, std::vector<Square> & squares )
 {
-    for( std::vector<std::vector<cv::Point>>::iterator i=squares.begin();
+    for( std::vector<Square>::iterator i=squares.begin();
          i!=squares.end(); i++ )
     {
-        std::vector<cv::Point> & sq = *i;
+        std::vector<cv::Point2d> & sq = (*i).floorPts;
         if ( sq.size() < 4 )
             continue;
-        cv::Point & pt1 = sq[0];
-        cv::Point & pt2 = sq[1];
-        cv::Point & pt3 = sq[2];
-        cv::Point & pt4 = sq[3];
+        cv::Point2d & pt1 = sq[0];
+        cv::Point2d & pt2 = sq[1];
+        cv::Point2d & pt3 = sq[2];
+        cv::Point2d & pt4 = sq[3];
         cv::Scalar GREEN( 0.0, 100.0, 0.0, 1.0 );
         cv::line( image, pt1, pt2, GREEN );
         cv::line( image, pt2, pt3, GREEN );

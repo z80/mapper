@@ -6,7 +6,7 @@ GridCalc::GridCalc( QWidget * parent )
     :QWidget( parent )
 {
     ui.setupUi( this );
-    this->setWindowFlags( Qt::Tool );
+    this->setWindowFlags( Qt::Tool | Qt::WindowStaysOnTopHint );
 
     sv = 0;
 

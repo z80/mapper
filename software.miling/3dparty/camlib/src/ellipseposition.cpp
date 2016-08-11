@@ -38,7 +38,7 @@ EllipsePosition::EllipsePosition() {
 }
 
 void EllipsePosition::setDiangle(double dia) {
-    assert( !isnan(dia) );
+    assert( !std::isnan(dia) );
     diangle = dia;
     setD();
 }
@@ -50,7 +50,7 @@ void EllipsePosition::setD() {
     // return P2( (a < 2 ? 1-a : a-3),
     //           (a < 3 ? ((a > 1) ? 2-a : a) : a-4)
     double d = diangle;
-    assert( !isnan(d) );
+    assert( !std::isnan(d) );
     while ( d > 4.0 ) // make d a diangle in [0,4]
         d -= 4.0;
     while ( d < 0.0)

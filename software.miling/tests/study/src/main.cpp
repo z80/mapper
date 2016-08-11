@@ -18,40 +18,53 @@
 #include <iostream>
 //using namespace boost::filesystem;
 
-template<typename D, typename B>
-class IsDerivedFromHelper
+
+int substring( const std::string & striA, const std::string & striB );
+
+int substring( const std::string & striA, const std::string & striB, int & posA, int & posB )
 {
-    class No { };
-    class Yes { No no[3]; };
-
-    static Yes Test( B* );
-    static No Test( ... );
-public:
-    enum { Is = sizeof(Test(static_cast<D*>(0))) == sizeof(Yes) };
-
-};
-
-
-template <class C, class P>
-bool IsDerivedFrom() {
-    return IsDerivedFromHelper<C, P>::Is;
+    int maxLen = 0;
+    int maxAtA = -1;
+    int maxAtB = -1;
+    for ( auto atA=0; atA<striA.size(); atA++ )
+    {
+        auto atB = 0;
+        while ( ( striA[atA] != striB[atB] ) && ( atB < striB.size() ) )
+            atB++;
+        if ( atB < striB.size() )
+        {
+            int len = 0;
+            int curAtA = atA;
+            int curAtB = atB;
+            int iterA = atA;
+            while ( ( striA[iterA] == striB[atB] ) && ( atB < striB.size() ) && ( iterA < striA.size() ) )
+            {
+                iterA++;
+                atB++;
+                len++;
+            }
+            if ( len > maxLen )
+            {
+                maxLen = len;
+                maxAtA = curAtA;
+                maxAtB = curAtB;
+            }
+        }
+    }
+    posA = maxAtA;
+    posB = maxAtB;
+    return maxLen;
 }
-
-class A
-{};
-
-class B
-{};
-
-class C: public A
-{
-};
 
 
 int main()
 {
-    std::cout << std::boolalpha << IsDerivedFrom<A, B>() << std::endl;
-    std::cout << std::boolalpha << IsDerivedFrom<C, A>() << std::endl;
+    std::string a = "abcdef";
+    std::string b = "nhbc";
+    int posA, posB;
+    int len = substring( a, b, posA, posB );
+    //std::cout << std::boolalpha << IsDerivedFrom<A, B>() << std::endl;
+    //std::cout << std::boolalpha << IsDerivedFrom<C, A>() << std::endl;
     return 0;
 }
 

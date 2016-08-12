@@ -39,7 +39,7 @@ EllipsePosition::EllipsePosition() {
 }
 
 void EllipsePosition::setDiangle(double dia) {
-    #ifdef UNIX
+    #ifndef WIN32
         assert( !std::isnan(dia) );
     #else
         assert( !isnan(dia) );
@@ -55,7 +55,7 @@ void EllipsePosition::setD() {
     // return P2( (a < 2 ? 1-a : a-3),
     //           (a < 3 ? ((a > 1) ? 2-a : a) : a-4)
     double d = diangle;
-    #ifdef UNIX
+    #ifndef WIN32
         assert( !std::isnan(d) );
     #else
         assert( !isnan(d) );

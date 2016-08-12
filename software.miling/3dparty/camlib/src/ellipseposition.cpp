@@ -23,6 +23,7 @@
 // uncomment to disable assert() calls
 // #define NDEBUG
 #include <cassert>
+#include <cfloat>
 
 #include "point.hpp"
 #include "ellipseposition.hpp"
@@ -38,7 +39,11 @@ EllipsePosition::EllipsePosition() {
 }
 
 void EllipsePosition::setDiangle(double dia) {
-    assert( !std::isnan(dia) );
+    #ifdef UNIX
+        assert( !std::isnan(dia) );
+    #else
+        assert( !isnan(dia) );
+    #endif
     diangle = dia;
     setD();
 }
@@ -50,7 +55,11 @@ void EllipsePosition::setD() {
     // return P2( (a < 2 ? 1-a : a-3),
     //           (a < 3 ? ((a > 1) ? 2-a : a) : a-4)
     double d = diangle;
-    assert( !std::isnan(d) );
+    #ifdef UNIX
+        assert( !std::isnan(d) );
+    #else
+        assert( !isnan(d) );
+    #endif
     while ( d > 4.0 ) // make d a diangle in [0,4]
         d -= 4.0;
     while ( d < 0.0)

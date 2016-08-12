@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <conio.h>
 #include <math.h>
 #include <cmath>
 #include <algorithm>
@@ -19,54 +20,118 @@
 //using namespace boost::filesystem;
 
 
-int substring( const std::string & striA, const std::string & striB );
-
-int substring( const std::string & striA, const std::string & striB, int & posA, int & posB )
+int commonSuffix( const std::string & striA, const std::string & striB )
 {
-    int maxLen = 0;
-    int maxAtA = -1;
-    int maxAtB = -1;
-    for ( auto atA=0; atA<striA.size(); atA++ )
+    int lenA = striA.size();
+    int lenB = striB.size();
+    int sz = ( lenA < lenB ) ? lenA : lenB;
+    int suffixSz = 0;
+    for ( auto i=0; i<sz; i++ )
     {
-        auto atB = 0;
-        while ( ( striA[atA] != striB[atB] ) && ( atB < striB.size() ) )
-            atB++;
-        if ( atB < striB.size() )
-        {
-            int len = 0;
-            int curAtA = atA;
-            int curAtB = atB;
-            int iterA = atA;
-            while ( ( striA[iterA] == striB[atB] ) && ( atB < striB.size() ) && ( iterA < striA.size() ) )
-            {
-                iterA++;
-                atB++;
-                len++;
-            }
-            if ( len > maxLen )
-            {
-                maxLen = len;
-                maxAtA = curAtA;
-                maxAtB = curAtB;
-            }
-        }
+        auto indA = lenA - i - 1;
+        auto indB = i;
+        if ( striA[indA] == striB[indB] )
+            suffixSz++;
+        else
+            break;
     }
-    posA = maxAtA;
-    posB = maxAtB;
-    return maxLen;
+    return suffixSz;
 }
 
+void merge2Strings( const std::string & striA, const std::string & striB, std::string & sum )
+{
+    int suffixSz = commonSuffix( striA, striB );
+    sum.resize( striA.size() + striB.size() - suffixSz );
+    for ( auto i=0; i<striA.size(); i++ )
+        sum[i] = striA[i];
+    for ( auto i=suffixSz; i<striB.size(); i++ )
+        sum[ striA.size() + i - suffixSz ] = striB[i];
+}
+
+class Strings
+{
+public:
+    Strings();
+    ~Strings();
+
+    Strings & operator<<( const std::string & stri );
+
+    void append( const std::string & stri );
+    void result( std::string & stri );
+
+private:
+    void mergeAll( std::string & sum );
+    std::list<std::string> striList;
+};
 
 int main()
 {
-    std::string a = "abcdef";
-    std::string b = "nhbc";
-    int posA, posB;
-    int len = substring( a, b, posA, posB );
-    //std::cout << std::boolalpha << IsDerivedFrom<A, B>() << std::endl;
-    //std::cout << std::boolalpha << IsDerivedFrom<C, A>() << std::endl;
+    Strings stris;
+    stris << "aaa";
+    stris << "abb";
+    stris << "bbaaaa";
+    stris << "sa";
+    stris << "assa";
+    stris << "aabbsa";
+    stris << "aassas";
+    stris << "ass";
+    stris << "aaba";
+    stris << "aasas";
+    stris << "ass";
+    std::string sum;
+    stris.result( sum );
+    std::cout << sum;
+    getch();
     return 0;
 }
 
+
+Strings::Strings()
+{
+}
+
+Strings::~Strings()
+{
+}
+
+Strings & Strings::operator<<( const std::string & stri )
+{
+    append( stri );
+    return *this;
+}
+
+void Strings::append( const std::string & stri )
+{
+    striList.push_back( stri );
+}
+
+void Strings::result( std::string & stri )
+{
+    striList.sort();
+    std::string sum;
+    mergeAll( sum );
+    std::string bestSum = sum;
+    while ( std::next_permutation( striList.begin(), striList.end() ) )
+    {
+        mergeAll( sum );
+        if ( sum.size() < bestSum.size() )
+            bestSum = sum;
+    }
+    stri = bestSum;
+}
+
+void Strings::mergeAll( std::string & sum )
+{
+    auto ind = striList.begin();
+    auto indPrev = ind++;
+    merge2Strings( *indPrev, *ind, sum );
+    while ( ind != striList.end() )
+    {
+        std::string res;
+        merge2Strings( sum, *ind, res );
+        sum = res;
+        ind++;
+    }
+}
 
 

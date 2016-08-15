@@ -1,7 +1,7 @@
 
 set( appname "study" )
 
-#find_package( Boost REQUIRED COMPONENTS regex system filesystem REQUIRED )
+find_package( Boost REQUIRED COMPONENTS regex system filesystem REQUIRED )
 
 
 #include(${BOOST_USE_FILE})

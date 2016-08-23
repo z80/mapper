@@ -12,8 +12,8 @@
 \RequirePackage[utf8]{inputenc}          
 \RequirePackage{geometry} % changes margins across the page
  \geometry{
- left=10mm,
- right=10mm,
+ left=7mm,
+ right=7mm,
  top=7mm,
  bottom=7mm,
 }

@@ -23,11 +23,11 @@
 \newcommand{\college}{Virginia Tech}
 
 % personal data
-\name{Sergey}{Bashkirov}
+%\name{Sergey}{Bashkirov}
 %\title{Resumé title}                               % optional, remove / comment the line if not wanted
 
-\address{1234 1st street}{Novato, california, 94945}{USA}% optional, remove / comment the line if not wanted; the "postcode city" and and "country" arguments can be omitted or provided empty
-\phone[mobile]{+1~(415)~123~4567}                   % optional, remove / comment the line if not wanted
+%\address{1234 1st street}{Novato, california, 94945}{USA}% optional, remove / comment the line if not wanted; the "postcode city" and and "country" arguments can be omitted or provided empty
+%\phone[mobile]{+1~(415)~123~4567}                   % optional, remove / comment the line if not wanted
 %\email{litedictteam@gmail.com}                               % optional, remove / comment the line if not wanted
 %\homepage{ajnorton.com}                         % optional, remove / comment the line if not wanted
 %\social[github][github.com/z80]{github.com/z80}

@@ -1,0 +1,97 @@
+
+\documentclass{sb_cv}
+ 
+% adjust the page margins
+%\setlength{\hintscolumnwidth}{3cm}                % if you want to change the width of the column with the dates
+%\setlength{\makecvtitlenamewidth}{10cm}           % for the 'classic' style, if you want to force the width allocated to your name and avoid line breaks. be careful though, the length is normally calculated to avoid any overlap with your personal info; use this at your own typographical risks...
+
+% personal data
+\name{Sergey}{Bashkirov}
+%\title{Resumé title}                               % optional, remove / comment the line if not wanted
+\address{1020 3rd street}{94945 Novato California}{USA}% optional, remove / comment the line if not wanted; the "postcode city" and and "country" arguments can be omitted or provided empty
+\email{litedictteam@gmail.com}                               % optional, remove / comment the line if not wanted
+\phone[mobile]{+1~(415)~123~4567}                   % optional, remove / comment the line if not wanted
+\break
+%\homepage{ajnorton.com}                         % optional, remove / comment the line if not wanted
+\social[github][github.com/z80]{github.com/z80}
+\social[linkedin][https://www.linkedin.com/in/sergey-bashkirov]{linkedin.com/in/sergey-bashkirov}
+%\extrainfo{additional information}                 % optional, remove / comment the line if not wanted
+%photo[64pt][0.4pt]{picture}                       % optional, remove / comment the line if not wanted; '64pt' is the height the picture must be resized to, 0.4pt is the thickness of the frame around it (put it to 0pt for no frame) and 'picture' is the name of the picture file
+
+
+%\quote{
+%Software Engineer with significant R\&D experience in Atomic Force Microscopy, Raman TERS imaging with a focus on software and firmware algorithms development. Active opensource community participant. I'm seeking for a full time position in software/firmware development.
+%}
+
+% to show numerical labels in the bibliography (default is to show no labels); only useful if you make citations in your resume
+%\makeatletter
+%\renewcommand*{\bibliographyitemlabel}{\@biblabel{\arabic{enumiv}}}
+%\makeatother
+%\renewcommand*{\bibliographyitemlabel}{[\arabic{enumiv}]}% CONSIDER REPLACING THE ABOVE BY THIS
+
+% bibliography with mutiple entries
+%\usepackage{multibib}
+%\newcites{book,misc}{{Books},{Others}}
+%----------------------------------------------------------------------------------
+%            content
+%----------------------------------------------------------------------------------
+\begin{document}
+%\begin{CJK*}{UTF8}{gbsn}                          % to typeset your resume in Chinese using CJK
+%-----       resume       ---------------------------------------------------------
+\makecvtitle
+
+\section{Goal}
+Software Engineer with R\&D experience in software and firmware development related to Atomic Force Microscopy, Raman TERS imaging with active open source community participation is seeking for a full time position in application development.
+
+\section{Areas of expertise}
+\cvdoubleitem{AFM}{Contact, semicontact, Kelvin, MFM, PFM}{Raman}{Confocal Raman, coupled mapping, TERS imaging}
+\cvdoubleitem{Programming}{Crossplatform, embedded programming, realtime algorithms, RTOS}{Math}{2d/3d geometry, computer vision, Kalman filtering, machine learning, statistics, image processing}
+
+
+
+\section{Technical proficiencies}
+\cvdoubleitem{Programming}{C, C++, Java, microcontroller assembler}{Scripting}{Lua, Ruby, Python, Maxima, JavaScript, SQL, R, Shell scripting}
+\cvdoubleitem{Platforms}{Linux, Windows, ChibiOs, FreeRTOS}{Web technologies}{Ruby-on-rails4, Javascript, Bootstrap}
+\cvdoubleitem{Frameworks}{Qt, Boost, Swing, WxWidgets}{Various}{FTDI/CPLD Verilog programming, simulation, PCB design, Spice simulation, hardware debugging, mature soldering skill}
+\cvdoubleitem{Microcontroller series}{NXP, ST ARM7; Atmel AVR8; Analog Devices Shark DSP}{Frameworks}{Qt, Boost, OpenCV, Swing}
+\section{Most recent work experience}
+\cventry{}{Software Engineer}{Aist-NT Inc.}{Novato, CA}{}{}  % arguments 3 to 6 can be left empty
+\begin{itemize}
+\item Created and maintained main AFM software.
+\item Designed scriptable GUI building framework and embedded real time scripting language.
+\item Created firmware for a number of devices, designed PCB for a few hardware solutions.
+\item Created WEB based software for warehouse keeping, production control, expenses calculation, forecasting.
+\end{itemize}
+
+
+\cventry{}{Contract}{Transmag}{Santa Rosa, CA}{}{USB based BLDC motor controller's interface development.}
+\begin{itemize}
+\item Designed GUI for BLDC motor setup and testing.
+\item Designed firmware for USB interaction and BLDC parameters read/write routines.
+\item Suggested USB part schematic design in order to provide reliabe USB communication.
+\end{itemize}
+
+\cventry{}{Programming engineer}{NT-Mdt}{Moscow, Russia}{}{Scanning probe microscope and auxilary devices programming.}
+\begin{itemize}
+\item Designed PCI driver and communication library for AFM controller. Created firmwarem, protorype soft for AFM controller.
+\item Improved firmware and created UI for thermocontroller.
+\item Designed UI and control algorithms for bipotentiostat coupled with AFM.
+\end{itemize}
+
+
+\section{Education}
+\cventry{}{Master of Science in Applied Mathematics and Physics}{Moscow Institute of Physics and Technology}{Moscow, Russia}{}{}
+\begin{itemize}
+\item Circuits \& Electronics, Machine learning, SAAS, Autonomous navigation, Statistics with R, Node.JS, Angular.JS, Booststrap, JavaScript.
+\end{itemize}
+
+\section{Open source projects participation}
+\cvitemwithcomment{grambo-pi.com}{Created expandable stackable PCBs set for RaspberryPi computer for robot prototyping.}{}
+\cvitemwithcomment{xonotic.org}{Created Blen2map Blender3D to MAP exporter.}{}
+\cvitemwithcomment{chibios.org}{Submitted I2C slave mode driver, IWDG driver.}{}
+\cvitemwithcomment{QtLua}{Provided a patch making Object::connect() work in the same way as in Qt.}{}
+\cvitemwithcomment{Gaw}{Provided a patch fixing crashes with default configuration file for gaw waveform viewer.}{}
+
+
+
+\end{document}

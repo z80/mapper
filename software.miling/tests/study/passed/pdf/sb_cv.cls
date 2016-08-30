@@ -7,6 +7,8 @@
 %\nopagenumbers{}                                  % uncomment to suppress automatic page numbering for CVs longer than one page
 
 
+
+
 % character encoding
 \RequirePackage[utf8]{inputenc}          
 \RequirePackage{geometry} % changes margins across the page

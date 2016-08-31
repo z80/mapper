@@ -7,6 +7,7 @@
 #add_subdirectory( "./cam-test" )
 add_subdirectory( "./study" )
 add_subdirectory( "./fit-test" )
+add_subdirectory( "./qml" )
 
 
 

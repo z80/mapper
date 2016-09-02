@@ -1,6 +1,12 @@
 
 set( appname "qml" )
 
+if ( WIN32 )
+    set( MSVC_RUNTIME dynamic )
+    include( ${ROOT}/cmake/MSVCRuntime.cmake )
+    configure_msvc_runtime()
+endif ( WIN32 )
+
 
 # Use the include path and library for Qt that is used by VTK.
 include_directories(

@@ -2,6 +2,7 @@
 #include <QtGui>
 #include <QApplication>
 #include <QtQuick>
+#include "piechart.h"
 //#include "voltamp_io.h"
 
 int main( int argc, char * argv[] )
@@ -10,18 +11,13 @@ int main( int argc, char * argv[] )
 
     Q_INIT_RESOURCE( images );
 
-    QFile f( ":main.qml" );
-    bool result = f.open( QIODevice::ReadOnly );
-    Q_ASSERT( result );
-    QByteArray a = f.readAll();
+    qmlRegisterType<PieChart>("Charts", 1, 0, "PieChart");
 
-    QQmlEngine engine;
-    QQmlComponent component( &engine );
-    component.setData( a, QUrl());
-    QQuickItem *item = qobject_cast<QQuickItem *>(component.create());
+    QQuickView view;
+    view.setResizeMode(QQuickView::SizeRootObjectToView);
+    view.setSource(QUrl("qrc:///main.qml"));
+    view.show();
 
-    QQuickView * view = new QQuickView( &engine, 0 );
-    view->show();
 
     int res = app.exec();
     

@@ -1,0 +1,116 @@
+
+\LoadClass[12pt,a4paper,sans]{moderncv}% possible options include font size ('10pt', '11pt' and '12pt'), paper size ('a4paper', 'letterpaper', 'a5paper', 'legalpaper', 'executivepaper' and 'landscape') and font family ('sans' and 'roman')
+
+\moderncvstyle{banking}                            % style options are 'casual' (default), 'classic', 'oldstyle' and 'banking'
+\moderncvcolor{blue}                                % color options 'blue' (default), 'orange', 
+
+
+% character encoding
+\RequirePackage[utf8]{inputenc}          
+\RequirePackage{geometry} % changes margins across the page
+ \geometry{
+ left=7mm,
+ right=7mm,
+ top=7mm,
+ bottom=7mm,
+}
+\RequirePackage{amssymb}
+\RequirePackage{fontawesome}
+
+ 
+\makeatletter
+\newcommand*{\skypesocialsymbol}{\includegraphics[height=.7\baselineskip]{skype_gray}}
+\collectionadd[skype]{socials}{ sergey\char`_831 }
+\makeatother
+
+\newcommand*{\skype}[1]{\def\@skype{#1}}
+
+% personal data
+\name{Sergey}{Bashkirov}
+\address{1020 3rd street apt \#2}{94945 Novato California}{USA}% optional, remove / comment the line if not wanted; the "postcode city" and and "country" arguments can be omitted or provided empty
+\email{bashkirov.sergey@gmail.com}                               % optional, remove / comment the line if not wanted
+\phone[mobile]{+1~(415)~246~0343}                   % optional, remove / comment the line if not wanted
+\social[github][github.com/z80]{github.com/z80}
+\social[linkedin][https://www.linkedin.com/in/sergey-bashkirov]{linkedin.com/in/sergey-bashkirov}
+
+
+%----------------------------------------------------------------------------------
+%            content
+%----------------------------------------------------------------------------------
+\begin{document}
+%\begin{CJK*}{UTF8}{gbsn}                          % to typeset your resume in Chinese using CJK
+%-----       resume       ---------------------------------------------------------
+\makecvtitle
+
+\vspace*{-15mm}
+
+\section{Summary}
+%Application software engineer with R\&D experience in software and firmware development for scientific devices with active open source community participation; experienced in GUI design, hardware to computer communication, firmware, RTOS, real time applications, motors control, pneumatics regulation, Atomic Force Microscopy, semiconductor Kelvin probe analysis, Raman TERS imaging, electrochemistry, BLDC, stepper motors, piezoceramics, actuators control; have experience in algorithms design, data acquisition and processing, computer vision, machine learning; rapid prorotyping and electrical debugging; good project management abilities, problem solving R\&D experience.
+
+%Application software engineer with experience in robotics, actuators control, data acquisition and processing; strong background in math and physics; active open source community participant; have good development time management and project tracking skills; obtained wide R\&D experience in scientific tools design and programming; good knowledge of application programming, UI, real time firmware, RTOS, machine learning, computer vision, 3d geometry; obtained experience in PCB development, electrical debugging.
+
+Engineer with 12+ years of professional experience in electrical engineering, firmware and software solutions in areas related to actuators control, data acquisition and processing, RTOS and bare metal programming, hardware interfaces, USB, networking; worked closely on actuators control, signal acquisition and processing, user interface design, robotics; have experience in computer vision applications, machine learning; electrical engineering, PCB design; good background in math and physics; mature problem solving ability.
+
+\vspace*{-4mm}
+\section{Areas of expertise}
+\cvdoubleitem{Electrical engineering}{PCB design, prototyping}{Firmware design}{Real time firmware, actuators control, physical properties measurement, RTOS and bare metal firmware, CPLD/FPGA experience}
+
+\cvdoubleitem{Scripting and automation}{Scripting languages, embedded scripting, bare metal firmware scripting}{Math}{Computer vision, machine learning, statistics, data, image processing, Kalman / Extended Kalman filter}
+
+\cvdoubleitem{Crossplatform programming}{GUI, hardware communication}{Visualization}{Widgets design, Spatial, 3D geometry, 2D/3D visualization}
+
+\vspace*{-4mm}
+\section{Most recent professional achievements}
+\begin{itemize}
+
+\item Reduced hardware design time by making expandable stackable PCB solutions consisting of identical PCBs with identical firmware.
+
+\item Created full control solution for pneumatic mechanism of variable complexity by designing expandable stackable PCB set consisting of identical PCBs, designed GUI for embedded Linux, communication library based on XMPP protocol, made real time firmware for \char`~10 interconnected by common bus microcontrollers.
+
+\item Reduced development time and eased prototyping by implementing hardware embedded real time scripting language and scriptable GUI builder.
+
+\item Achieved high precision with equipment made of the lowest cost components by applying machine learning techniques to calibration process.
+
+\item Reorganaized production and supplies purchase processes by perforing statistical predictive contracts analysis. Made business control software for warehouse keeping, product assembling, purchasing and contracts tracking.
+
+\item Created robot SDK with microcontroller embedded Pawn scripting language for real time algorithms and single board computer based Python SDK for complex logic tasks; made it expandable by making PCB set stackable.
+
+\end{itemize}
+
+\vspace*{-4mm}
+\section{Technical proficiencies}
+\cvdoubleitem{Electrical}{PCB design, electrical debugging, soldering skill}{Interfaces}{USB, TCP/IP, UDP, I2C, SPI, UART, SMBus, PWM, DAC, ADC, JTAG debugging}
+\cvdoubleitem{Devices}{Avr8, Cortex-M, NXP ARM7TDMI, AD Shark DSP, Altera FPGA/CPLD Verilog programming and testbench}{Aplications}{Stepper, BLDC, DC motors control; piezoceramics, temperature, humidity control, data acquisition, signal processing, FIR/IIR filtering, Kalman filtering, automation}
+\cvdoubleitem{Platforms}{Linux, Windows, ChibiOs, FreeRTOS}{Scripting}{Lua, Ruby, Python, R, MATLAB, SQL, Shell scripting, Pawn}
+\cvdoubleitem{Programming}{C, C++, Java, microcontroller assembler}{Frameworks}{Qt, Boost, OpenCV, VTK, CMake, Buildroot, Raspbian, OpenWRT}
+
+\vspace*{-4mm}
+\section{Most recent work experience}
+\cventry{}{Software Engineer}{Aist-NT Inc.}{Novato, CA}{April 2007 - present}{PCB, firmware development, embedded real time scripting language design, AFM software development, AFM-Raman coupling, actuators control, AFM modes design, data acquisition and processing}  % arguments 3 to 6 can be left empty
+
+
+\cventry{}{Contractor}{Transmag}{Santa Rosa, CA}{August 2013 - December 2013}{Designed USB based BLDC motor controller's interface. Designed firmware, user interface, suggested proper USB schematics.}
+
+\cventry{}{Contractor, remote position}{IPM RAS}{Moscow, Russia}{April 2012 - February 2015}{Designed PCBs for pneumatic robot control modules, created firmware and software, developed scriptable SDK, programmed movement algorithms. }
+
+\vspace*{-4mm}
+\section{Education}
+\cventry{}{Master of Science in Applied Mathematics and Physics}{Moscow Institute of Physics and Technology}{Moscow, Russia}{February 2004}{}
+
+\cventry{}{Courses in robotics, control theory and stability}{Moscow Institute for Problems in Mechanics}{Moscow, Russia}{June 2004}{Laboratory of Robotics and mechatronics.}
+
+\textbf{Most recent courses taken:} Circuits \& Electronics, Machine learning, SAAS, Autonomous navigation, Statistics with R, Node.JS, Angular.JS, Booststrap, JavaScript.
+
+
+
+\vspace*{-4mm}
+\section{Open source projects participation}
+\cvitemwithcomment{grambo-pi.com}{Created expandable stackable PCBs set for RaspberryPi computer for robot prototyping.}{}
+\cvitemwithcomment{xonotic.org}{Created Blend2map Blender3D to MAP exporter.}{}
+\cvitemwithcomment{chibios.org}{Submitted I2C slave mode driver, IWDG driver.}{}
+\cvitemwithcomment{QtLua}{Provided a patch making Object::connect() work in the same way as in Qt.}{}
+\cvitemwithcomment{Gaw}{Provided a patch fixing crashes with default configuration file for gaw waveform viewer.}{}
+
+
+
+\end{document}

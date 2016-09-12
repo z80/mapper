@@ -1,0 +1,114 @@
+
+\documentclass[10pt,letterpaper,oneside,sans]{moderncv}
+%\LoadClass[10pt,a4paper,sans]{moderncv}% possible options include font size ('10pt', '11pt' and '12pt'), paper size ('a4paper', 'letterpaper', 'a5paper', 'legalpaper', 'executivepaper' and 'landscape') and font family ('sans' and 'roman')
+
+\usepackage[none]{hyphenat}
+
+\moderncvstyle{banking}                            % style options are 'casual' (default), 'classic', 'oldstyle' and 'banking'
+\moderncvcolor{blue}                                % color options 'blue' (default), 'orange', 
+
+
+% character encoding
+\RequirePackage[utf8]{inputenc}          
+\RequirePackage{geometry} % changes margins across the page
+ \geometry{
+ left=7mm,
+ right=7mm,
+ top=7mm,
+ bottom=7mm,
+}
+\RequirePackage{amssymb}
+\RequirePackage{fontawesome}
+ 
+\makeatletter
+\newcommand*{\skypesocialsymbol}{\includegraphics[height=.7\baselineskip]{skype_gray}}
+\collectionadd[skype]{socials}{ sergey\char`_831 }
+\makeatother
+
+\newcommand*{\skype}[1]{\def\@skype{#1}}
+
+% personal data
+\name{Sergey}{Bashkirov}
+\address{Novato California}{94945}{USA}% optional, remove / comment the line if not wanted; the "postcode city" and and "country" arguments can be omitted or provided empty
+\email{bashkirov.sergey@gmail.com}                               % optional, remove / comment the line if not wanted
+\phone[mobile]{+1~(415)~246~0343}                   % optional, remove / comment the line if not wanted
+\social[github][github.com/z80]{github.com/z80}
+\social[linkedin][https://www.linkedin.com/in/sergey-bashkirov]{linkedin.com/in/sergey-bashkirov}
+
+
+%----------------------------------------------------------------------------------
+%            content
+%----------------------------------------------------------------------------------
+\begin{document}
+%\begin{CJK*}{UTF8}{gbsn}                          % to typeset your resume in Chinese using CJK
+%-----       resume       ---------------------------------------------------------
+\makecvtitle
+
+\vspace*{-15mm}
+
+\section{Summary}
+Programming engineer with 12+ years of professional experience in firmware and software solutions in areas related to RTOS, bare metal, Linux, hardware interfaces, drivers, USB, networking; worked closely on actuators control, signal acquisition and processing, user interface design, robotics; have experience in computer vision applications, machine learning; electrical engineering, PCB design; good background in math and physics.
+
+\vspace*{-4mm}
+\section{Areas of expertise}
+\cvdoubleitem{Firmware design}{Real time firmware, actuators control, physical properties measurement, RTOS and bare metal firmware, embedded Linux}{Scripting and automation}{Scripting languages, embedded scripting, bare metal firmware scripting}
+\cvdoubleitem{Crossplatform programming}{GUI, hardware communication}{RPC design}{Sockets, XMPP, ICE, XMLRPC}
+\cvdoubleitem{Visualization}{Widgets design, Spatial, 3D geometry, 2D/3D visualization}{Math}{Computer vision, machine learning, statistics, data, image processing, Kalman / Extended Kalman filter}
+
+\vspace*{-4mm}
+\section{Most recent professional achievements}
+\begin{itemize}
+
+\item Reduced development time and eased prototyping by implementing hardware embedded real time scripting language and scriptable GUI builder.
+
+\item Created full control solution for pneumatic mechanism of variable complexity by designing expandable stackable PCB set consisting of identical PCBs, designed GUI for embedded Linux, communication library based on XMPP protocol, made real time firmware for \char`~10 interconnected by common bus microcontrollers.
+
+\item Achieved high precision with equipment made of the lowest cost components by applying machine learning techniques to calibration process.
+
+\item Reduced hardware design time by making expandable PCB solutions consisting of identical PCBs with identical firmware.
+
+\item Simplified "find the same place" task for AFM after sample reinstallation by making video aligning and navigation by video mode via applying regression by recognizable points.
+
+\item Reorganized production and supplies purchase processes by performing statistical predictive contracts analysis. Made business control software for warehouse keeping, product assembling, purchasing and contracts tracking.
+
+\end{itemize}
+
+
+
+\vspace*{-4mm}
+\section{Most recent work experience}
+
+\cventry{}{Software Engineer}{Aist-NT Inc.}{Novato, CA}{April 2007 - present}{Designed firmware for all hardware solutions, created embedded real time scripting language, designed AFM software, integrated a number of 3rd party devices}  % arguments 3 to 6 can be left empty
+
+
+\cventry{}{Contract, USB interface design}{Transmag}{Santa Rosa, CA}{August 2013 - December 2013}{Designed USB based BLDC motor controller's interface. Designed firmware, user interface, suggested proper USB schematics.}
+
+\cventry{}{Contract, remote position, pneumatic mechanism control module}{IPM RAS}{Moscow, Russia}{April 2012 - February 2015}{Created firmware, software and schematics for pneumatic robot control modules, developed scriptable SDK, programmed movement algorithms. }
+
+
+
+\vspace*{-4mm}
+\section{Education}
+\cventry{}{Master of Science in Applied Mathematics and Physics}{Moscow Institute of Physics and Technology}{Moscow, Russia}{February 2004}{}
+
+\cventry{}{Courses in robotics, control theory and stability}{Moscow Institute for Problems in Mechanics}{Moscow, Russia}{June 2004}{Laboratory of Robotics and mechatronics.}
+
+%\textbf{Most recent courses taken:} Circuits \& Electronics, Machine learning, SAAS, Autonomous navigation, Statistics with R, Node.JS, Angular.JS, Booststrap, JavaScript.
+
+
+
+
+\vspace*{-4mm}
+\section{Detailed technical proficiencies}
+\cvdoubleitem{Platforms}{Embedded systems, Linux OS, Windows OS, ChibiOs, FreeRTOS, familiarity with Buildroot, Raspbian, OpenWRT, Android }{Interfaces}{USB, Ethernet, TCP/IP, UDP, I2C, SPI, UART, SMBus, PWM, DAC, ADC, JTAG debugging}
+\cvdoubleitem{Programming}{C, C++, Java, microcontroller assembler, familiarity with C\#, .NET}{Scripting}{Lua, Ruby, Python, R, MATLAB, SQL, Shell scripting, Pawn}
+\cvdoubleitem{Devices}{Avr8, Cortex-M, NXP ARM7TDMI, AD Shark DSP, Altera FPGA/CPLD Verilog programming and testbench, familiarity with Microchip PIC}{Aplications}{Stepper, BLDC, DC motors control; piezoceramics, temperature, humidity control, data acquisition, signal processing, FIR/IIR filtering, Kalman filtering, automation}
+\cvdoubleitem{Frameworks}{Qt, Boost, OpenCV, VTK, CMake}{Electrical}{PCB design, electrical engineering and debugging, soldering skill, familiarity with power electronics}
+\cvdoubleitem{Software, tools}{Git, Subversion, TFS, Keil, MPLab, Eclipse, VisualDSP, VisualStudio}{}{KiCAD, Eagle, NGSpice, familiarity with Altium, OrCAD, LTSpice}
+
+
+\phantom{
+Programming engineer with 12+ years of professional experience in firmware and software solutions in areas related to RTOS and bare metal programming, hardware interfaces, USB, networking; worked closely on actuators control, signal acquisition and processing, user interface design, robotics; have experience in computer vision applications, machine learning; electrical engineering, PCB design; good background in math and physics; mature problem solving ability.
+}
+
+\end{document}

@@ -1,4 +1,4 @@
-update=9/12/2016 1:13:20 PM
+update=Tue 13 Sep 2016 11:25:47 PM MSK
 version=1
 last_client=kicad
 [pcbnew]
@@ -27,7 +27,7 @@ NetIExt=net
 version=1
 [eeschema]
 version=1
-LibDir=../bmx055-brd
+LibDir=../libs
 [eeschema/libraries]
 LibName1=power
 LibName2=device
@@ -58,4 +58,4 @@ LibName26=opto
 LibName27=atmel
 LibName28=contrib
 LibName29=valves
-LibName30=C:/projects/mapper.git/schemes/libs/bmx055
+LibName30=/home/z80/projects/mapper.git/schemes/libs/bmx055

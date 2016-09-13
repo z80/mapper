@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>/home/z80/projects/mapper.git/schemes/bmx055-brd/bmx055-brd.sch</source>
+    <date>Tue 13 Sep 2016 11:56:32 PM MSK</date>
+    <tool>Eeschema 4.1.0-alpha+201609090932+7138~55~ubuntu16.04.1-product</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>bmx055-brd.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="U1">
+      <value>BMX055</value>
+      <footprint>libs:bmx055-w</footprint>
+      <libsource lib="bmx055" part="BMX055"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57D714D8</tstamp>
+    </comp>
+    <comp ref="C1">
+      <value>100n</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="device" part="C"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57D7157B</tstamp>
+    </comp>
+    <comp ref="C2">
+      <value>100n</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="device" part="C"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57D7170F</tstamp>
+    </comp>
+    <comp ref="P3">
+      <value>scl</value>
+      <footprint>Measurement_Points:Measurement_Point_Round-SMD-Pad_Small</footprint>
+      <libsource lib="device" part="TST"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57D723A1</tstamp>
+    </comp>
+    <comp ref="P4">
+      <value>sda</value>
+      <footprint>Measurement_Points:Measurement_Point_Round-SMD-Pad_Small</footprint>
+      <libsource lib="device" part="TST"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57D7241E</tstamp>
+    </comp>
+    <comp ref="P1">
+      <value>vcc</value>
+      <footprint>Measurement_Points:Measurement_Point_Round-SMD-Pad_Small</footprint>
+      <libsource lib="device" part="TST"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57D7262E</tstamp>
+    </comp>
+    <comp ref="P2">
+      <value>gnd</value>
+      <footprint>Measurement_Points:Measurement_Point_Round-SMD-Pad_Small</footprint>
+      <libsource lib="device" part="TST"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>57D72696</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="bmx055" part="BMX055">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">BMX055</field>
+      </fields>
+      <pins>
+        <pin num="1" name="INT2*" type="output"/>
+        <pin num="2" name="DRDYM*" type="output"/>
+        <pin num="3" name="VDD" type="power_in"/>
+        <pin num="4" name="GNDA" type="passive"/>
+        <pin num="5" name="CSB2" type="input"/>
+        <pin num="6" name="GNDIO" type="passive"/>
+        <pin num="7" name="PS" type="input"/>
+        <pin num="8" name="NC" type="NotConnected"/>
+        <pin num="9" name="SCx" type="input"/>
+        <pin num="10" name="INT5*" type="output"/>
+        <pin num="11" name="SDx" type="BiDi"/>
+        <pin num="12" name="SDO2" type="output"/>
+        <pin num="13" name="VDDIO" type="power_in"/>
+        <pin num="14" name="INT3*" type="BiDi"/>
+        <pin num="15" name="INT4*" type="BiDi"/>
+        <pin num="16" name="CSB1" type="input"/>
+        <pin num="17" name="SDO1" type="output"/>
+        <pin num="18" name="nc" type="NotConnected"/>
+        <pin num="19" name="INT1*" type="output"/>
+        <pin num="20" name="CSB3" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="C">
+      <description>Unpolarized capacitor</description>
+      <footprints>
+        <fp>C?</fp>
+        <fp>C_????_*</fp>
+        <fp>C_????</fp>
+        <fp>SMD*_c</fp>
+        <fp>Capacitor*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="device" part="TST">
+      <fields>
+        <field name="Reference">P</field>
+        <field name="Value">TST</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="device">
+      <uri>/usr/share/kicad/library/device.lib</uri>
+    </library>
+    <library logical="bmx055">
+      <uri>/home/z80/projects/mapper.git/schemes/libs/bmx055.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="Net-(U1-Pad14)">
+      <node ref="U1" pin="14"/>
+    </net>
+    <net code="2" name="VDD">
+      <node ref="P1" pin="1"/>
+      <node ref="U1" pin="3"/>
+      <node ref="C1" pin="1"/>
+      <node ref="U1" pin="13"/>
+      <node ref="U1" pin="7"/>
+      <node ref="C2" pin="1"/>
+    </net>
+    <net code="3" name="/sda">
+      <node ref="P4" pin="1"/>
+      <node ref="U1" pin="11"/>
+    </net>
+    <net code="4" name="/scl">
+      <node ref="P3" pin="1"/>
+      <node ref="U1" pin="9"/>
+    </net>
+    <net code="5" name="Net-(U1-Pad2)">
+      <node ref="U1" pin="2"/>
+    </net>
+    <net code="6" name="Net-(U1-Pad15)">
+      <node ref="U1" pin="15"/>
+    </net>
+    <net code="7" name="Net-(U1-Pad10)">
+      <node ref="U1" pin="10"/>
+    </net>
+    <net code="8" name="Net-(U1-Pad1)">
+      <node ref="U1" pin="1"/>
+    </net>
+    <net code="9" name="Net-(U1-Pad19)">
+      <node ref="U1" pin="19"/>
+    </net>
+    <net code="10" name="Net-(U1-Pad5)">
+      <node ref="U1" pin="5"/>
+    </net>
+    <net code="11" name="Net-(U1-Pad16)">
+      <node ref="U1" pin="16"/>
+    </net>
+    <net code="12" name="GND">
+      <node ref="U1" pin="6"/>
+      <node ref="U1" pin="12"/>
+      <node ref="U1" pin="4"/>
+      <node ref="C2" pin="2"/>
+      <node ref="P2" pin="1"/>
+      <node ref="C1" pin="2"/>
+      <node ref="U1" pin="17"/>
+      <node ref="U1" pin="20"/>
+    </net>
+    <net code="13" name="Net-(U1-Pad18)">
+      <node ref="U1" pin="18"/>
+    </net>
+    <net code="14" name="Net-(U1-Pad8)">
+      <node ref="U1" pin="8"/>
+    </net>
+  </nets>
+</export>

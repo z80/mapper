@@ -1,5 +1,6 @@
 
 #include "ukf.h"
+#include "matrix2.hpp"
 
 template <typename Float, int Nst, int Nsen >
 Ukf<Float, Nst, Nsen>::Ukf()
@@ -130,6 +131,24 @@ void Ukf<Float, Nst, Nsen>::correct( Float * z, FSens    & sens )
             {
                 Pxz[i][j] += W * ( y[k][i] - Ym[i] ) * ( z[k][j] - Zm[j] );
             }
+        }
+    }
+
+    // Calculate inversion invPzz.
+    Math::Matrix<Nsen, Float> A;
+    for ( auto i=0; i<Nsen; i++ )
+    {
+        for ( auto j=0; j<Nsen; j++ )
+        {
+            A[i][j] = Pz[i][j];
+        }
+    }
+    Math::Matrix<Nsen, Float> invA = A.inv();
+    for ( auto i=0; i<Nsen; i++ )
+    {
+        for ( auto j=0; j<Nsen; j++ )
+        {
+            invPz[i][j] = invA[i][j];
         }
     }
 }

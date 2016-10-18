@@ -43,6 +43,8 @@ int main()
     for ( auto i=0; i<100; i++ )
     {
         z[2] = static_cast<double>( ((rand() % 128) - 64 ) ) / 64.0;
+        z[1] = x[1];
+        z[0] = -4.0;
         ukf.predict( x, x, std::bind( &pr, std::placeholders::_1, std::placeholders::_2 ) );
         ukf.correct( z, x, sen );
         ukf.stateNoiseCov( P );

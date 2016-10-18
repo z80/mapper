@@ -23,8 +23,7 @@ void sen( double * x, double * z );
 
 int main()
 {
-    Ukf<double, 3, 1 > ukf;
-    ukf.init();
+    Ukf<double, 3, 3 > ukf;
     ukf.Rx[0][0] = 2.0; // cm;
     ukf.Rx[1][1] = 2.0; // cm;
     ukf.Rz[0][0] = 2.0; // cm;
@@ -34,15 +33,19 @@ int main()
     x[0] = 0.0;
     x[1] = 0.0;
     x[2] = 0.0;
-    double z[1];
+    double z[3];
     z[0] = 0.0;
+    z[1] = 0.0;
+    z[2] = 0.0;
     srand( 0 );
+    double P[3][3];
 
     for ( auto i=0; i<100; i++ )
     {
-        z[0] = static_cast<double>( ((rand() % 128) - 64 ) ) / 64.0;
+        z[2] = static_cast<double>( ((rand() % 128) - 64 ) ) / 64.0;
         ukf.predict( x, x, std::bind( &pr, std::placeholders::_1, std::placeholders::_2 ) );
         ukf.correct( z, x, sen );
+        ukf.stateNoiseCov( P );
     }
 
     return 0;
@@ -59,7 +62,9 @@ void pr( double * x, double * xn )
 
 void sen( double * x, double * z )
 {
-    z[0] = x[2];
+    z[0] = x[0];
+    z[1] = x[1];
+    z[2] = x[2];
 }
 
 

@@ -20,20 +20,25 @@ public:
     Ukf();
     ~Ukf();
 
-    void init();
     void predict( Float * x, Float * xNext, FPredict pr );
     void correct( Float * z, Float * xNext, FSens sens );
-    void cholesky();
+    void stateNoiseCov( Float (& P)[Nst][Nst] );
+
+    // Yes, these are public parameters to be able to modify them by just 
+    // accessing appropriate fields within class instance.
 
     // Sigma point parameters.
     Float alpha; // Scaling parameters. 1<=alpha<=1+1e-4.
     Float beta;  // For Gaussian distribution beta = 2 is optimal.
     Float k;     // k is usually set to either 0 or 3-L.
-    // Lambda = alpha^2 * (L + k) - L.
-
+                 // Lambda = alpha^2 * (L + k) - L.
     // Process description "Rx", "Rz" process noise and sensor noise covariance matrices.
     Float Rx[Nst][Nst];
     Float Rz[Nsen][Nsen];
+
+private:
+    void init();
+    void cholesky();
 
     Float x[Nst];     // State at previous step.
     Float P[Nst][Nst]; // State noise covariance.
@@ -60,6 +65,7 @@ public:
 template <typename Float, int Nst, int Nsen>
 Ukf<Float, Nst, Nsen>::Ukf()
 {
+    init();
 }
 
 template <typename Float, int Nst, int Nsen>
@@ -303,6 +309,17 @@ void Ukf<Float, Nst, Nsen>::correct( Float * z, Float * xNext, FSens    sens )
         for ( auto i=0; i<Nst; i++ )
             xNext[i] = this->x[i];
     }
+}
+
+template <typename Float, int Nst, int Nsen >
+void Ukf<Float, Nst, Nsen>::stateNoiseCov( Float (& P)[Nst][Nst] )
+{
+    for ( auto i=0; i<Nst; i++ )
+    {
+        for ( auto j=0; j<Nst; j++ )
+            P[i][j] = this->P[i][j];
+    }
+    
 }
 
 template <typename Float, int Nst, int Nsen >

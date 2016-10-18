@@ -21,8 +21,8 @@ public:
     ~Ukf();
 
     void init();
-    void predict( Float * x, FPredict pr );
-    void correct( Float * z, FSens    sens );
+    void predict( Float * x, Float * xNext, FPredict pr );
+    void correct( Float * z, Float * xNext, FSens sens );
     void cholesky();
 
     // Sigma point parameters.
@@ -95,7 +95,7 @@ void Ukf<Float, Nst, Nsen>::init()
 }
 
 template <typename Float, int Nst, int Nsen >
-void Ukf<Float, Nst, Nsen>::predict( Float * x, FPredict pr )
+void Ukf<Float, Nst, Nsen>::predict( Float * x, Float * xNext, FPredict pr )
 {
     // Obtain Cholesky square root of covariance.
     cholesky();
@@ -103,8 +103,8 @@ void Ukf<Float, Nst, Nsen>::predict( Float * x, FPredict pr )
     // Initialize weights.
     const Float lambda = alpha*alpha*(static_cast<Float>(Nst) + k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
-    const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
-    const Float Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
+    const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) ) + (1.0 - alpha*alpha + beta);
+    const Float Wc0 = Wm0;// + (1.0 - alpha*alpha + beta);
     const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
     const Float Sm = 1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
     const Float Sc = 1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
@@ -132,11 +132,13 @@ void Ukf<Float, Nst, Nsen>::predict( Float * x, FPredict pr )
     // Calculate mean "Ym".
     for ( auto i=0; i<Nst; i++ )
     {
-        const Float W = Sm * ( (i==0) ? Wm0 : Wmci );
         Ym[i] = 0.0;
         const int N = 2*Nst+1;
         for ( auto j=0; j<N; j++ )
+        {
+            const Float W = Sm * ( (j==0) ? Wm0 : Wmci );
             Ym[i] += W*y[j][i];
+        }
     }
     // Initialize covatiance Py.
     for ( auto i=0; i<Nst; i++ )
@@ -157,10 +159,16 @@ void Ukf<Float, Nst, Nsen>::predict( Float * x, FPredict pr )
                 Py[i][j] += W * ( y[k][i] - Ym[i] ) * ( y[k][j] - Ym[j] );
         }
     }
+
+    if ( xNext )
+    {
+        for ( auto i=0; i<Nst; i++ )
+            xNext[i] = Ym[i];
+    }
 }
 
 template <typename Float, int Nst, int Nsen >
-void Ukf<Float, Nst, Nsen>::correct( Float * z, FSens    sens )
+void Ukf<Float, Nst, Nsen>::correct( Float * z, Float * xNext, FSens    sens )
 {
     // Predict sensor readings.
     const int N = 2*Nst+1;
@@ -178,10 +186,12 @@ void Ukf<Float, Nst, Nsen>::correct( Float * z, FSens    sens )
     // Calculate mean "Zm".
     for ( auto i=0; i<Nsen; i++ )
     {
-        Float W = Sm * ( (i==0) ? Wm0 : Wmci );
         Zm[i] = 0.0;
         for ( auto j=0; j<N; j++ )
+        {
+            Float W = Sm * ( (j==0) ? Wm0 : Wmci );
             Zm[i] += W*zy[j][i];
+        }
     }
 
     // Calculate sensor noise covariance.
@@ -286,6 +296,12 @@ void Ukf<Float, Nst, Nsen>::correct( Float * z, FSens    sens )
                 P[i][j] -= K[i][k] * PzTrK[k][j];
             }
         }
+    }
+
+    if ( xNext )
+    {
+        for ( auto i=0; i<Nst; i++ )
+            xNext[i] = this->x[i];
     }
 }
 

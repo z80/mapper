@@ -106,6 +106,8 @@ void Ukf<Float, Nst, Nsen>::predict( Float * x, FPredict pr )
     const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
     const Float Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
     const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
+    const Float Sm = 1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sc = 1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
 
     // Generate sigma points.
     // 0-th point.
@@ -130,7 +132,7 @@ void Ukf<Float, Nst, Nsen>::predict( Float * x, FPredict pr )
     // Calculate mean "Ym".
     for ( auto i=0; i<Nst; i++ )
     {
-        const Float W = (i==0) ? Wm0 : Wmci;
+        const Float W = Sm * ( (i==0) ? Wm0 : Wmci );
         Ym[i] = 0.0;
         const int N = 2*Nst+1;
         for ( auto j=0; j<N; j++ )
@@ -148,7 +150,7 @@ void Ukf<Float, Nst, Nsen>::predict( Float * x, FPredict pr )
     const int N = 2*Nst+1;
     for ( auto k=0; k<N; k++ )
     {
-        Float W = (k==0) ? Wc0 : Wmci;
+        Float W = Sc * ( (k==0) ? Wc0 : Wmci );
         for ( auto i=0; i<Nst; i++ )
         {
             for ( auto j=0; j<Nst; j++ )
@@ -170,11 +172,13 @@ void Ukf<Float, Nst, Nsen>::correct( Float * z, FSens    sens )
     const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
     const Float Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
     const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
+    const Float Sm = 1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sc = 1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
 
     // Calculate mean "Zm".
     for ( auto i=0; i<Nsen; i++ )
     {
-        Float W = (i==0) ? Wm0 : Wmci;
+        Float W = Sm * ( (i==0) ? Wm0 : Wmci );
         Zm[i] = 0.0;
         for ( auto j=0; j<N; j++ )
             Zm[i] += W*zy[j][i];
@@ -192,7 +196,7 @@ void Ukf<Float, Nst, Nsen>::correct( Float * z, FSens    sens )
     // Calculate covariance "Pz" using points "z[i]" and mean value "Zm".
     for ( auto k=0; k<N; k++ )
     {
-        Float W = (k==0) ? Wc0 : Wmci;
+        Float W = Sc * ( (k==0) ? Wc0 : Wmci );
         for ( auto i=0; i<Nsen; i++ )
         {
             for ( auto j=0; j<Nsen; j++ )
@@ -211,7 +215,7 @@ void Ukf<Float, Nst, Nsen>::correct( Float * z, FSens    sens )
     }
     for ( auto k=0; k<N; k++ )
     {
-        Float W = (k==0) ? Wc0 : Wmci;
+        Float W = Sc * ( (k==0) ? Wc0 : Wmci );
         for ( auto i=0; i<Nst; i++ )
         {
             for ( auto j=0; j<Nsen; j++ )

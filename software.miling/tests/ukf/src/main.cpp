@@ -17,6 +17,7 @@
 
 
 #include "ukf.h"
+#include "ukfm.h"
 
 void pr( double * x, double * xn );
 void sen( double * x, double * z );

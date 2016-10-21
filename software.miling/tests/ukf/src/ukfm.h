@@ -1,12 +1,14 @@
 
-#ifndef __UKF_H_
-#define __UKF_H_
+#ifndef __UKFM_H_
+#define __UKFM_H_
 
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <functional>
 #include "matrix2.hpp"
+
+template <typename Float, int Nst, int Nsen> class UkfC;
 
 template <typename Float, int Nst>
 class UkfP
@@ -32,6 +34,7 @@ private:
     void init();
     void cholesky();
 
+protected:
     Float x[Nst];     // State at previous step.
     Float P[Nst][Nst]; // State noise covariance.
     Float L[Nst][Nst]; // Square root of covariance, e.i. P = L * tr(L);
@@ -39,6 +42,8 @@ private:
     Float y[2*Nst + 1][Nst]; // Sigma points moved through predition function.
     Float Ym[Nst];           // Mean value.
     Float Py[Nst][Nst];      // Covariance matrix calculated from sigma points.
+
+    template <typename Float, int Nst, int Nsen> friend class UkfC;
 };
 
 template <typename Float, int Nst>
@@ -68,13 +73,6 @@ void UkfP<Float, Nst>::init()
         {
             P[i][j] = (i==j) ? 1.0 : 0.0;
             Rx[i][j] = (i==j) ? 1.0 : 0.0;
-        }
-    }
-    for ( auto i=0; i<Nsen; i++ )
-    {
-        for ( auto j=0; j<Nsen; j++ )
-        {
-            Rz[i][j] = (i==j) ? 1.0 : 0.0;
         }
     }
 }
@@ -152,6 +150,50 @@ void UkfP<Float, Nst>::predict( Float * x, Float * xNext, FPredict pr )
     }
 }
 
+template <typename Float, int Nst>
+void UkfP<Float, Nst>::stateNoiseCov( Float (& P)[Nst][Nst] )
+{
+    for ( auto i=0; i<Nst; i++ )
+    {
+        for ( auto j=0; j<Nst; j++ )
+            P[i][j] = this->P[i][j];
+    }
+    
+}
+
+
+template <typename Float, int Nst>
+void UkfP<Float, Nst>::cholesky()
+{
+    // Init elements with zeros.
+    for ( auto i=0; i<Nst; i++ )
+    {
+        for ( auto j=0; j<Nst; j++ )
+        {
+            L[i][j] = 0.0;
+        }
+    }
+
+    // Elements to the left of diagonal.
+    for ( auto i=0; i<Nst; i++ )
+    {
+        Float acc;
+        for ( auto j=0; j<i; j++ )
+        {
+            acc = 0.0;
+            for ( auto k=0; k<j; k++ )
+                acc += L[i][k] * L[j][k];
+            L[i][j] = ( L[i][j] - acc ) / L[j][j];
+        }
+
+        // Diagonal element.
+        acc = P[i][i];
+        for ( auto k=0; k<i; k++ )
+            acc -= L[i][k] * L[i][k];
+        L[i][i] = sqrt( acc );
+    }
+}
+
 
 
 
@@ -162,10 +204,10 @@ class UkfC
 public:
     typedef std::function<void (Float * x, Float * z)>      FSens;
 
-    Ukfm();
-    ~Ukfm();
+    UkfC();
+    ~UkfC();
 
-    void correct( UkfP<Float,Nst> * pr, Float * z, Float * xNext, FSens sens );
+    void correct( UkfP<Float,Nst> & pr, Float * z, Float * xNext, FSens sens );
 
     // Yes, these are public parameters to be able to modify them by just 
     // accessing appropriate fields within class instance.
@@ -187,28 +229,28 @@ private:
 };
 
 template <typename Float, int Nst, int Nsen>
-Ukfm<Float, Nst, Nsen>::Ukfm()
+UkfC<Float, Nst, Nsen>::UkfC()
 {
     init();
 }
 
 template <typename Float, int Nst, int Nsen>
-Ukfm<Float, Nst, Nsen>::~Ukfm()
+UkfC<Float, Nst, Nsen>::~UkfC()
 {
 }
 
 template <typename Float, int Nst, int Nsen>
-void Ukfm<Float, Nst, Nsen>::correct( UkfP<Float,Nst> * pr, Float * z, Float * xNext, FSens sens )
+void UkfC<Float, Nst, Nsen>::correct( UkfP<Float,Nst> & pr, Float * z, Float * xNext, FSens sens )
 {
     // Predict sensor readings.
     const int N = 2*Nst+1;
     for ( auto i=0; i<N; i++ )
-        sens( pr->y[i], zy[i] );
+        sens( pr.y[i], zy[i] );
 
-    const Float lambda = pr->alpha*pr->alpha*(static_cast<Float>(Nst) + k) - static_cast<Float>(Nst);
+    const Float lambda = pr.alpha*pr.alpha*(static_cast<Float>(Nst) + pr.k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
     const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
-    const Float Wc0 = Wm0 + (1.0 - pr->alpha*pr->alpha + pr->beta);
+    const Float Wc0 = Wm0 + (1.0 - pr.alpha*pr.alpha + pr.beta);
     const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
     const Float Sm = 1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
     const Float Sc = 1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
@@ -260,7 +302,7 @@ void Ukfm<Float, Nst, Nsen>::correct( UkfP<Float,Nst> * pr, Float * z, Float * x
         {
             for ( auto j=0; j<Nsen; j++ )
             {
-                Pyz[i][j] += W * ( pr->y[k][i] - Ym[i] ) * ( zy[k][j] - Zm[j] );
+                Pyz[i][j] += W * ( pr.y[k][i] - pr.Ym[i] ) * ( zy[k][j] - Zm[j] );
             }
         }
     }
@@ -300,9 +342,9 @@ void Ukfm<Float, Nst, Nsen>::correct( UkfP<Float,Nst> * pr, Float * z, Float * x
         zzy[i] = z[i] - Zm[i];
     for ( auto i=0; i<Nst; i++ )
     {
-        pr->x[i] = pr->Ym[i];
+        pr.x[i] = pr.Ym[i];
         for ( auto j=0; j<Nsen; j++ )
-            pr->x[i] += K[i][j] * zzy[j];
+            pr.x[i] += K[i][j] * zzy[j];
     }
 
     // P = Py - K * Pz * tr(K);
@@ -320,23 +362,29 @@ void Ukfm<Float, Nst, Nsen>::correct( UkfP<Float,Nst> * pr, Float * z, Float * x
     {
         for ( auto j=0; j<Nst; j++ )
         {
-            P[i][j] = Py[i][j];
+            pr.P[i][j] = pr.Py[i][j];
             for ( auto k=0; k<Nsen; k++ )
             {
-                P[i][j] -= K[i][k] * PzTrK[k][j];
+                pr.P[i][j] -= K[i][k] * PzTrK[k][j];
             }
         }
     }
-
+    for ( auto i=0; i<Nst; i++ )
+    {
+        for ( auto j=0; j<Nst; j++ )
+        {
+            pr.P[i][j] = (pr.P[i][j] >= 0.0) ? pr.P[i][j] : -pr.P[i][j];
+        }
+    }
     if ( xNext )
     {
         for ( auto i=0; i<Nst; i++ )
-            xNext[i] = pr->x[i];
+            xNext[i] = pr.x[i];
     }
 }
 
 template <typename Float, int Nst, int Nsen>
-void Ukfm<Float, Nst, Nsen>::init()
+void UkfC<Float, Nst, Nsen>::init()
 {
     for ( auto i=0; i<Nsen; i++ )
     {

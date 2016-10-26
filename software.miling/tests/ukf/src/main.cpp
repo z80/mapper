@@ -50,10 +50,14 @@ int main()
         for ( auto j=0; j<10; j++ )
         {
             z01[0] = static_cast<double>( ((rand() % 128) - 64 ) ) / 64.0;
+            z02[0] = static_cast<double>( ((rand() % 128) - 64 ) ) / 64.0; // + static_cast<double>( i );
             ukfp.predict( x, x, std::bind( &pr, std::placeholders::_1, std::placeholders::_2 ) );
             ukfc01.correct( ukfp, z01, x, sen01 );
+            //ukfp.predict( x, x, std::bind( &pr, std::placeholders::_1, std::placeholders::_2 ) );
+            //ukfc02.correct( ukfp, z02, x, sen02 );
             ukfp.stateNoiseCov( P );
         }
+        ukfp.predict( x, x, std::bind( &pr, std::placeholders::_1, std::placeholders::_2 ) );
         z02[0] = static_cast<double>( ((rand() % 128) - 64 ) ) / 64.0; // + static_cast<double>( i );
         ukfc02.correct( ukfp, z02, x, sen02 );
         ukfp.stateNoiseCov( P );

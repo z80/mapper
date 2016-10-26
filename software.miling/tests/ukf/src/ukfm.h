@@ -43,7 +43,7 @@ protected:
     Float Ym[Nst];           // Mean value.
     Float Py[Nst][Nst];      // Covariance matrix calculated from sigma points.
 
-    template <typename Float, int Nst, int Nsen> friend class UkfC;
+    template <typename TFloat, int PNst, int PNsen> friend class UkfC;
 };
 
 template <typename Float, int Nst>
@@ -87,7 +87,7 @@ void UkfP<Float, Nst>::predict( Float * x, Float * xNext, FPredict pr )
     const Float lambda = alpha*alpha*(static_cast<Float>(Nst) + k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
     const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) ) + (1.0 - alpha*alpha + beta);
-    const Float Wc0 = Wm0;// + (1.0 - alpha*alpha + beta);
+    const Float Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
     const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
     const Float Sm = 1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
     const Float Sc = 1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
@@ -142,6 +142,17 @@ void UkfP<Float, Nst>::predict( Float * x, Float * xNext, FPredict pr )
                 Py[i][j] += W * ( y[k][i] - Ym[i] ) * ( y[k][j] - Ym[j] );
         }
     }
+
+    for ( auto i=0; i<Nst; i++ )
+    {
+        for ( auto j=0; j<Nst; j++ )
+        {
+            // Calculational imperfectness???
+            // Yes, it happens somehow.
+            Py[i][j] = (Py[i][j] >= 0.0) ? Py[i][j] : -Py[i][j];
+        }
+    }
+
 
     if ( xNext )
     {
@@ -358,24 +369,37 @@ void UkfC<Float, Nst, Nsen>::correct( UkfP<Float,Nst> & pr, Float * z, Float * x
                 PzTrK[i][j] += Pz[i][k] * Pyz[j][k]; // Second index because it is transposed.
         }
     }
-    for ( auto i=0; i<Nst; i++ )
-    {
-        for ( auto j=0; j<Nst; j++ )
+    Float a = 1.0;
+    do {
+        for ( auto i=0; i<Nst; i++ )
         {
-            pr.P[i][j] = pr.Py[i][j];
-            for ( auto k=0; k<Nsen; k++ )
+            for ( auto j=0; j<Nst; j++ )
             {
-                pr.P[i][j] -= K[i][k] * PzTrK[k][j];
+                pr.P[i][j] = pr.Py[i][j];
+                for ( auto k=0; k<Nsen; k++ )
+                    pr.P[i][j] -= a * K[i][k] * PzTrK[k][j];
             }
         }
-    }
-    for ( auto i=0; i<Nst; i++ )
-    {
-        for ( auto j=0; j<Nst; j++ )
+        // Checke for negative elements.
+        bool cont = false;
+        for ( auto i=0; i<Nst; i++ )
         {
-            pr.P[i][j] = (pr.P[i][j] >= 0.0) ? pr.P[i][j] : -pr.P[i][j];
+            for ( auto j=0; j<Nst; j++ )
+            {
+                //pr.P[i][j] = (pr.P[i][j] >= 0.0) ? pr.P[i][j] : -pr.P[i][j];
+                if ( pr.P[i][j] < 0.0 )
+                {
+                    a *= 0.5;
+                    cont = true;
+                    break;
+                }
+            }
+            if ( cont )
+                break;
         }
-    }
+        if ( !cont )
+            break;
+    } while ( true );
     if ( xNext )
     {
         for ( auto i=0; i<Nst; i++ )

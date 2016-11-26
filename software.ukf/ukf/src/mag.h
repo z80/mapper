@@ -2,12 +2,24 @@
 #ifndef __MAG_H_
 #define __MAG_H_
 
+#include "mag.h"
 #include "matrix2.hpp"
 #include "vector2.hpp"
+#include "ukfm.h"
 
-template<int DIM, typename FLOAT> const Math::Vector<DIM, FLOAT> & m2a( const Math::Matrix<DIM, FLOAT> & m )
+#include <math.h>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
+#include <iostream>
+#include <limits>
+#include <functional>
+
+
+
+template<typename FLOAT> const Math::Vector<4, FLOAT> m2q( const Math::Matrix<3, FLOAT> & m )
 {
-    Math::Vector<DIM, FLOAT> q;
+    Math::Vector<4, FLOAT> q;
     FLOAT trace = m[0][0] + m[1][1] + m[2][2];
     if( trace > 0.0 )
     {
@@ -47,9 +59,9 @@ template<int DIM, typename FLOAT> const Math::Vector<DIM, FLOAT> & m2a( const Ma
     return q;
 }
 
-template<int DIM, typename FLOAT> const Math::Matrix<DIM, FLOAT> & q2m( const Math::Vector<DIM, FLOAT> & q )
+template<typename FLOAT> const Math::Matrix<3, FLOAT> q2m( const Math::Vector<4, FLOAT> & q )
 {
-    Math::Matrix<DIM, FLOAT> m;
+    Math::Matrix<3, FLOAT> m;
 
     FLOAT qw = q[0];
     FLOAT qx = q[1];
@@ -69,6 +81,53 @@ template<int DIM, typename FLOAT> const Math::Matrix<DIM, FLOAT> & q2m( const Ma
     return m;
 }
 
+template<typename FLOAT> const Math::Vector<4, FLOAT> a2q( const Math::Vector<3, FLOAT> & a )
+{
+    FLOAT ang = sqrt( a[0]*a[0] + a[1]*a[1] + a[2]*a[2] );
+    Math::Vector<4, FLOAT> q;
+    if ( ang <= 0.0001 )
+    {
+        q[0] = 1.0;
+        q[1] = q[2] = q[3] = 0.0;
+    }
+    else
+    {
+        FLOAT n[3];
+        n[0] = a[0]/ang;
+        n[1] = a[1]/ang;
+        n[2] = a[2]/ang;
+        FLOAT c = cos( ang );
+        FLOAT s = sin( ang );
+        q[0] = c;
+        q[1] = s*n[0];
+        q[2] = s*n[1];
+        q[3] = s*n[2];
+    }
+    return q;
+}
+
+template<typename FLOAT> const Math::Vector<3, FLOAT> q2a( const Math::Vector<4, FLOAT> & q )
+{
+    FLOAT c = q[0];
+    FLOAT s = sqrt( q[1]*q[1] + q[2]*q[2] + q[3]*q[3] );
+    FLOAT ang = atan2( s, c );
+    Math::Vector<3, FLOAT> a;
+    if ( abs( ang ) < 0.0001 )
+    {
+        a[0] = 0.0;
+        a[1] = 0.0;
+        a[2] = 0.0;
+    }
+    else
+    {
+        a[0] = q[1]/s*ang;
+        a[1] = q[2]/s*ang;
+        a[2] = q[3]/s*ang;
+    }
+    return a;
+}
+
+
 
 
 //B = mu/(4pi)( 3r(m,r)/r^5 - m/r^3 )
@@ -81,9 +140,16 @@ public:
     ~Mag();
 
     // Magnet state.
+    void   initSystem();
     void   magnetTimeStep();
     double magnetAng; // Magnet rotation angle.
     void realB( double * x, double * B );
+
+    // Generate X.
+    void generateSensorReadings();
+
+    // Predict.
+    void predict();
 
     // State variables.
     double senX[3];
@@ -93,22 +159,31 @@ public:
     double senAng[3];
     double senW[3];
 
-    double Be[3];
+    double senB[3];
 
     // Sensor readings.
     double sa[3];
     double sw[3];
     double sB[3];
 
-    // Predicted sensor readings.
-    double pa[3];
-    double pw[3];
-    double pB[3];
+    // Predicted sensor readings and belief.
+    double pB[3]; // Field value.
+
+    // Beief.
+    double x[3];
+    double v[3];
+    double a[3];
+
+    double ang[3];
+    double angW[3];
+
+    UkfP<double, 15>    ukfP;
+    UkfC<double, 15, 9> ukfC;
+
 
     // Prediction step.
-    void predictionX();
-    void predictionG();
-    void predictionB();
+    void predict( double * x, double * y );
+    void estimate( double * x, double * z );
 
     // System params.
     //static int stepsPerRev; // Steps per revolution.
@@ -116,6 +191,10 @@ public:
     static double r0;       // To exclude infinite field value.
     static double magnetW;  // Angular velocity.
     static double sensorN;  // Measure frequency.
+    // Sensor precision.
+    static double sigmaA;
+    static double sigmaW;
+    static double sigmaB;
 };
 
 

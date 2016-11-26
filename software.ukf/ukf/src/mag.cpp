@@ -1,12 +1,59 @@
 
 #include "mag.h"
-#include <math.h>
 
 double Mag::m = 1.0; // Magnetic momentum.
 double Mag::r0 = 0.01; // To exclude infinite field value.
 double Mag::magnetW = 0.5 * 2.0*3.1415926535; // Angular velocity.
 double Mag::sensorN = 1.0; // Measure frequency.
 
+double Mag::sigmaA = 0.05;
+double Mag::sigmaW = 0.1;
+double Mag::sigmaB = 0.1;
+
+void Mag::initSystem()
+{
+    // Real position.
+    senX[0] = 1.0;
+    senX[1] = 0.0;
+    senX[2] = 0.0;
+
+    senV[0] = 0.0;
+    senV[1] = 0.0;
+    senV[2] = 0.0;
+
+    senA[0] = 0.0;
+    senA[1] = 0.0;
+    senA[2] = 0.0;
+
+    senAng[0] = 0.0;
+    senAng[1] = 0.0;
+    senAng[2] = 0.0;
+
+    senW[0] = 0.0;
+    senW[1] = 0.0;
+    senW[2] = 0.0;
+
+    // Belief.
+    x[0] = 1.0;
+    x[1] = 0.0;
+    x[2] = 0.0;
+
+    v[0] = 0.0;
+    v[1] = 0.0;
+    v[2] = 0.0;
+
+    a[0] = 0.0;
+    a[1] = 0.0;
+    a[2] = 0.0;
+
+    ang[0] = 0.0;
+    ang[1] = 0.0;
+    ang[2] = 0.0;
+
+    angW[0] = 0.0;
+    angW[1] = 0.0;
+    angW[2] = 0.0;
+}
 
 void Mag::magnetTimeStep()
 {
@@ -25,6 +72,100 @@ void Mag::realB( double * x, double * B )
     B[1] = (3.0*x[1]*mr - m[1])/(r*r*r);
     B[2] = (3.0*x[2]*mr - m[2])/(r*r*r);
 }
+
+void Mag::generateSensorReadings()
+{
+    // It is also necessary to convert readings to local sensor RF.
+    Math::Matrix<3, double> A;
+    Math::Vector<4, double> q;
+    q = a2q<double>( senAng );
+    A = q2m<double>( q );
+
+    for ( int i=0; i<3; i++ )
+    {
+        sa[i] = 0.0;
+        for ( int j=0; j<3; j++ )
+            sa[i] += senA[j] * A[j][i]; // Transposed A to get value in local RF.
+    }
+    sa[0] = sa[0] + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sa[1] = sa[1] + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sa[2] = sa[2] + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+
+    for ( int i=0; i<3; i++ )
+    {
+        sw[i] = 0.0;
+        for ( int j=0; j<3; j++ )
+            sw[i] += senW[j] * A[j][i]; // Transposed A to get value in local RF.
+    }
+    sw[0] = sw[0] + sigmaW * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sw[1] = sw[1] + sigmaW * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sw[2] = sw[2] + sigmaW * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+
+    realB( senX, senB );
+
+    for ( int i=0; i<3; i++ )
+    {
+        sB[i] = 0.0;
+        for ( int j=0; j<3; j++ )
+            sB[i] += senB[j] * A[j][i]; // Transposed A to get value in local RF.
+    }
+    sB[0] = sB[0] + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sB[1] = sB[1] + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sB[2] = sB[2] + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+}
+
+void Mag::predict()
+{
+    double dt = 1.0/sensorN;
+    for ( int i=0; i<3; i++ )
+    {
+        angW[i] = sw[i];
+
+        a[i] = sa[i];
+        x[i] += v[i] * dt;
+        v[i] += a[i] * dt;
+    }
+
+}
+
+void Mag::predict( double * x, double * y )
+{
+    // All numbers are in global RF.
+    double dt = 1.0/sensorN;
+    for ( int i=0; i<3; i++ )
+    {
+        y[i]   = x[i] + x[i+3]*dt;
+        y[i+3] = x[i+3] + x[i+6]*dt;
+        y[i+6] = x[i+6];
+        //y[i+9] = x[i+9] + x[i+12]*dt; // Not sure if I can add angles (may be for small angles???).
+    }
+    Math::Vector<3, double> a;
+    a[0] = x[9];
+    a[1] = x[10];
+    a[2] = x[11];
+    Math::Vector<4, double> q = a2q<double>( a );
+    Math::Matrix<3, double> A = q2m<double>( q );
+    a[0] = x[12] * dt;
+    a[1] = x[13] * dt;
+    a[2] = x[14] * dt;
+    q = a2q( a );
+    Math::Matrix<3, double> B = q2m<double>( q );
+    A = A * B;
+    q = m2q<double>( A );
+    a = q2a<double>( q );
+    for ( int i=0; i<3; i++ )
+    {
+        y[i+9]  = a[i];
+        y[i+12] = x[i+12];
+    }
+}
+
+void Mag::estimate( double * x, double * z )
+{
+    // Calculate B in external RF.
+    // Convert all needed readings into local sensor RF.
+}
+
 
 
 

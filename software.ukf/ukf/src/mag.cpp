@@ -81,15 +81,20 @@ void Mag::generateSensorReadings()
     q = a2q<double>( senAng );
     A = q2m<double>( q );
 
+
     for ( int i=0; i<3; i++ )
     {
         sa[i] = 0.0;
         for ( int j=0; j<3; j++ )
-            sa[i] += senA[j] * A[j][i]; // Transposed A to get value in local RF.
+        {
+            double a = (j==2) ? (senA[j] + 9.81) : senA[j]; // For Z acceleration first add gravity.
+            sa[i] += a * A[j][i]; // Transposed A to get value in local RF.
+        }
     }
     sa[0] = sa[0] + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
     sa[1] = sa[1] + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
     sa[2] = sa[2] + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    //
 
     for ( int i=0; i<3; i++ )
     {
@@ -162,8 +167,48 @@ void Mag::predict( double * x, double * y )
 
 void Mag::estimate( double * x, double * z )
 {
+    // xx, xy, xz, vx, vy, vz, ax, ay, az, angx, angy, angz, wx, wy, wz, bx, by, bz
     // Calculate B in external RF.
     // Convert all needed readings into local sensor RF.
+    double a[3];
+    double w[3];
+    double B[3];
+    for ( int i=0; i<3; i++ )
+    {
+        a[i] = x[i+6];
+        w[i] = x[i+12];
+        B[i] = x[i+15];
+    }
+    // Convert to local RF.
+    Math::Matrix<3, double> A = toWorldA( x );
+    // Concerning acceleration first add gravity to it.
+    a[0] += 9.81;
+    for ( int i=0; i<3; i++ )
+    {
+        z[i]   = 0.0;
+        z[i+3] = 0.0;
+        z[i+6] = 0.0;
+        for ( int j=0; j<3; j++ )
+        {
+            double aa = A[j][i];
+            z[i]   += aa * a[j]; // A is transposed, because of that indices are flipped.
+            z[i+3] += aa * w[i];
+            z[i+6] += aa * B[i];
+        }
+    }
+}
+
+Math::Matrix<3, double> Mag::toWorldA( double * x )
+{
+    Math::Vector<3, double> senAng;
+    senAng[0] = x[9];
+    senAng[1] = x[10];
+    senAng[2] = x[11];
+    Math::Vector<4, double> q;
+    q = a2q<double>( senAng );
+    Math::Matrix<3, double> aA;
+    aA = q2m<double>( q );
+    return aA;
 }
 
 

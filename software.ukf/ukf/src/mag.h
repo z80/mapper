@@ -177,13 +177,15 @@ public:
     double ang[3];
     double angW[3];
 
-    UkfP<double, 15>    ukfP;
-    UkfC<double, 15, 9> ukfC;
+    UkfP<double, 18>    ukfP;
+    UkfC<double, 18, 9> ukfC;
 
 
     // Prediction step.
     void predict( double * x, double * y );
     void estimate( double * x, double * z );
+    // Auxilary function to get world to local RF transformation.
+    Math::Matrix<3, double> toWorldA( double * x );
 
     // System params.
     //static int stepsPerRev; // Steps per revolution.

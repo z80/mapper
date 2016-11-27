@@ -23,7 +23,7 @@ public:
     void stateNoiseCov( Float (& P)[Nst][Nst] );
 
     // Sigma point parameters.
-    Float alpha; // Scaling parameters. 1<=alpha<=1+1e-4.
+    Float alpha; // Scaling parameters. 1e-3<=alpha<=1e-4.
     Float beta;  // For Gaussian distribution beta = 2 is optimal.
     Float k;     // k is usually set to either 0 or 3-L.
                  // Lambda = alpha^2 * (L + k) - L.
@@ -61,7 +61,7 @@ template <typename Float, int Nst>
 void UkfP<Float, Nst>::init()
 {
     alpha = 1.0; // Scaling parameters. 1<=alpha<=1+1e-4.
-    beta = 2.0;  // For Gaussian distribution beta = 2 is optimal.
+    beta  = 2.0;  // For Gaussian distribution beta = 2 is optimal.
     k = 0.0;     // k is usually set to either 0 or 3-L.
 
 
@@ -123,23 +123,19 @@ void UkfP<Float, Nst>::predict( Float * x, Float * xNext, FPredict pr )
             Ym[i] += W*y[j][i];
         }
     }
-    // Initialize covatiance Py.
+    // Calculate covariance "Py" using points "y[i]" and mean value "Ym".
+    const int N = 2*Nst+1;
     for ( auto i=0; i<Nst; i++ )
     {
         for ( auto j=0; j<Nst; j++ )
         {
+            // Initialize covatiance Py.
             Py[i][j] = Rx[i][j];
-        }
-    }
-    // Calculate covariance "Py" using points "y[i]" and mean value "Ym".
-    const int N = 2*Nst+1;
-    for ( auto k=0; k<N; k++ )
-    {
-        Float W = Sc * ( (k==0) ? Wc0 : Wmci );
-        for ( auto i=0; i<Nst; i++ )
-        {
-            for ( auto j=0; j<Nst; j++ )
+            for ( auto k=0; k<N; k++ )
+            {
+                Float W = Sc * ( (k==0) ? Wc0 : Wmci );
                 Py[i][j] += W * ( y[k][i] - Ym[i] ) * ( y[k][j] - Ym[j] );
+            }
         }
     }
 
@@ -256,7 +252,7 @@ void UkfC<Float, Nst, Nsen>::correct( UkfP<Float,Nst> & pr, Float * z, Float * x
     // Predict sensor readings.
     const int N = 2*Nst+1;
     for ( auto i=0; i<N; i++ )
-        sens( pr.y[i], zy[i] );
+        sens( pr.sigma[i], zy[i] );
 
     const Float lambda = pr.alpha*pr.alpha*(static_cast<Float>(Nst) + pr.k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
@@ -277,42 +273,31 @@ void UkfC<Float, Nst, Nsen>::correct( UkfP<Float,Nst> & pr, Float * z, Float * x
         }
     }
 
-    // Calculate sensor noise covariance.
-    // Initialize covatiance Pz.
+    // Calculate covariance "Pz" using points "z[i]" and mean value "Zm".
     for ( auto i=0; i<Nsen; i++ )
     {
         for ( auto j=0; j<Nsen; j++ )
         {
+            // Calculate sensor noise covariance.
+            // Initialize covatiance Pz.
             Pz[i][j] = Rz[i][j];
-        }
-    }
-    // Calculate covariance "Pz" using points "z[i]" and mean value "Zm".
-    for ( auto k=0; k<N; k++ )
-    {
-        Float W = Sc * ( (k==0) ? Wc0 : Wmci );
-        for ( auto i=0; i<Nsen; i++ )
-        {
-            for ( auto j=0; j<Nsen; j++ )
+            for ( auto k=0; k<N; k++ )
             {
+                Float W = Sc * ( (k==0) ? Wc0 : Wmci );
                 Pz[i][j] += W * ( zy[k][i] - Zm[i] ) * ( zy[k][j] - Zm[j] );
             }
         }
     }
+
     // Calculate cross covariance Pxz.
     for ( auto i=0; i<Nst; i++ )
     {
         for ( auto j=0; j<Nsen; j++ )
         {
             Pyz[i][j] = 0.0;
-        }
-    }
-    for ( auto k=0; k<N; k++ )
-    {
-        Float W = Sc * ( (k==0) ? Wc0 : Wmci );
-        for ( auto i=0; i<Nst; i++ )
-        {
-            for ( auto j=0; j<Nsen; j++ )
+            for ( auto k=0; k<N; k++ )
             {
+                Float W = Sc * ( (k==0) ? Wc0 : Wmci );
                 Pyz[i][j] += W * ( pr.y[k][i] - pr.Ym[i] ) * ( zy[k][j] - Zm[j] );
             }
         }

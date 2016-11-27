@@ -139,6 +139,10 @@ public:
     Mag();
     ~Mag();
 
+    void process();
+    void fillState( double  * x, double * z );
+    void updateState( double * x, double * z );
+
     // Magnet state.
     void   initSystem();
     void   magnetTimeStep();
@@ -147,9 +151,6 @@ public:
 
     // Generate X.
     void generateSensorReadings();
-
-    // Predict.
-    void predict();
 
     // State variables.
     double senX[3];
@@ -177,13 +178,13 @@ public:
     double ang[3];
     double angW[3];
 
-    UkfP<double, 18>    ukfP;
-    UkfC<double, 18, 9> ukfC;
+    UkfP<double, 15>    ukfP;
+    UkfC<double, 15, 9> ukfC;
 
 
     // Prediction step.
     void predict( double * x, double * y );
-    void estimate( double * x, double * z );
+    void correct( double * x, double * z );
     // Auxilary function to get world to local RF transformation.
     Math::Matrix<3, double> toWorldA( double * x );
 

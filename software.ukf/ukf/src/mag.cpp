@@ -1,5 +1,7 @@
 
 #include "mag.h"
+#include <functional>
+
 
 double Mag::m = 1.0; // Magnetic momentum.
 double Mag::r0 = 0.01; // To exclude infinite field value.
@@ -9,6 +11,71 @@ double Mag::sensorN = 1.0; // Measure frequency.
 double Mag::sigmaA = 0.05;
 double Mag::sigmaW = 0.1;
 double Mag::sigmaB = 0.1;
+
+Mag::Mag()
+{
+
+}
+
+Mag::~Mag()
+{
+
+}
+
+void Mag::process()
+{
+    initSystem();
+
+    double x[15];
+    double z[9];
+    generateSensorReadings();
+    fillState( x, z );
+    ukfP.predict( x, x, std::bind( &Mag::predict, this, std::placeholders::_1, std::placeholders::_2 ) );
+    ukfC.correct( ukfP, z, x, std::bind( &Mag::correct, this, std::placeholders::_1, std::placeholders::_2 ) );
+    updateState( x, z );
+
+    for ( int i=0; i<10; i++ )
+    {
+        magnetTimeStep();
+        generateSensorReadings();
+        fillState( x, z );
+        ukfP.predict( x, x, std::bind( &Mag::predict, this, std::placeholders::_1, std::placeholders::_2 ) );
+        ukfC.correct( ukfP, z, x, std::bind( &Mag::correct, this, std::placeholders::_1, std::placeholders::_2 ) );
+        updateState( x, z );
+    }
+}
+
+void Mag::fillState( double  * x, double * z )
+{
+    for ( int i=0; i<3; i++ )
+    {
+        x[i]   = this->x[i];
+        x[i+3] = this->v[i];
+        x[i+6] = this->a[i];
+        x[i+9] = this->ang[i];
+        x[i+12] = this->angW[i];
+
+        z[i]   = this->sa[i];
+        z[i+3] = this->sw[i];
+        z[i+6] = this->sB[i];
+    }
+}
+
+void Mag::updateState( double * x, double * z )
+{
+    for ( int i=0; i<3; i++ )
+    {
+        this->x[i]    = x[i];
+        this->v[i]    = x[i+3];
+        this->a[i]    = x[i+6];
+        this->ang[i]  = x[i+9];
+        this->angW[i] = x[i+12];
+
+        this->sa[i] = z[i];
+        this->sw[i] = z[i+3];
+        this->sB[i] = z[i+6];
+    }
+}
 
 void Mag::initSystem()
 {
@@ -53,6 +120,28 @@ void Mag::initSystem()
     angW[0] = 0.0;
     angW[1] = 0.0;
     angW[2] = 0.0;
+
+    // Initialize ukfp.
+    // Position
+    ukfP.Rx[0][0] = 1.0 / sensorN; // = 1m/s * dt
+    ukfP.Rx[1][1] = 1.0 / sensorN;
+    ukfP.Rx[2][2] = 1.0 / sensorN;
+    // Speed
+    ukfP.Rx[3][3] = 1.0 / sensorN;
+    ukfP.Rx[4][4] = 1.0 / sensorN;
+    ukfP.Rx[5][5] = 1.0 / sensorN;
+    // Acceleration
+    ukfP.Rx[6][6] = 0.01;
+    ukfP.Rx[7][7] = 0.01;
+    ukfP.Rx[8][8] = 0.01;
+    // Angle
+    ukfP.Rx[9][9]   = 0.01;
+    ukfP.Rx[10][10] = 0.01;
+    ukfP.Rx[11][11] = 0.01;
+    // Angular velocity
+    ukfP.Rx[12][12] = 0.01;
+    ukfP.Rx[13][13] = 0.01;
+    ukfP.Rx[14][14] = 0.01;
 }
 
 void Mag::magnetTimeStep()
@@ -119,19 +208,6 @@ void Mag::generateSensorReadings()
     sB[2] = sB[2] + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
 }
 
-void Mag::predict()
-{
-    double dt = 1.0/sensorN;
-    for ( int i=0; i<3; i++ )
-    {
-        angW[i] = sw[i];
-
-        a[i] = sa[i];
-        x[i] += v[i] * dt;
-        v[i] += a[i] * dt;
-    }
-
-}
 
 void Mag::predict( double * x, double * y )
 {
@@ -165,7 +241,7 @@ void Mag::predict( double * x, double * y )
     }
 }
 
-void Mag::estimate( double * x, double * z )
+void Mag::correct( double * x, double * z )
 {
     // xx, xy, xz, vx, vy, vz, ax, ay, az, angx, angy, angz, wx, wy, wz, bx, by, bz
     // Calculate B in external RF.
@@ -173,11 +249,11 @@ void Mag::estimate( double * x, double * z )
     double a[3];
     double w[3];
     double B[3];
+    realB( x, B );
     for ( int i=0; i<3; i++ )
     {
         a[i] = x[i+6];
         w[i] = x[i+12];
-        B[i] = x[i+15];
     }
     // Convert to local RF.
     Math::Matrix<3, double> A = toWorldA( x );

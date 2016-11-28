@@ -61,6 +61,7 @@ void Mag1D::process()
         updateState( x, z );
     }
 
+    this->extB += 1.0;
     for ( int i=0; i<100; i++ )
     {
         magnetTimeStep();
@@ -100,6 +101,7 @@ void Mag1D::updateState( double * x, double * z )
 
 void Mag1D::initSystem()
 {
+    extB = 1.0;
     // Real position.
     senX = 1.0;
     senV = 0.0;
@@ -148,7 +150,7 @@ void Mag1D::generateSensorReadings()
 {
     sa = senA + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
     realB( &senX, &senB );
-    sB = 1.0 + senB + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sB = extB + senB + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
 }
 
 

@@ -71,6 +71,7 @@ public:
     void correct( double * x, double * z );
 
     // System params.
+    double extB; // External magnetic field.
     //static int stepsPerRev; // Steps per revolution.
     static double m;        // Magnetic momentum.
     static double r0;       // To exclude infinite field value.

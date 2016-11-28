@@ -186,7 +186,24 @@ template<typename FLOAT> Math::Vector<3, FLOAT> quatNorm( const Math::Vector<3, 
     A[1][0] = 2.0 * (q[1]*q[2] + q[0]*q[3]);
     // q.w²-q.x² + q.y²-q.z²
     A[1][1] = q[0]*q[0] - q[1]*q[1] + q[2]*q[2] - q[3]*q[3];
-    //
+    // 2*q.y*q.z - 2*q.w*q.x
+    A[1][2] = 2.0 * (q[2]*q[3] - q[0]*q[1]);
+
+    // 2*q.x*q.z - 2*q.w*q.y
+    A[2][0] = 2.0 * (q[1]*q[3] - q[0]*q[2]);
+    // 2*q.y*q.z + 2*q.w*q.x
+    A[2][1] = 2.0 * (q[2]*q[3] + q[0]*q[1]);
+    // q.w²-q.x²-q.y²+q.z²
+    A[2][2] = q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3];
+
+    // Transforming vector.
+    Math::Vector<3, FLOAT> r;
+    r[0] = A[0][0]*v[0] + A[0][1]*v[1] + A[0][2]*v[2];
+    r[1] = A[1][0]*v[0] + A[1][1]*v[1] + A[1][2]*v[2];
+    r[2] = A[2][0]*v[0] + A[2][1]*v[1] + A[2][2]*v[2];
+
+    // Returning result.
+    return r;
 }
 
 

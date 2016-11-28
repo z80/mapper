@@ -36,9 +36,9 @@ void Mag1D::process()
         ukfC.correct( ukfP, z, x, std::bind( &Mag1D::correct, this, std::placeholders::_1, std::placeholders::_2 ) );
         updateState( x, z );
     }
-    //this->x = 1.0;
-    //this->v = 0.0;
-    //this->a = 0.0;
+    this->x = 1.0;
+    this->v = 0.0;
+    this->a = 0.0;
 
     for ( int i=0; i<100; i++ )
     {

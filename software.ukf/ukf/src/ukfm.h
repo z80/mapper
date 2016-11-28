@@ -60,7 +60,7 @@ UkfP<Float, Nst>::~UkfP()
 template <typename Float, int Nst>
 void UkfP<Float, Nst>::init()
 {
-    alpha = 1.0; // Scaling parameters. 1<=alpha<=1+1e-4.
+    alpha = 1.0e-3; // Scaling parameters. 1<=alpha<=1+1e-4.
     beta  = 2.0;  // For Gaussian distribution beta = 2 is optimal.
     k = 0.0;     // k is usually set to either 0 or 3-L.
 
@@ -86,11 +86,11 @@ void UkfP<Float, Nst>::predict( Float * x, Float * xNext, FPredict pr )
     // Initialize weights.
     const Float lambda = alpha*alpha*(static_cast<Float>(Nst) + k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
-    const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) ) + (1.0 - alpha*alpha + beta);
+    const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
     const Float Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
     const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
-    const Float Sm = 1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
-    const Float Sc = 1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sm = 1.0; //1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sc = 1.0; //1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
 
     // Generate sigma points.
     // 0-th point.
@@ -252,15 +252,15 @@ void UkfC<Float, Nst, Nsen>::correct( UkfP<Float,Nst> & pr, Float * z, Float * x
     // Predict sensor readings.
     const int N = 2*Nst+1;
     for ( auto i=0; i<N; i++ )
-        sens( pr.sigma[i], zy[i] );
+        sens( pr.y[i], zy[i] );
 
     const Float lambda = pr.alpha*pr.alpha*(static_cast<Float>(Nst) + pr.k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
     const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
     const Float Wc0 = Wm0 + (1.0 - pr.alpha*pr.alpha + pr.beta);
     const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
-    const Float Sm = 1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
-    const Float Sc = 1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sm = 1.0; //1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sc = 1.0; //1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
 
     // Calculate mean "Zm".
     for ( auto i=0; i<Nsen; i++ )

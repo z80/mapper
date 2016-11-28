@@ -27,7 +27,7 @@ void Mag1D::process()
     initSystem();
 
     double x[3];
-    double z[1];
+    double z[2];
     for ( int i=0; i<5; i++ )
     {
         generateSensorReadings();
@@ -71,6 +71,7 @@ void Mag1D::fillState( double  * x, double * z )
     //z[0] = this->sa;
     //z[1] = this->sB;
     z[0] = this->sB;
+    z[1] = this->sa;
 }
 
 void Mag1D::updateState( double * x, double * z )
@@ -82,6 +83,7 @@ void Mag1D::updateState( double * x, double * z )
     //this->sa = z[0];
     //this->sB = z[1];
     this->sB = z[0];
+    this->sa = z[1];
 }
 
 void Mag1D::initSystem()
@@ -155,6 +157,7 @@ void Mag1D::correct( double * x, double * z )
     //z[0] = x[2];
     //z[1] = B;
     z[0] = B;
+    z[1] = x[2];
 }
 
 

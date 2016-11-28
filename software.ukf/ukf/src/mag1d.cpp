@@ -26,7 +26,7 @@ void Mag1D::process()
 {
     initSystem();
 
-    double x[3];
+    double x[4];
     double z[2];
     for ( int i=0; i<5; i++ )
     {
@@ -60,6 +60,16 @@ void Mag1D::process()
         ukfC.correct( ukfP, z, x, std::bind( &Mag1D::correct, this, std::placeholders::_1, std::placeholders::_2 ) );
         updateState( x, z );
     }
+
+    for ( int i=0; i<100; i++ )
+    {
+        magnetTimeStep();
+        generateSensorReadings();
+        fillState( x, z );
+        ukfP.predict( x, x, std::bind( &Mag1D::predict, this, std::placeholders::_1, std::placeholders::_2 ) );
+        ukfC.correct( ukfP, z, x, std::bind( &Mag1D::correct, this, std::placeholders::_1, std::placeholders::_2 ) );
+        updateState( x, z );
+    }
 }
 
 void Mag1D::fillState( double  * x, double * z )
@@ -67,6 +77,7 @@ void Mag1D::fillState( double  * x, double * z )
     x[0] = this->x;
     x[1] = this->v;
     x[2] = this->a;
+    x[3] = this->pB;
 
     //z[0] = this->sa;
     //z[1] = this->sB;
@@ -79,6 +90,7 @@ void Mag1D::updateState( double * x, double * z )
     this->x  = x[0];
     this->v  = x[1];
     this->a  = x[2];
+    this->pB = x[3];
 
     //this->sa = z[0];
     //this->sB = z[1];
@@ -94,9 +106,10 @@ void Mag1D::initSystem()
     senA = 0.0;
 
     // Belief.
-    x = 1.0;
-    v = 0.0;
-    a = 0.0;
+    x  = 1.0;
+    v  = 0.0;
+    a  = 0.0;
+    pB = 0.0;
 
     // Initialize ukfp.
     // Position
@@ -105,6 +118,8 @@ void Mag1D::initSystem()
     ukfP.Rx[1][1] = 0.1;
     // Acceleration
     ukfP.Rx[2][2] = 0.1;
+    // External magnetic field.
+    ukfP.Rx[3][3] = 0.1;
 
     ukfC.Rz[0][0] = 0.0000001;
     //ukfC.Rz[1][1] = 0.01;
@@ -133,7 +148,7 @@ void Mag1D::generateSensorReadings()
 {
     sa = senA + sigmaA * static_cast<double>( rand() % 128 - 64 ) / 64.0;
     realB( &senX, &senB );
-    sB = senB + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
+    sB = 1.0 + senB + sigmaB * static_cast<double>( rand() % 128 - 64 ) / 64.0;
 }
 
 
@@ -144,6 +159,7 @@ void Mag1D::predict( double * x, double * y )
     y[0] = x[0] + x[1]*dt;
     y[1] = x[1] + x[2]*dt;
     y[2] = x[2];
+    y[3] = x[3];
 }
 
 void Mag1D::correct( double * x, double * z )
@@ -156,7 +172,7 @@ void Mag1D::correct( double * x, double * z )
     realB( x, &B );
     //z[0] = x[2];
     //z[1] = B;
-    z[0] = B;
+    z[0] = B + x[3];
     z[1] = x[2];
 }
 

@@ -62,8 +62,8 @@ public:
     double v;
     double a;
 
-    UkfP<double, 3>    ukfP;
-    UkfC<double, 3, 2> ukfC;
+    UkfP<double, 4>    ukfP;
+    UkfC<double, 4, 2> ukfC;
 
 
     // Prediction step.

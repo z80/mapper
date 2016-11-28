@@ -258,8 +258,9 @@ public:
     double ang[3];
     double angW[3];
 
-    UkfP<double, 15>    ukfP;
-    UkfC<double, 15, 9> ukfC;
+    // x3, v3, a3, ang4, w3, [B3]
+    UkfP<double, 16>    ukfP;
+    UkfC<double, 16, 9> ukfC;
 
 
     // Prediction step.

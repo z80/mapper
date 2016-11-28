@@ -6,7 +6,7 @@
 double Mag1D::m = 1.0; // Magnetic momentum.
 double Mag1D::r0 = 0.01; // To exclude infinite field value.
 double Mag1D::magnetW = 0.0 * 2.0*3.1415926535; // Angular velocity.
-double Mag1D::sensorN = 1.0; // Measure frequency.
+double Mag1D::sensorN = 20.0; // Measure frequency.
 
 double Mag1D::sigmaA = 0.1;
 double Mag1D::sigmaW = 0.1;
@@ -104,7 +104,7 @@ void Mag1D::initSystem()
     // Acceleration
     ukfP.Rx[2][2] = 0.1;
 
-    ukfC.Rz[0][0] = 0.1;
+    ukfC.Rz[0][0] = 0.0000001;
     //ukfC.Rz[1][1] = 0.01;
 }
 

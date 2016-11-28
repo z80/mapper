@@ -86,11 +86,11 @@ void UkfP<Float, Nst>::predict( Float * x, Float * xNext, FPredict pr )
     // Initialize weights.
     const Float lambda = alpha*alpha*(static_cast<Float>(Nst) + k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
-    const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
-    const Float Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
-    const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
-    const Float Sm = 1.0; //1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
-    const Float Sc = 1.0; //1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Wm0 = 1.0; //lambda / ( lambda + static_cast<Float>(Nst) );
+    const Float Wc0 = 1.0; //Wm0 + (1.0 - alpha*alpha + beta);
+    const Float Wmci = 1.0; //0.5/( lambda + static_cast<Float>(Nst) );
+    const Float Sm = 1.0/(static_cast<Float>(Nst*2) + 1.0); //1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sc = 1.0/(static_cast<Float>(Nst*2) + 1.0); //1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
 
     // Generate sigma points.
     // 0-th point.
@@ -129,7 +129,7 @@ void UkfP<Float, Nst>::predict( Float * x, Float * xNext, FPredict pr )
     {
         for ( auto j=0; j<Nst; j++ )
         {
-            // Initialize covatiance Py.
+            // Initialize covariance Py.
             Py[i][j] = Rx[i][j];
             for ( auto k=0; k<N; k++ )
             {
@@ -256,11 +256,11 @@ void UkfC<Float, Nst, Nsen>::correct( UkfP<Float,Nst> & pr, Float * z, Float * x
 
     const Float lambda = pr.alpha*pr.alpha*(static_cast<Float>(Nst) + pr.k) - static_cast<Float>(Nst);
     const Float lambda_2 = sqrt( lambda + static_cast<Float>(Nst) );
-    const Float Wm0 = lambda / ( lambda + static_cast<Float>(Nst) );
-    const Float Wc0 = Wm0 + (1.0 - pr.alpha*pr.alpha + pr.beta);
-    const Float Wmci = 0.5/( lambda + static_cast<Float>(Nst) );
-    const Float Sm = 1.0; //1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
-    const Float Sc = 1.0; //1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Wm0 = 1.0; //lambda / ( lambda + static_cast<Float>(Nst) );
+    const Float Wc0 = 1.0; //Wm0 + (1.0 - pr.alpha*pr.alpha + pr.beta);
+    const Float Wmci = 1.0; //0.5/( lambda + static_cast<Float>(Nst) );
+    const Float Sm = 1.0/(static_cast<Float>(Nst*2) + 1.0); //1.0/( Wm0 + static_cast<Float>(Nst*2)*Wmci );
+    const Float Sc = 1.0/(static_cast<Float>(Nst*2) + 1.0); //1.0/( Wc0 + static_cast<Float>(Nst*2)*Wmci );
 
     // Calculate mean "Zm".
     for ( auto i=0; i<Nsen; i++ )

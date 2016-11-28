@@ -127,6 +127,69 @@ template<typename FLOAT> const Math::Vector<3, FLOAT> q2a( const Math::Vector<4,
     return a;
 }
 
+// Quaternion normalization.
+template<typename FLOAT> void quatNorm( Math::Vector<4, FLOAT> & a )
+{
+    FLOAT l = 1.0/sqrt( a[0]*a[0] + a[1]*a[1] + a[2]*a[2] + a[3]*a[3] );
+    a[0] *= l;
+    a[1] *= l;
+    a[2] *= l;
+    a[3] *= l;
+}
+
+// Quaternion multiplication.
+template<typename FLOAT> const Math::Vector<4, FLOAT> quatMult( const Math::Vector<4, FLOAT> & a,
+                                                                const Math::Vector<4, FLOAT> & b  )
+{
+    FLOAT w, x, y ,z;
+    //x =  q1.x * q2.w + q1.y * q2.z - q1.z * q2.y + q1.w * q2.x;
+    x   =  a[1] * b[0] + a[2] * b[3] - a[3] * b[2] + a[0] * b[1];
+    //y = -q1.x * q2.z + q1.y * q2.w + q1.z * q2.x + q1.w * q2.y;
+    y   = -a[1] * b[3] + a[2] * b[0] + a[3] * b[1] + a[0] * b[2];
+    //z =  q1.x * q2.y - q1.y * q2.x + q1.z * q2.w + q1.w * q2.z;
+    z   =  a[1] * b[2] - a[2] * b[1] + a[3] * b[0] + a[0] * b[3];
+    //w = -q1.x * q2.x - q1.y * q2.y - q1.z * q2.z + q1.w * q2.w;
+    w   = -a[1] * b[1] - a[2] * b[2] - a[3] * b[3] + a[0] * b[0];
+    Math::Vector<4, FLOAT> ab;
+    ab[0] = w;
+    ab[1] = x;
+    ab[2] = y;
+    ab[3] = z;
+    quatNorm( ab );
+    return ab;
+}
+
+// Quaternion conjugate.
+template<typename FLOAT> Math::Vector<4, FLOAT> quatConj( const Math::Vector<4, FLOAT> & a )
+{
+    Math::Vector<4, FLOAT> b;
+    b[0] = a[0];
+    b[1] = -a[1];
+    b[2] = -a[2];
+    b[3] = -a[3];
+    return b;
+}
+
+// Quaternion vector transform.
+template<typename FLOAT> Math::Vector<3, FLOAT> quatNorm( const Math::Vector<3, FLOAT> & v,
+                                                          const Math::Vector<4, FLOAT> & q )
+{
+    FLOAT A[3][3];
+    // q.w²+q.x²-q.y²-q.z²
+    A[0][0] = q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3];
+    // 2*q.x*q.y - 2*q.w*q.z
+    A[0][1] = 2.0 * (q[1]*q[2] - q[0]*q[3]);
+    // 2*q.x*q.z + 2*q.w*q.y
+    A[0][2] = 2.0 * (q[1]*q[3] + q[0]*q[2]);
+
+    // 2*q.x*q.y + 2*q.w*q.z
+    A[1][0] = 2.0 * (q[1]*q[2] + q[0]*q[3]);
+    // q.w²-q.x² + q.y²-q.z²
+    A[1][1] = q[0]*q[0] - q[1]*q[1] + q[2]*q[2] - q[3]*q[3];
+    //
+}
+
+
 
 
 
